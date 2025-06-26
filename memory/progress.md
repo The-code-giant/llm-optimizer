@@ -1,0 +1,2 @@
+- Backend and frontend scaffolding complete (TypeScript, Drizzle, PostgreSQL, Next.js).
+- Next: Implement API endpoints, data models, and authentication. 
