@@ -1,20 +1,68 @@
 {
-  "dependencies": {
-    "@sentry/node": "^9.32.0",
-    "axios": "^1.10.0",
-    "bullmq": "^5.56.0",
-    "express-winston": "^4.2.0",
-    "ioredis": "^5.6.1",
-    "prom-client": "^15.1.3",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "winston": "^3.17.0",
-    "xml2js": "^0.6.2"
+  "name": "llm-optimizer",
+  "version": "1.0.0",
+  "description": "LLM Optimizer - A SaaS platform to optimize website content for Large Language Models",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run dev:setup && npm run dev:start && npm run dev:init",
+    "dev:setup": "cp env.example .env 2>/dev/null || true",
+    "dev:start": "docker compose up --build -d",
+    "dev:init": "npm run dev:wait && npm run db:migrate",
+    "dev:wait": "echo 'Waiting for services to be ready...' && sleep 10",
+    "dev:first-time": "npm run dev:setup && npm run dev:start && npm run dev:wait && npm run db:migrate && echo '🎉 Setup complete! Visit http://localhost:3000'",
+    "dev:stop": "docker compose down",
+    "dev:restart": "npm run dev:stop && npm run dev:start",
+    "dev:clean": "docker compose down -v && docker system prune -f",
+    "dev:logs": "docker compose logs -f",
+    "dev:logs:backend": "docker compose logs -f backend",
+    "dev:logs:frontend": "docker compose logs -f frontend",
+    "dev:logs:postgres": "docker compose logs -f postgres",
+    "dev:logs:redis": "docker compose logs -f redis",
+    "dev:status": "docker compose ps",
+    "dev:build": "docker compose build --no-cache",
+    "dev:shell:backend": "docker compose exec backend sh",
+    "dev:shell:frontend": "docker compose exec frontend sh",
+    "dev:shell:postgres": "docker compose exec postgres psql -U postgres -d llm_optimizer_dev",
+    "dev:shell:redis": "docker compose exec redis redis-cli",
+    "db:migrate": "docker compose exec backend npm run db:migrate:safe",
+    "db:generate": "docker compose exec backend npm run db:generate",
+    "db:studio": "docker compose exec backend npm run db:studio",
+    "db:reset": "docker compose down -v postgres && docker compose up -d postgres",
+    "tools:start": "docker compose --profile tools up -d",
+    "tools:stop": "docker compose --profile tools down",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:all": "npm run lint:backend && npm run lint:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "test:all": "npm run test:backend && npm run test:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:all": "npm run build:backend && npm run build:frontend"
   },
+  "keywords": [
+    "llm",
+    "seo",
+    "ai",
+    "optimization",
+    "chatgpt",
+    "claude",
+    "saas"
+  ],
+  "author": "Ali Akbar Alizada",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "devDependencies": {
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8",
-    "@types/xml2js": "^0.4.14"
-  },
-  "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af"
+    "concurrently": "^8.2.2"
+  }
 }
