@@ -79,6 +79,13 @@ npm run test:all              # Run all tests
 npm run build:all             # Build all projects
 ```
 
+## 🎯 Pro Tips
+
+- **Debugging**: Use `npm run dev:debug` for debugger on port 9229
+- **Logs**: `docker compose logs backend -f` to follow live logs
+- **Database changes**: Run `npm run db:migrate` after schema changes
+- **Environment**: Changes to `.env` require container restart
+
 ## 🐳 Docker Services
 
 - **postgres**: PostgreSQL database (port 5432)
