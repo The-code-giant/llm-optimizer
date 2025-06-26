@@ -61,9 +61,9 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./backend:/app
+      - ./backend:/app:cached
       - /app/node_modules
-      - ./shared:/app/shared
+      - ./shared:/app/shared:cached
     networks:
       - llm-optimizer-network
     depends_on:
@@ -85,13 +85,14 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       WATCHPACK_POLLING: true
+      CHOKIDAR_USEPOLLING: true
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app:cached
       - /app/node_modules
       - /app/.next
-      - ./shared:/app/shared
+      - ./shared:/app/shared:cached
     networks:
       - llm-optimizer-network
     depends_on:

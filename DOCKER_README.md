@@ -177,6 +177,21 @@ docker compose up -d postgres
 - Change ports in `docker-compose.yml` if needed
 - Default ports: 3000 (frontend), 3001 (backend), 5432 (postgres), 6379 (redis)
 
+### Hot Reload Not Working
+```bash
+# Frontend hot reload issues (common on macOS)
+docker compose restart frontend
+
+# Check if file changes are synced
+docker compose exec frontend ls -la /app/src/app/page.tsx
+
+# View frontend logs for compilation errors
+docker compose logs frontend --tail 20
+
+# Force rebuild if needed
+docker compose up --build frontend
+```
+
 ### Permission issues (Linux/Mac)
 ```bash
 # Fix script permissions
