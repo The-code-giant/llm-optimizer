@@ -3,7 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRouter from './routes/auth';
 import sitesRouter from './routes/sites';
-import pagesRouter from './routes/pages';
 import analysisRouter from './routes/analysis';
 import injectedContentRouter from './routes/injectedContent';
 import trackerRouter from './routes/tracker';
@@ -58,17 +57,25 @@ if (process.env.SENTRY_DSN) {
 // Prometheus metrics middleware
 app.use(metricsMiddleware);
 
-// Logging middleware
-app.use(expressWinston.logger({
-  transports: [new winston.transports.Console()],
-  format: winston.format.combine(
-    winston.format.colorize(),
-    winston.format.simple()
-  ),
-  meta: true,
-  expressFormat: true,
-  colorize: true,
-}));
+// Clean, secure logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const statusColor = res.statusCode >= 400 ? '\x1b[31m' : '\x1b[32m'; // Red for errors, green for success
+    const resetColor = '\x1b[0m';
+    
+    // Only log non-health check requests to reduce noise
+    if (req.originalUrl !== '/healthz' && req.originalUrl !== '/metrics') {
+      console.log(
+        `${statusColor}${req.method}${resetColor} ${req.originalUrl} ${statusColor}${res.statusCode}${resetColor} ${duration}ms`
+      );
+    }
+  });
+  
+  next();
+});
 
 const swaggerSpec = swaggerJSDoc({
   definition: {
@@ -94,18 +101,20 @@ app.get('/healthz', (req, res) => {
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/sites', sitesRouter);
-app.use('/api/v1/pages', pagesRouter);
 app.use('/api/v1/analysis', analysisRouter);
 app.use('/api/v1/injected-content', injectedContentRouter);
 app.use('/api/v1', trackerRouter);
 
-// Error logging middleware
+// Error logging middleware - only for actual errors
 app.use(expressWinston.errorLogger({
   transports: [new winston.transports.Console()],
   format: winston.format.combine(
     winston.format.colorize(),
-    winston.format.simple()
+    winston.format.printf(({ level, message, meta }) => {
+      return `${level}: ${message}`;
+    })
   ),
+  meta: false, // Don't include request/response metadata for errors
 }));
 
 // Prometheus error metrics middleware
@@ -119,6 +128,9 @@ if (process.env.SENTRY_DSN) {
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  // Log error without sensitive information
+  console.error(`❌ ERROR: ${err.message} - ${req.method} ${req.originalUrl}`);
+  
   if (process.env.SENTRY_DSN) {
     // @ts-ignore
     Sentry.withScope((scope: any) => {
@@ -135,8 +147,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
-  console.log(`Health check available at http://localhost:${PORT}/healthz`);
-  console.log(`Prometheus metrics available at http://localhost:${PORT}/metrics`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📚 Swagger docs available at http://localhost:${PORT}/api-docs`);
+  console.log(`❤️  Health check available at http://localhost:${PORT}/healthz`);
+  console.log(`📊 Prometheus metrics available at http://localhost:${PORT}/metrics`);
 });

@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, users } from '../db/schema';
+import { sites, users, pages } from '../db/schema';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { sitemapImportQueue } from '../utils/queue';
@@ -21,7 +21,7 @@ const siteSchema = z.object({
 });
 
 const sitemapImportSchema = z.object({
-  sitemapUrl: z.string().url().optional(),
+  sitemapUrl: z.string().url(),
 });
 
 // Helper function to ensure user exists in database
@@ -365,7 +365,7 @@ router.delete('/:siteId', authenticateJWT, async (req: AuthenticatedRequest, res
 
 /**
  * @openapi
- * /api/v1/sites/{siteId}/sitemap/import:
+ * /api/v1/sites/{siteId}/import-sitemap:
  *   post:
  *     summary: Import a sitemap for a site
  *     tags: [Sites]
@@ -376,11 +376,12 @@ router.delete('/:siteId', authenticateJWT, async (req: AuthenticatedRequest, res
  *         schema:
  *           type: string
  *     requestBody:
- *       required: false
+ *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
+ *             required: [sitemapUrl]
  *             properties:
  *               sitemapUrl:
  *                 type: string
@@ -403,8 +404,8 @@ router.delete('/:siteId', authenticateJWT, async (req: AuthenticatedRequest, res
  *       404:
  *         description: Site not found
  */
-// Import sitemap for a site
-router.post('/:siteId/sitemap/import', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+// Import sitemap for a site (updated path to match frontend expectation)
+router.post('/:siteId/import-sitemap', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const parse = sitemapImportSchema.safeParse(req.body);
     if (!parse.success) {
@@ -420,10 +421,50 @@ router.post('/:siteId/sitemap/import', authenticateJWT, async (req: Authenticate
     // Enqueue sitemap import job
     const job = await sitemapImportQueue.add('import', {
       siteId: req.params.siteId,
-      sitemapUrl: parse.data.sitemapUrl || site.url + '/sitemap.xml',
+      sitemapUrl: parse.data.sitemapUrl,
       userId: req.user!.userId,
     });
     res.status(202).json({ message: 'Sitemap import started', jobId: job.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/sites/{siteId}/pages:
+ *   get:
+ *     summary: List pages for a site
+ *     tags: [Sites, Pages]
+ *     parameters:
+ *       - in: path
+ *         name: siteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of pages
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Page'
+ *       404:
+ *         description: Site not found
+ */
+// List pages for a site
+router.get('/:siteId/pages', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Site not found' });
+      return;
+    }
+    const sitePages = await db.select().from(pages).where(eq(pages.siteId, req.params.siteId));
+    res.json(sitePages);
   } catch (err) {
     next(err);
   }
