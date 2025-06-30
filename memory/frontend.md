@@ -2,6 +2,14 @@ Okay, here is a frontend implementation guide for the LLM Optimizer, formatted i
 
 - The frontend will be implemented in **Next.js (TypeScript)** as of July 2024, per updated requirements.
 
+## Authentication
+
+- Clerk is used as the authentication provider for the frontend.
+- Integrates directly with Next.js using the @clerk/nextjs package.
+- Prebuilt Clerk components are used for login, registration, and session management, replacing custom authentication logic.
+- Supports secure, modern auth flows (including social login, SSO, and 2FA if enabled in Clerk dashboard).
+- User session and access control are managed via Clerk hooks and middleware.
+
 ```markdown
 # Frontend Implementation Guide: LLM Optimizer Dashboard
 
@@ -20,55 +28,56 @@ The frontend architecture should be structured to support a clear separation of 
 
 ### Core Components:
 
-*   **`App`:** The root component, handles routing and potentially global providers (auth, state).
-*   **`Layout`:** Provides the overall dashboard structure (navigation, header, main content area). It wraps the specific page components based on the current route.
-    *   `Navigation` (Sidebar/Header): Contains links to main sections (Dashboard, Sitemap, Analysis, Content Injection, Settings).
-    *   `Header`: May include user info, site selection, and global actions.
-*   **Page Components:** Represent the different views of the application.
-    *   `DashboardPage`: Overview, key metrics, recent activity.
-    *   `SitemapPage`: Interface for importing sitemaps, listing scanned pages, viewing status.
-    *   `AnalysisPage`: Displays analysis results, LLM-readiness scores, and recommendations for selected pages.
-    *   `ContentInjectionPage`: Interface for selecting pages, previewing/editing suggested content, and triggering injection.
-    *   `SettingsPage`: Configuration options (tracker script retrieval, site settings, etc.).
-*   **Shared Components:** Reusable UI elements used across different pages.
-    *   `Button`, `Input`, `Select`
-    *   `Table`: For displaying lists of pages, recommendations, etc.
-    *   `Modal`: For confirmations, detailed views, or small forms.
-    *   `LoadingIndicator`, `ErrorMessage`
-    *   `ScoreDisplay`: Visual representation of the LLM-readiness score.
-    *   `RecommendationCard`: Displays individual analysis recommendations.
-    *   `ContentEditor` (Simplified): A text area or rich text editor for proposed content.
+- **`App`:** The root component, handles routing and potentially global providers (auth, state).
+- **`Layout`:** Provides the overall dashboard structure (navigation, header, main content area). It wraps the specific page components based on the current route.
+  - `Navigation` (Sidebar/Header): Contains links to main sections (Dashboard, Sitemap, Analysis, Content Injection, Settings).
+  - `Header`: May include user info, site selection, and global actions.
+- **Page Components:** Represent the different views of the application.
+  - `DashboardPage`: Overview, key metrics, recent activity.
+  - `SitemapPage`: Interface for importing sitemaps, listing scanned pages, viewing status.
+  - `AnalysisPage`: Displays analysis results, LLM-readiness scores, and recommendations for selected pages.
+  - `ContentInjectionPage`: Interface for selecting pages, previewing/editing suggested content, and triggering injection.
+  - `SettingsPage`: Configuration options (tracker script retrieval, site settings, etc.).
+- **Shared Components:** Reusable UI elements used across different pages.
+  - `Button`, `Input`, `Select`
+  - `Table`: For displaying lists of pages, recommendations, etc.
+  - `Modal`: For confirmations, detailed views, or small forms.
+  - `LoadingIndicator`, `ErrorMessage`
+  - `ScoreDisplay`: Visual representation of the LLM-readiness score.
+  - `RecommendationCard`: Displays individual analysis recommendations.
+  - `ContentEditor` (Simplified): A text area or rich text editor for proposed content.
 
 ### Relationship Diagram (Conceptual):
+```
 
-```
 +-----------------+
-|       App       |
+| App |
 | (Router, Global |
-|    Providers)   |
+| Providers) |
 +--------+--------+
-         |
-         | Renders
-         V
+|
+| Renders
+V
 +-----------------+
-|     Layout      |
-| (Navigation,    |
-|    Header)      |
+| Layout |
+| (Navigation, |
+| Header) |
 +--------+--------+
-         |
-         | Renders (Based on Route)
-         V
+|
+| Renders (Based on Route)
+V
 +-------------------------------------------------------------------------------------+
-|   DashboardPage |   SitemapPage   |   AnalysisPage  | ContentInjectionPage | SettingsPage |
+| DashboardPage | SitemapPage | AnalysisPage | ContentInjectionPage | SettingsPage |
 +--------+--------+--------+--------+--------+--------+--------+--------------+--------+------+
-         |                 |                 |                 |              |        |
-         | Uses            | Uses            | Uses            | Uses         | Uses   |
-         V                 V                 V                 V              V        V
+| | | | | |
+| Uses | Uses | Uses | Uses | Uses |
+V V V V V V
 +-------------------------------------------------------------------------------------+
-|                          Shared Components                                          |
-| (Table, Button, Modal, LoadingIndicator, ScoreDisplay, RecommendationCard, etc.)   |
+| Shared Components |
+| (Table, Button, Modal, LoadingIndicator, ScoreDisplay, RecommendationCard, etc.) |
 +-------------------------------------------------------------------------------------+
-```
+
+````
 
 The frontend interacts with the Backend API for data fetching, triggering analysis, saving settings, and executing content injection. The Tracker Script runs on the *user's* website and communicates directly with the backend; the dashboard frontend interacts with the backend to configure the tracker or view its collected data/status.
 
@@ -282,61 +291,75 @@ function PageList({ siteId }) {
 }
 
 export default PageList;
-```
+````
 
 ### Example 2: Displaying Analysis Recommendations
 
 This component displays recommendations for a specific page based on analysis results.
 
 ```jsx
-import React from 'react';
-import './AnalysisResults.css'; // Assuming some basic styling
+import React from "react";
+import "./AnalysisResults.css"; // Assuming some basic styling
 
 function AnalysisResults({ pageAnalysis }) {
-    if (!pageAnalysis) {
-        return <div className="no-data">Select a page or run analysis to see results.</div>;
-    }
-
-    const { llmScore, recommendations } = pageAnalysis;
-
+  if (!pageAnalysis) {
     return (
-        <div className="analysis-results-container">
-            <h3>Analysis Results for {pageAnalysis.pageUrl}</h3>
-
-            <div className="score-section">
-                <h4>LLM Readiness Score:</h4>
-                {/* Implement ScoreDisplay component - simple text for now */}
-                <div className="llm-score">{llmScore !== undefined ? llmScore.toFixed(1) : 'N/A'} / 100</div>
-                <p>Score indicates how well this page is structured and contains content likely to be useful for LLMs.</p>
-            </div>
-
-            <div className="recommendations-section">
-                <h4>Recommendations:</h4>
-                {recommendations && recommendations.length > 0 ? (
-                    <ul className="recommendations-list">
-                        {recommendations.map((rec, index) => (
-                            <li key={index} className="recommendation-item">
-                                <h5>{rec.title}</h5>
-                                <p>{rec.description}</p>
-                                {rec.suggestion && (
-                                    <div className="recommendation-suggestion">
-                                        <strong>Suggestion:</strong> {rec.suggestion}
-                                    </div>
-                                )}
-                                {rec.action && (
-                                    <button className="recommendation-action-button" onClick={() => alert(`Action: ${rec.action.type}`)}>
-                                        {rec.action.label}
-                                    </button>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <div className="no-data">No recommendations for this page currently.</div>
-                )}
-            </div>
-        </div>
+      <div className="no-data">
+        Select a page or run analysis to see results.
+      </div>
     );
+  }
+
+  const { llmScore, recommendations } = pageAnalysis;
+
+  return (
+    <div className="analysis-results-container">
+      <h3>Analysis Results for {pageAnalysis.pageUrl}</h3>
+
+      <div className="score-section">
+        <h4>LLM Readiness Score:</h4>
+        {/* Implement ScoreDisplay component - simple text for now */}
+        <div className="llm-score">
+          {llmScore !== undefined ? llmScore.toFixed(1) : "N/A"} / 100
+        </div>
+        <p>
+          Score indicates how well this page is structured and contains content
+          likely to be useful for LLMs.
+        </p>
+      </div>
+
+      <div className="recommendations-section">
+        <h4>Recommendations:</h4>
+        {recommendations && recommendations.length > 0 ? (
+          <ul className="recommendations-list">
+            {recommendations.map((rec, index) => (
+              <li key={index} className="recommendation-item">
+                <h5>{rec.title}</h5>
+                <p>{rec.description}</p>
+                {rec.suggestion && (
+                  <div className="recommendation-suggestion">
+                    <strong>Suggestion:</strong> {rec.suggestion}
+                  </div>
+                )}
+                {rec.action && (
+                  <button
+                    className="recommendation-action-button"
+                    onClick={() => alert(`Action: ${rec.action.type}`)}
+                  >
+                    {rec.action.label}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="no-data">
+            No recommendations for this page currently.
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default AnalysisResults;
@@ -347,8 +370,8 @@ export default AnalysisResults;
 A basic form to select a page and inject some hardcoded sample content as a placeholder for AI-generated suggestions.
 
 ```jsx
-import React, { useState } from 'react';
-import './ContentInjectionForm.css'; // Basic styling
+import React, { useState } from "react";
+import "./ContentInjectionForm.css"; // Basic styling
 
 // Assume 'pages' and 'siteId' are passed as props or fetched via context/hook
 // Assume sampleSuggestedContent comes from AI analysis results or backend
@@ -362,113 +385,129 @@ const sampleSuggestedContent = `
 `;
 
 function ContentInjectionForm({ siteId, pages }) {
-    const [selectedPageId, setSelectedPageId] = useState('');
-    const [contentToInject, setContentToInject] = useState(sampleSuggestedContent);
-    const [isInjecting, setIsInjecting] = useState(false);
-    const [message, setMessage] = useState(null); // For success/error messages
+  const [selectedPageId, setSelectedPageId] = useState("");
+  const [contentToInject, setContentToInject] = useState(
+    sampleSuggestedContent
+  );
+  const [isInjecting, setIsInjecting] = useState(false);
+  const [message, setMessage] = useState(null); // For success/error messages
 
-    const handleInjectContent = async () => {
-        if (!selectedPageId || !contentToInject.trim()) {
-            setMessage({ type: 'error', text: 'Please select a page and ensure content is not empty.' });
-            return;
+  const handleInjectContent = async () => {
+    if (!selectedPageId || !contentToInject.trim()) {
+      setMessage({
+        type: "error",
+        text: "Please select a page and ensure content is not empty.",
+      });
+      return;
+    }
+
+    setIsInjecting(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch(
+        `/api/sites/${siteId}/pages/${selectedPageId}/inject-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`, // Example token usage
+          },
+          body: JSON.stringify({
+            content: contentToInject,
+            // For MVP, location might be simple:
+            location: "append_to_body", // Example location key
+          }),
         }
+      );
 
-        setIsInjecting(true);
-        setMessage(null);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to inject content.");
+      }
 
-        try {
-            const response = await fetch(`/api/sites/${siteId}/pages/${selectedPageId}/inject-content`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}` // Example token usage
-                },
-                body: JSON.stringify({
-                    content: contentToInject,
-                    // For MVP, location might be simple:
-                    location: 'append_to_body' // Example location key
-                })
-            });
+      // Assuming backend returns success confirmation
+      const result = await response.json();
+      setMessage({
+        type: "success",
+        text: result.message || "Content injected successfully!",
+      });
 
-            if (!response.ok) {
-                 const errorData = await response.json();
-                 throw new Error(errorData.message || 'Failed to inject content.');
-            }
+      // Optional: Refetch page data or update local state if needed
+    } catch (err) {
+      console.error("Error injecting content:", err);
+      setMessage({ type: "error", text: `Injection failed: ${err.message}` });
+    } finally {
+      setIsInjecting(false);
+    }
+  };
 
-            // Assuming backend returns success confirmation
-            const result = await response.json();
-            setMessage({ type: 'success', text: result.message || 'Content injected successfully!' });
+  return (
+    <div className="content-injection-form">
+      <h2>Inject Content</h2>
 
-            // Optional: Refetch page data or update local state if needed
+      {message && (
+        <div className={`message ${message.type}`}>{message.text}</div>
+      )}
 
-        } catch (err) {
-            console.error("Error injecting content:", err);
-            setMessage({ type: 'error', text: `Injection failed: ${err.message}` });
-        } finally {
-            setIsInjecting(false);
-        }
-    };
+      <div className="form-group">
+        <label htmlFor="pageSelect">Select Page:</label>
+        <select
+          id="pageSelect"
+          value={selectedPageId}
+          onChange={(e) => setSelectedPageId(e.target.value)}
+          disabled={!pages || pages.length === 0}
+        >
+          <option value="">-- Select a Page --</option>
+          {pages &&
+            pages.map((page) => (
+              <option key={page.id} value={page.id}>
+                {page.url}
+              </option>
+            ))}
+        </select>
+        {!pages ||
+          (pages.length === 0 && (
+            <p>No pages available. Import sitemap first.</p>
+          ))}
+      </div>
 
-    return (
-        <div className="content-injection-form">
-            <h2>Inject Content</h2>
+      <div className="form-group">
+        <label htmlFor="contentEditor">Content to Inject:</label>
+        <textarea
+          id="contentEditor"
+          rows="10"
+          value={contentToInject}
+          onChange={(e) => setContentToInject(e.target.value)}
+          placeholder="Enter or edit the content to inject..."
+          disabled={!selectedPageId}
+        />
+      </div>
 
-            {message && (
-                <div className={`message ${message.type}`}>
-                    {message.text}
-                </div>
-            )}
-
-            <div className="form-group">
-                <label htmlFor="pageSelect">Select Page:</label>
-                <select
-                    id="pageSelect"
-                    value={selectedPageId}
-                    onChange={(e) => setSelectedPageId(e.target.value)}
-                    disabled={!pages || pages.length === 0}
-                >
-                    <option value="">-- Select a Page --</option>
-                    {pages && pages.map(page => (
-                         <option key={page.id} value={page.id}>{page.url}</option>
-                    ))}
-                </select>
-                {!pages || pages.length === 0 && <p>No pages available. Import sitemap first.</p>}
-            </div>
-
-             <div className="form-group">
-                <label htmlFor="contentEditor">Content to Inject:</label>
-                <textarea
-                    id="contentEditor"
-                    rows="10"
-                    value={contentToInject}
-                    onChange={(e) => setContentToInject(e.target.value)}
-                    placeholder="Enter or edit the content to inject..."
-                    disabled={!selectedPageId}
-                />
-            </div>
-
-            {/* MVP: Location strategy might be simplified or implicit */}
-            {/* <div className="form-group">
+      {/* MVP: Location strategy might be simplified or implicit */}
+      {/* <div className="form-group">
                  <label>Injection Location:</label>
                  // ... radio buttons or select for location options
             </div> */}
 
+      <button
+        onClick={handleInjectContent}
+        disabled={!selectedPageId || !contentToInject.trim() || isInjecting}
+      >
+        {isInjecting ? "Injecting..." : "Inject Content"}
+      </button>
 
-            <button
-                onClick={handleInjectContent}
-                disabled={!selectedPageId || !contentToInject.trim() || isInjecting}
-            >
-                {isInjecting ? 'Injecting...' : 'Inject Content'}
-            </button>
-
-             {/* Optional: Add a Preview button */}
-             {selectedPageId && (
-                 <button onClick={() => alert('Simulate Preview')} disabled={isInjecting}>
-                     Preview (Simulated)
-                 </button>
-             )}
-        </div>
-    );
+      {/* Optional: Add a Preview button */}
+      {selectedPageId && (
+        <button
+          onClick={() => alert("Simulate Preview")}
+          disabled={isInjecting}
+        >
+          Preview (Simulated)
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default ContentInjectionForm;
@@ -477,4 +516,7 @@ export default ContentInjectionForm;
 These examples provide a starting point for implementing the core features. Remember to integrate them within your chosen framework's structure (routing, state management context, etc.).
 
 This guide covers the essential aspects for frontend developers to begin building the LLM Optimizer Dashboard according to the MVP requirements.
+
+```
+
 ```

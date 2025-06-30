@@ -84,6 +84,8 @@ services:
       NODE_ENV: development
       NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_bmV3LWNhaW1hbi02MS5jbGVyay5hY2NvdW50cy5kZXYk
+      CLERK_SECRET_KEY: sk_test_j9z0Dda9JfUE7UVXN3D6spZl7dzWulNFIQfPMyFLGx
       WATCHPACK_POLLING: true
       CHOKIDAR_USEPOLLING: true
     ports:
@@ -107,7 +109,7 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@llmoptimizer.dev
       PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
       - "5050:80"
     volumes:
@@ -145,4 +147,4 @@ volumes:
 
 networks:
   llm-optimizer-network:
-    driver: bridge 
+    driver: bridge
