@@ -10,7 +10,7 @@ RUN apk add --no-cache libc6-compat
 COPY package*.json ./
 
 # Install dependencies (use npm install for dev builds)  
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .

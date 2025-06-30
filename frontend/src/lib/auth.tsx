@@ -1,5 +1,13 @@
-'use client'
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+// Clerk authentication is now used. This file is deprecated and can be removed once all references are updated.
+
+"use client";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 
 interface User {
@@ -87,4 +95,4 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-} 
+}
