@@ -1,115 +1,273 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../../lib/auth";
-import { getBillingInfo, updateBillingInfo, BillingInfo } from "../../../lib/api";
+import { useUser, useAuth } from "@clerk/nextjs";
+import { DashboardLayout } from "../../../components/ui/dashboard-layout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Button } from "../../../components/ui/button";
+import { Badge } from "../../../components/ui/badge";
+import { CreditCard, Check, Zap, Crown, Star } from "lucide-react";
 import Toast from "../../../components/Toast";
+
+interface BillingInfo {
+  plan: string;
+  paymentMethod: string;
+  nextBillingDate: string;
+  usage: {
+    sitesAnalyzed: number;
+    sitesLimit: number;
+    pagesAnalyzed: number;
+    pagesLimit: number;
+  };
+}
+
+const plans = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "Perfect for trying out our LLM optimization tools",
+    features: [
+      "Up to 2 sites",
+      "10 pages per month",
+      "Basic SEO analysis",
+      "Email support"
+    ],
+    icon: Star,
+    current: true
+  },
+  {
+    name: "Pro",
+    price: "$29",
+    period: "per month",
+    description: "Ideal for small to medium websites",
+    features: [
+      "Up to 10 sites",
+      "500 pages per month",
+      "Advanced LLM optimization",
+      "Priority support",
+      "Custom reports"
+    ],
+    icon: Zap,
+    current: false,
+    popular: true
+  },
+  {
+    name: "Enterprise",
+    price: "$99",
+    period: "per month",
+    description: "For large websites and agencies",
+    features: [
+      "Unlimited sites",
+      "5,000 pages per month",
+      "White-label solution",
+      "24/7 phone support",
+      "API access",
+      "Custom integrations"
+    ],
+    icon: Crown,
+    current: false
+  }
+];
 
 export default function BillingPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [billing, setBilling] = useState<BillingInfo | null>(null);
-  const [plan, setPlan] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("");
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!isLoaded) return;
+    
+    if (!isSignedIn) {
       router.replace("/login");
       return;
     }
+
     async function fetchBilling() {
       setLoading(true);
       setError(null);
+      
       try {
-        const data = await getBillingInfo(token);
-        setBilling(data);
-        setPlan(data.plan);
-        setPaymentMethod(data.paymentMethod);
+        const token = await getToken();
+        if (!token) {
+          setError("Failed to get authentication token");
+          return;
+        }
+        
+        // Mock data for now
+        setBilling({
+          plan: "Free",
+          paymentMethod: "No payment method",
+          nextBillingDate: "N/A",
+          usage: {
+            sitesAnalyzed: 2,
+            sitesLimit: 2,
+            pagesAnalyzed: 8,
+            pagesLimit: 10
+          }
+        });
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Failed to load billing info");
+        setToast({ message: "Failed to load billing information", type: "error" });
       } finally {
         setLoading(false);
       }
     }
+    
     fetchBilling();
-  }, [token, router]);
+  }, [isLoaded, isSignedIn, getToken, router]);
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!token) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const updated = await updateBillingInfo(token, { plan, paymentMethod });
-      setBilling(updated);
-      setToast({ message: "Billing info updated!", type: "success" });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to update billing info");
-      setToast({ message: err instanceof Error ? err.message : "Failed to update billing info", type: "error" });
-    } finally {
-      setSaving(false);
-    }
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
+    <DashboardLayout>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Billing & Subscription</h1>
+      
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Billing & Subscription</h1>
+          <p className="text-gray-600 mt-2">
+            Manage your subscription plan and billing information.
+          </p>
+        </div>
+
+        {/* Current Plan & Usage */}
         {loading ? (
-          <div>Loading billing info...</div>
-        ) : error ? (
-          <div className="text-red-600 mb-4">{error}</div>
+          <Card>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
         ) : billing ? (
-          <form onSubmit={handleSave} className="space-y-4">
-            <div>
-              <label htmlFor="plan" className="block text-sm font-medium text-gray-700">
-                Plan
-              </label>
-              <select
-                id="plan"
-                value={plan}
-                onChange={e => setPlan(e.target.value)}
-                className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                disabled={saving}
-              >
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="paymentMethod" className="block text-sm font-medium text-gray-700">
-                Payment Method
-              </label>
-              <input
-                id="paymentMethod"
-                type="text"
-                value={paymentMethod}
-                onChange={e => setPaymentMethod(e.target.value)}
-                className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                disabled={saving}
-              />
-            </div>
-            <div className="text-sm text-gray-500">
-              Status: {billing.status} <br />
-              Renewal: {new Date(billing.renewalDate).toLocaleDateString()} <br />
-              Amount: ${billing.amount.toFixed(2)}
-            </div>
-            <button
-              type="submit"
-              className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold disabled:opacity-50"
-              disabled={saving}
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-          </form>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <CreditCard className="w-5 h-5 mr-2" />
+                  Current Plan
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold">{billing.plan} Plan</span>
+                    <Badge variant="outline">Active</Badge>
+                  </div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>Payment Method: {billing.paymentMethod}</p>
+                    <p>Next Billing: {billing.nextBillingDate}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Usage This Month</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Sites Analyzed</span>
+                      <span>{billing.usage.sitesAnalyzed}/{billing.usage.sitesLimit}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${(billing.usage.sitesAnalyzed / billing.usage.sitesLimit) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>Pages Analyzed</span>
+                      <span>{billing.usage.pagesAnalyzed}/{billing.usage.pagesLimit}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full" 
+                        style={{ width: `${(billing.usage.pagesAnalyzed / billing.usage.pagesLimit) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         ) : null}
+
+        {/* Available Plans */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Choose Your Plan</CardTitle>
+            <CardDescription>
+              Upgrade or downgrade your plan anytime. No commitments.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {plans.map((plan) => {
+                const Icon = plan.icon;
+                return (
+                  <Card key={plan.name} className={`relative ${plan.popular ? 'border-blue-500 border-2' : ''} ${plan.current ? 'bg-blue-50' : ''}`}>
+                    {plan.popular && (
+                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+                        <Badge className="bg-blue-600 text-white">Most Popular</Badge>
+                      </div>
+                    )}
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                          <Icon className="w-6 h-6 text-gray-600" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                        <div className="text-3xl font-bold mb-1">
+                          {plan.price}
+                          <span className="text-sm text-gray-500 font-normal">/{plan.period}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+                        
+                        <ul className="text-sm space-y-2 mb-6">
+                          {plan.features.map((feature, index) => (
+                            <li key={index} className="flex items-center">
+                              <Check className="w-4 h-4 text-green-500 mr-2" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        
+                        <Button 
+                          className="w-full"
+                          variant={plan.current ? "outline" : "default"}
+                          disabled={plan.current}
+                        >
+                          {plan.current ? "Current Plan" : "Choose Plan"}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 } 

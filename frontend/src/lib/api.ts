@@ -1,12 +1,3 @@
-export interface AuthResponse {
-  token: string;
-  refreshToken: string;
-  user: {
-    id: string;
-    email: string;
-  };
-}
-
 export interface Site {
   id: string;
   name: string;
@@ -84,24 +75,6 @@ async function handleResponse(res: Response) {
     throw new Error(message);
   }
   return res.json();
-}
-
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  return handleResponse(res);
-}
-
-export async function register(email: string, password: string): Promise<AuthResponse> {
-  const res = await fetch(`${API_BASE}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  return handleResponse(res);
 }
 
 export async function getSites(token: string): Promise<Site[]> {

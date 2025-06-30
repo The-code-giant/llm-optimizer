@@ -146,6 +146,27 @@ docker compose exec frontend npm install package-name
 docker compose restart frontend
 ```
 
+### Updating Packages After Git Pull
+When you pull changes that include new packages or dependency updates:
+
+```bash
+# Install new/updated packages for frontend
+docker compose exec frontend npm install
+
+# If you encounter dependency conflicts (e.g., React version issues)
+docker compose exec frontend npm install --legacy-peer-deps
+
+# Restart the frontend service
+docker compose restart frontend
+
+# Check if everything is working
+docker compose logs frontend --tail 10
+
+# For backend updates
+docker compose exec backend npm install
+docker compose restart backend
+```
+
 ### Environment Variables
 - Edit `.env` file for local changes
 - Restart affected services: `docker compose restart backend frontend`

@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
 import authRouter from './routes/auth';
 import sitesRouter from './routes/sites';
@@ -23,6 +24,15 @@ if (process.env.SENTRY_DSN) {
 }
 
 const app = express();
+
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Sentry request handler with context

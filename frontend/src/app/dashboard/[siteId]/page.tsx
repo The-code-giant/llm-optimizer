@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuth } from "../../../lib/auth";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { getSiteDetails, getPages, Page, SiteDetails, importSitemap } from "../../../lib/api";
 import Toast from "../../../components/Toast";
 
 export default function SiteDetailsPage() {
   const router = useRouter();
   const { siteId } = useParams() as { siteId: string };
-  const { token } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [site, setSite] = useState<SiteDetails | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,15 +19,22 @@ export default function SiteDetailsPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
-    if (!token || !siteId) {
+    if (!isLoaded) return;
+    
+    if (!isSignedIn || !siteId) {
       router.replace("/login");
       return;
     }
+
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        if (!token || !siteId) return;
+        const token = await getToken();
+        if (!token || !siteId) {
+          setError("Failed to get authentication token");
+          return;
+        }
         const [siteData, pagesData] = await Promise.all([
           getSiteDetails(token, siteId),
           getPages(token, siteId),
@@ -40,14 +48,18 @@ export default function SiteDetailsPage() {
       }
     }
     fetchData();
-  }, [token, siteId, router]);
+  }, [isLoaded, isSignedIn, getToken, siteId, router]);
 
   async function handleImportSitemap(e: React.FormEvent) {
     e.preventDefault();
-    if (!token || !siteId) return;
     setImporting(true);
     setError(null);
     try {
+      const token = await getToken();
+      if (!token || !siteId) {
+        setError("Failed to get authentication token");
+        return;
+      }
       await importSitemap(token, siteId, sitemapUrl);
       setToast({ message: "Sitemap import started!", type: "success" });
       setSitemapUrl("");
@@ -60,6 +72,14 @@ export default function SiteDetailsPage() {
     } finally {
       setImporting(false);
     }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (

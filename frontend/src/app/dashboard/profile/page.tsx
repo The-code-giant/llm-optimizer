@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../../lib/auth";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { getUserProfile, updateUserProfile, UserProfile } from "../../../lib/api";
 import Toast from "../../../components/Toast";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { user, isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -17,14 +18,22 @@ export default function ProfilePage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!isLoaded) return;
+    
+    if (!isSignedIn) {
       router.replace("/login");
       return;
     }
+
     async function fetchProfile() {
       setLoading(true);
       setError(null);
       try {
+        const token = await getToken();
+        if (!token) {
+          setError("Failed to get authentication token");
+          return;
+        }
         const data = await getUserProfile(token);
         setProfile(data);
         setName(data.name || "");
@@ -36,14 +45,18 @@ export default function ProfilePage() {
       }
     }
     fetchProfile();
-  }, [token, router]);
+  }, [isLoaded, isSignedIn, getToken, router]);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return;
     setSaving(true);
     setError(null);
     try {
+      const token = await getToken();
+      if (!token) {
+        setError("Failed to get authentication token");
+        return;
+      }
       const updated = await updateUserProfile(token, { name, email });
       setProfile(updated);
       setToast({ message: "Profile updated!", type: "success" });
@@ -55,11 +68,26 @@ export default function ProfilePage() {
     }
   }
 
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4">Profile & Settings</h1>
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold">Profile & Settings</h1>
+          {user && (
+            <p className="text-sm text-gray-600 mt-1">
+              Signed in as: {user.emailAddresses[0]?.emailAddress}
+            </p>
+          )}
+        </div>
         {loading ? (
           <div>Loading profile...</div>
         ) : error ? (

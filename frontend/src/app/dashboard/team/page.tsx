@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../../lib/auth";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { getTeamMembers, addTeamMember, TeamMember } from "../../../lib/api";
 import Toast from "../../../components/Toast";
 
 export default function TeamPage() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -16,14 +17,22 @@ export default function TeamPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
-    if (!token) {
+    if (!isLoaded) return;
+    
+    if (!isSignedIn) {
       router.replace("/login");
       return;
     }
+
     async function fetchMembers() {
       setLoading(true);
       setError(null);
       try {
+        const token = await getToken();
+        if (!token) {
+          setError("Failed to get authentication token");
+          return;
+        }
         const data = await getTeamMembers(token);
         setMembers(data);
       } catch (err: unknown) {
@@ -33,14 +42,18 @@ export default function TeamPage() {
       }
     }
     fetchMembers();
-  }, [token, router]);
+  }, [isLoaded, isSignedIn, getToken, router]);
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return;
     setInviting(true);
     setError(null);
     try {
+      const token = await getToken();
+      if (!token) {
+        setError("Failed to get authentication token");
+        return;
+      }
       await addTeamMember(token, email);
       setToast({ message: "Invitation sent!", type: "success" });
       setEmail("");
@@ -53,6 +66,14 @@ export default function TeamPage() {
     } finally {
       setInviting(false);
     }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (

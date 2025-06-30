@@ -1,14 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useAuth } from "../../../../../lib/auth";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { getPageAnalysis, AnalysisResult, triggerAnalysis } from "../../../../../lib/api";
 import Toast from "../../../../../components/Toast";
 
 export default function PageAnalysisPage() {
   const router = useRouter();
   const { pageId } = useParams() as { pageId: string };
-  const { token } = useAuth();
+  const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,15 +17,22 @@ export default function PageAnalysisPage() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
-    if (!token || !pageId) {
+    if (!isLoaded) return;
+    
+    if (!isSignedIn || !pageId) {
       router.replace("/login");
       return;
     }
+
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
-        if (!token || !pageId) return;
+        const token = await getToken();
+        if (!token || !pageId) {
+          setError("Failed to get authentication token");
+          return;
+        }
         const data = await getPageAnalysis(token, pageId);
         setAnalysis(data);
       } catch (err: unknown) {
@@ -34,17 +42,22 @@ export default function PageAnalysisPage() {
       }
     }
     fetchData();
-  }, [token, pageId, router]);
+  }, [isLoaded, isSignedIn, getToken, pageId, router]);
 
   async function handleTriggerAnalysis() {
-    if (!token || !pageId) return;
     setTriggering(true);
     setError(null);
     try {
+      const token = await getToken();
+      if (!token || !pageId) {
+        setError("Failed to get authentication token");
+        return;
+      }
       await triggerAnalysis(token, pageId);
       setToast({ message: "Analysis started!", type: "success" });
       // Optionally refresh analysis result after a delay
       setTimeout(async () => {
+        const token = await getToken();
         if (!token || !pageId) return;
         const data = await getPageAnalysis(token, pageId);
         setAnalysis(data);
@@ -55,6 +68,14 @@ export default function PageAnalysisPage() {
     } finally {
       setTriggering(false);
     }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div>Loading...</div>
+      </div>
+    );
   }
 
   return (

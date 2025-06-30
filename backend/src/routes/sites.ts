@@ -1,9 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites } from '../db/schema';
+import { sites, users } from '../db/schema';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { sitemapImportQueue } from '../utils/queue';
+import { randomUUID } from 'crypto';
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -22,6 +23,28 @@ const siteSchema = z.object({
 const sitemapImportSchema = z.object({
   sitemapUrl: z.string().url().optional(),
 });
+
+// Helper function to ensure user exists in database
+async function ensureUserExists(userId: string, email: string) {
+  try {
+    // Try to find the user first
+    const existingUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    
+    if (existingUser.length === 0) {
+      // Create the user if they don't exist
+      await db.insert(users).values({
+        id: userId,
+        email: email,
+      });
+    }
+  } catch (error) {
+    // User might already exist due to concurrent requests, ignore duplicate key errors
+    if (!(error as any)?.constraint) {
+      console.error('Error ensuring user exists:', error);
+      throw error;
+    }
+  }
+}
 
 /**
  * @openapi
@@ -156,9 +179,14 @@ router.post('/', authenticateJWT, async (req: AuthenticatedRequest, res: Respons
       return;
     }
     const { name, url } = parse.data;
+    
+    // Ensure user exists in our database
+    await ensureUserExists(req.user!.userId, req.user!.email);
+    
     // Generate trackerId and set status
-    const trackerId = crypto.randomUUID();
+    const trackerId = randomUUID();
     const status = 'created';
+    
     const [site] = await db.insert(sites).values({
       userId: req.user!.userId,
       name,
@@ -166,6 +194,7 @@ router.post('/', authenticateJWT, async (req: AuthenticatedRequest, res: Respons
       trackerId,
       status,
     }).returning();
+    
     res.status(201).json(site);
   } catch (err) {
     next(err);
@@ -191,6 +220,9 @@ router.post('/', authenticateJWT, async (req: AuthenticatedRequest, res: Respons
 // List sites for the authenticated user
 router.get('/', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    // Ensure user exists in our database
+    await ensureUserExists(req.user!.userId, req.user!.email);
+    
     const userSites = await db.select().from(sites).where(eq(sites.userId, req.user!.userId));
     res.json(userSites);
   } catch (err) {

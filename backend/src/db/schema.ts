@@ -1,16 +1,15 @@
 import { pgTable, serial, uuid, varchar, text, timestamp, doublePrecision, jsonb, primaryKey, integer } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
+  id: varchar('id', { length: 255 }).primaryKey(), // Clerk user ID
   email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
 export const sites = pgTable('sites', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id),
+  userId: varchar('user_id', { length: 255 }).notNull().references(() => users.id),
   name: varchar('name', { length: 255 }).notNull(),
   url: varchar('url', { length: 512 }).notNull().unique(),
   trackerId: uuid('tracker_id').notNull().unique(),
