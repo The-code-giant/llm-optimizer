@@ -56,7 +56,7 @@ services:
       JWT_SECRET: your-jwt
       CLERK_SECRET_KEY: sk_test_j9z0Dda9JfUE7UVXN3D6spZl7dzWulNFIQfPMyFLGx
       JWT_EXPIRES_IN: 7d
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-your-openai-api-key-here}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CORS_ORIGIN: http://localhost:3000
     ports:

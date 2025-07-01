@@ -72,3 +72,29 @@ export const trackerData = pgTable('tracker_data', {
   anonymousUserId: uuid('anonymous_user_id'),
   createdAt: timestamp('created_at').defaultNow(),
 });
+
+export const pageContent = pgTable('page_content', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  pageId: uuid('page_id').notNull().references(() => pages.id),
+  contentType: varchar('content_type', { length: 64 }).notNull(), // 'title', 'description', 'faq', 'paragraph', 'keywords'
+  originalContent: text('original_content'),
+  optimizedContent: text('optimized_content').notNull(),
+  aiModel: varchar('ai_model', { length: 128 }),
+  generationContext: text('generation_context'),
+  isActive: integer('is_active').default(1), // 0 or 1 for boolean
+  version: integer('version').default(1),
+  metadata: jsonb('metadata').default({}), // Store additional data like keyword analysis, character counts, etc.
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const contentSuggestions = pgTable('content_suggestions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  pageId: uuid('page_id').notNull().references(() => pages.id),
+  contentType: varchar('content_type', { length: 64 }).notNull(),
+  suggestions: jsonb('suggestions').notNull(), // Array of suggestions from AI
+  requestContext: text('request_context'), // Additional context provided by user
+  aiModel: varchar('ai_model', { length: 128 }),
+  generatedAt: timestamp('generated_at').defaultNow(),
+  expiresAt: timestamp('expires_at'), // Optional expiration for suggestion caching
+});

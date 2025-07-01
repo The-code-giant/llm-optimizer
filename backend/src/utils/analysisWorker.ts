@@ -4,7 +4,7 @@ import winston from 'winston';
 import { db } from '../db/client';
 import { pages, analysisResults } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import axios from 'axios';
+import { AnalysisService } from './analysisService';
 
 const logger = winston.createLogger({
   level: 'info',
@@ -19,48 +19,51 @@ async function analyzePage(pageId: string) {
   const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
   const page = pageArr[0];
   if (!page) throw new Error(`Page ${pageId} not found`);
-  // Use page.contentSnapshot as the prompt, or fallback
-  const prompt = page.contentSnapshot || `Analyze the following page for LLM readiness: ${page.url}`;
-  logger.info(`Calling OpenAI API for page ${pageId}...`);
-  let llmResponse = null;
+
+  logger.info(`🔍 Starting comprehensive analysis for page ${pageId} (${page.url})...`);
+  
   try {
-    const openaiRes = await axios.post(
-      'https://api.openai.com/v1/chat/completions',
-      {
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: 'You are an SEO and LLM optimization expert.' },
-          { role: 'user', content: prompt },
-        ],
-        max_tokens: 512,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    llmResponse = openaiRes.data;
-    logger.info(`OpenAI response for page ${pageId}: ${JSON.stringify(llmResponse)}`);
-  } catch (err) {
-    logger.error(`OpenAI API call failed for page ${pageId}: ${err}`);
-    throw err;
+    // Use the new AnalysisService for comprehensive analysis
+    const analysisResult = await AnalysisService.analyzePage({
+      url: page.url,
+      contentSnapshot: page.contentSnapshot || undefined
+    });
+
+    // Store analysis results in database (using existing schema fields)
+    await db.insert(analysisResults).values({
+      pageId,
+      score: analysisResult.score,
+      recommendations: JSON.stringify({
+        recommendations: analysisResult.recommendations,
+        issues: analysisResult.issues,
+        summary: analysisResult.summary,
+        contentQuality: analysisResult.contentQuality,
+        technicalSEO: analysisResult.technicalSEO,
+        keywordAnalysis: analysisResult.keywordAnalysis,
+        llmOptimization: analysisResult.llmOptimization
+      }),
+      llmModelUsed: 'gpt-4o-mini',
+      rawLlmOutput: JSON.stringify(analysisResult),
+      analyzedAt: new Date()
+    });
+
+    logger.info(`✅ Analysis completed for page ${pageId} - Score: ${analysisResult.score}/100`);
+
+    // Auto-generate content suggestions after analysis
+    try {
+      // We need to get the page content for auto-generation
+      const content = await AnalysisService.fetchPageContent(page.url);
+      await AnalysisService.autoGenerateContentSuggestions(pageId, content, analysisResult);
+      logger.info(`🤖 Auto-generated content suggestions for page ${pageId}`);
+    } catch (contentError) {
+      logger.error(`❌ Failed to auto-generate content for page ${pageId}:`, contentError);
+      // Don't fail the analysis if content generation fails
+    }
+
+  } catch (error) {
+    logger.error(`❌ Analysis failed for page ${pageId}:`, error);
+    throw error;
   }
-  // Parse LLM response (stub: just use the text)
-  const text = llmResponse?.choices?.[0]?.message?.content || '';
-  // Mock score and recommendations from LLM output
-  const score = Math.floor(Math.random() * 100);
-  const recommendations = [
-    { type: 'llm', message: text.slice(0, 100) },
-  ];
-  await db.insert(analysisResults).values({
-    pageId,
-    score,
-    recommendations: JSON.stringify(recommendations),
-    rawLlmOutput: JSON.stringify(llmResponse),
-  });
-  logger.info(`Stored analysis result for page ${pageId}`);
 }
 
 const analysisWorker = new Worker('analysis', async (job) => {
@@ -89,4 +92,7 @@ analysisWorker.on('completed', (job) => {
 
 analysisWorker.on('failed', (job, err) => {
   logger.error(`Analysis job ${job?.id} failed: ${err}`);
-}); 
+});
+
+// Log when worker starts
+logger.info('🔄 Analysis worker started and ready to process jobs'); 

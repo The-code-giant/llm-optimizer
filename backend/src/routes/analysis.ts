@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, pages } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { sites, pages, analysisResults } from '../db/schema';
+import { eq, desc } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { analysisQueue } from '../utils/queue';
 
@@ -12,6 +12,8 @@ interface AuthenticatedRequest extends Request {
 }
 
 const router = Router();
+
+
 
 /**
  * @openapi

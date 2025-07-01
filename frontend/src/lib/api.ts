@@ -113,6 +113,14 @@ export async function getPages(token: string, siteId: string): Promise<Page[]> {
   return handleResponse(res);
 }
 
+export async function getPageDetails(token: string, pageId: string): Promise<Page> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}`, {
+    headers: { "Authorization": `Bearer ${token}` },
+    cache: "no-store",
+  });
+  return handleResponse(res);
+}
+
 export async function getPageAnalysis(token: string, pageId: string): Promise<AnalysisResult> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/analysis`, {
     headers: { "Authorization": `Bearer ${token}` },
@@ -197,6 +205,114 @@ export async function updateBillingInfo(token: string, data: Partial<BillingInfo
       "Authorization": `Bearer ${token}`,
     },
     body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+}
+
+export interface ContentSuggestion {
+  contentType: string;
+  suggestions: any;
+  pageUrl: string;
+  generatedAt: string;
+}
+
+export async function generateContentSuggestions(
+  token: string, 
+  pageId: string, 
+  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+  currentContent?: string,
+  additionalContext?: string
+): Promise<ContentSuggestion> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/content-suggestions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      contentType,
+      currentContent,
+      additionalContext
+    }),
+  });
+  return handleResponse(res);
+}
+
+export interface PageContentData {
+  id: string;
+  pageId: string;
+  contentType: string;
+  originalContent?: string;
+  optimizedContent: string;
+  aiModel?: string;
+  generationContext?: string;
+  isActive: number;
+  version: number;
+  metadata: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function savePageContent(
+  token: string,
+  pageId: string,
+  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+  optimizedContent: string,
+  originalContent?: string,
+  generationContext?: string,
+  metadata?: any
+): Promise<{ message: string; content: PageContentData }> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/content`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      contentType,
+      originalContent,
+      optimizedContent,
+      generationContext,
+      metadata
+    }),
+  });
+  return handleResponse(res);
+}
+
+export async function getPageContent(
+  token: string,
+  pageId: string,
+  contentType?: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords'
+): Promise<{ pageId: string; content: PageContentData[] }> {
+  const url = new URL(`${API_BASE}/pages/${pageId}/content`);
+  if (contentType) {
+    url.searchParams.append('contentType', contentType);
+  }
+  
+  const res = await fetch(url.toString(), {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+  return handleResponse(res);
+}
+
+export async function getCachedContentSuggestions(
+  token: string,
+  pageId: string,
+  contentType?: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords'
+): Promise<{ pageId: string; suggestions: any[] }> {
+  const url = new URL(`${API_BASE}/pages/${pageId}/content-suggestions`);
+  if (contentType) {
+    url.searchParams.append('contentType', contentType);
+  }
+  
+  const res = await fetch(url.toString(), {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    cache: "no-store",
   });
   return handleResponse(res);
 }

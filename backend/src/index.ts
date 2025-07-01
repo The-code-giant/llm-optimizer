@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRouter from './routes/auth';
 import sitesRouter from './routes/sites';
+import pagesRouter from './routes/pages';
 import analysisRouter from './routes/analysis';
 import injectedContentRouter from './routes/injectedContent';
 import trackerRouter from './routes/tracker';
@@ -14,6 +15,10 @@ import * as Sentry from '@sentry/node';
 import client from 'prom-client';
 import { metricsMiddleware, errorMetricsMiddleware, metricsEndpoint } from './utils/metrics';
 import { setSentryUser, setSentryRequest } from './utils/sentryContext';
+
+// Import workers to start background job processing
+import './utils/sitemapWorker';
+import './utils/analysisWorker';
 
 dotenv.config();
 
@@ -101,6 +106,7 @@ app.get('/healthz', (req, res) => {
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/sites', sitesRouter);
+app.use('/api/v1/pages', pagesRouter);
 app.use('/api/v1/analysis', analysisRouter);
 app.use('/api/v1/injected-content', injectedContentRouter);
 app.use('/api/v1', trackerRouter);
