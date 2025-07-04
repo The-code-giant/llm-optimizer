@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "npm run dev:setup && npm run dev:start && npm run dev:init",
+    "start:dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
     "dev:setup": "cp env.example .env 2>/dev/null || true",
     "dev:start": "docker compose up --build -d",
     "dev:init": "npm run dev:wait && npm run db:migrate",

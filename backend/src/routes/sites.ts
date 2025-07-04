@@ -1,8 +1,8 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, users, pages } from '../db/schema';
+import { sites, users, pages, pageContent } from '../db/schema';
 import { z } from 'zod';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { sitemapImportQueue } from '../utils/queue';
 import { randomUUID } from 'crypto';
 
@@ -467,6 +467,416 @@ router.get('/:siteId/pages', authenticateJWT, async (req: AuthenticatedRequest, 
     res.json(sitePages);
   } catch (err) {
     next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/sites/{siteId}/pages:
+ *   post:
+ *     summary: Add a single page to a site
+ *     tags: [Sites, Pages]
+ *     parameters:
+ *       - in: path
+ *         name: siteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [url]
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 format: uri
+ *                 example: https://example.com/new-page
+ *               title:
+ *                 type: string
+ *                 example: New Page Title
+ *     responses:
+ *       201:
+ *         description: Page added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Page'
+ *       400:
+ *         description: Invalid input or page already exists
+ *       404:
+ *         description: Site not found
+ */
+// Add a single page to a site
+router.post('/:siteId/pages', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { url, title } = req.body;
+    
+    // Validate input
+    if (!url) {
+      res.status(400).json({ message: 'URL is required' });
+      return;
+    }
+    
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch (error) {
+      res.status(400).json({ message: 'Invalid URL format' });
+      return;
+    }
+    
+    // Check if site exists and user owns it
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Site not found' });
+      return;
+    }
+    
+    // Check if page already exists for this site
+    const existingPage = await db.select()
+      .from(pages)
+      .where(and(eq(pages.siteId, req.params.siteId), eq(pages.url, url)));
+    
+    if (existingPage.length > 0) {
+      res.status(400).json({ message: 'Page with this URL already exists' });
+      return;
+    }
+    
+    // Create new page
+    const newPage = await db.insert(pages).values({
+      siteId: req.params.siteId,
+      url: url,
+      title: title || new URL(url).pathname,
+      llmReadinessScore: 0 // Initial score
+    }).returning();
+    
+    res.status(201).json(newPage[0]);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/sites/{siteId}/tracker-script:
+ *   get:
+ *     summary: Get tracking script for a site
+ *     tags: [Sites, Tracker]
+ *     parameters:
+ *       - in: path
+ *         name: siteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Tracking script HTML
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 siteId:
+ *                   type: string
+ *                 siteName:
+ *                   type: string
+ *                 trackerId:
+ *                   type: string
+ *                 scriptHtml:
+ *                   type: string
+ *                 instructions:
+ *                   type: object
+ *       404:
+ *         description: Site not found
+ */
+// Get tracking script for a site
+router.get('/:siteId/tracker-script', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Site not found' });
+      return;
+    }
+
+    // Generate the tracking script HTML
+    const apiBase = process.env.NODE_ENV === 'production' 
+      ? process.env.API_URL || 'https://api.llmoptimizer.com'
+      : 'http://localhost:3001';
+
+    const scriptHtml = `<!-- LLM Optimizer Tracking Script -->
+<script>
+(function() {
+  'use strict';
+  
+  // Configuration
+  const CONFIG = {
+    API_BASE: '${apiBase}',
+    SITE_ID: '${site.trackerId}',
+    VERSION: '1.0.0',
+    RETRY_ATTEMPTS: 3,
+    TIMEOUT: 5000
+  };
+
+  // Load the main tracker script
+  const script = document.createElement('script');
+  script.src = CONFIG.API_BASE + '/tracker/v1/tracker.js?v=' + CONFIG.VERSION;
+  script.async = true;
+  script.defer = true;
+  
+  // Set configuration for the main script
+  script.setAttribute('data-config', JSON.stringify(CONFIG));
+  
+  script.onerror = function() {
+    console.warn('LLM Optimizer script failed to load');
+  };
+  
+  // Insert script
+  const firstScript = document.getElementsByTagName('script')[0];
+  if (firstScript && firstScript.parentNode) {
+    firstScript.parentNode.insertBefore(script, firstScript);
+  } else {
+    document.head.appendChild(script);
+  }
+})();
+</script>`;
+
+    res.json({
+      siteId: site.id,
+      siteName: site.name,
+      trackerId: site.trackerId,
+      scriptHtml: scriptHtml,
+      instructions: {
+        installation: "Copy the script above and paste it in your website's <head> section, preferably near the top.",
+        verification: "After installation, visit your website and check the browser console for 'LLM Optimizer' messages to verify the script is working.",
+        support: "If you need help, contact our support team."
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Get analytics data for a site
+router.get('/:siteId/analytics', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const timeRange = req.query.timeRange as string || '7d';
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'Site not found' });
+      return;
+    }
+
+    // Mock analytics data for now - in real implementation, query tracker_data and page_analytics tables
+    const analyticsData = {
+      overview: {
+        totalViews: 1250,
+        uniqueVisitors: 423,
+        avgLoadTime: 1200,
+        contentDeployments: 8,
+        trendsPercentage: {
+          views: 12.5,
+          visitors: 8.3,
+          loadTime: -5.2,
+          deployments: 33.3
+        }
+      },
+      topPages: [
+        {
+          url: '/home',
+          views: 456,
+          avgLoadTime: 1100,
+          bounceRate: 23,
+          hasDeployedContent: true,
+          lastOptimized: '2024-01-15'
+        },
+        {
+          url: '/products',
+          views: 334,
+          avgLoadTime: 1250,
+          bounceRate: 18,
+          hasDeployedContent: true,
+          lastOptimized: '2024-01-12'
+        }
+      ],
+      contentPerformance: [
+        {
+          contentType: 'title',
+          deployedCount: 5,
+          avgImprovementPercent: 23.5,
+          topPerformingUrl: '/home',
+          views: 890
+        },
+        {
+          contentType: 'description',
+          deployedCount: 3,
+          avgImprovementPercent: 18.2,
+          topPerformingUrl: '/products',
+          views: 567
+        }
+      ],
+      recentActivity: [
+        {
+          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          type: 'page_view',
+          url: '/home'
+        },
+        {
+          timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
+          type: 'content_injection',
+          url: '/products'
+        }
+      ]
+    };
+
+    res.json(analyticsData);
+  } catch (error) {
+    console.error('Analytics fetch error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
+// Get deployments for a site
+router.get('/:siteId/deployments', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'Site not found' });
+      return;
+    }
+
+    // Get deployed content from page_content table
+    const deployments = await db.select({
+      url: pageContent.pageUrl,
+      contentType: pageContent.contentType,
+      content: pageContent.optimizedContent,
+      isActive: pageContent.isActive,
+      lastDeployed: pageContent.updatedAt
+    })
+    .from(pageContent)
+    .innerJoin(pages, eq(pageContent.pageId, pages.id))
+    .where(and(
+      eq(pages.siteId, req.params.siteId),
+      eq(pageContent.isActive, 1)
+    ));
+
+    // Group by URL
+    const groupedDeployments = deployments.reduce((acc: any, deployment) => {
+      const url = deployment.url;
+      if (!url) return acc; // Skip deployments without URL
+      
+      if (!acc[url]) {
+        acc[url] = {
+          url: url,
+          content: {},
+          isActive: deployment.isActive === 1,
+          lastDeployed: deployment.lastDeployed,
+          performance: {
+            views: Math.floor(Math.random() * 500) + 50,
+            ctr: Math.floor(Math.random() * 10) + 2,
+            avgLoadTime: Math.floor(Math.random() * 500) + 800
+          }
+        };
+      }
+      acc[url].content[deployment.contentType] = deployment.content;
+      return acc;
+    }, {});
+
+    res.json({ deployments: Object.values(groupedDeployments) });
+  } catch (error) {
+    console.error('Deployments fetch error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
+// Deploy content to a URL
+router.post('/:siteId/deploy-content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { url, content, pageId } = req.body;
+    
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'Site not found' });
+      return;
+    }
+
+    // For each content type, create or update page_content records
+    for (const [contentType, contentValue] of Object.entries(content)) {
+      if (contentValue && typeof contentValue === 'string' && contentValue.trim()) {
+        await db.insert(pageContent).values({
+          pageId: pageId || null,
+          pageUrl: url,
+          contentType: contentType as any,
+          optimizedContent: contentValue as string,
+          isActive: 1,
+          version: 1,
+          metadata: { deployedVia: 'dashboard' }
+        }).onConflictDoUpdate({
+          target: [pageContent.pageUrl, pageContent.contentType],
+          set: {
+            optimizedContent: contentValue as string,
+            isActive: 1,
+            updatedAt: new Date()
+          }
+        });
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Content deployed successfully',
+      url: url
+    });
+  } catch (error) {
+    console.error('Content deployment error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
+// Update deployment status
+router.patch('/:siteId/deployments/:url', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { isActive } = req.body;
+    const url = decodeURIComponent(req.params.url);
+    
+    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
+    const site = siteArr[0];
+    
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'Site not found' });
+      return;
+    }
+
+    await db.update(pageContent)
+      .set({ isActive: isActive ? 1 : 0 })
+      .where(eq(pageContent.pageUrl, url));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Deployment update error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
   }
 });
 

@@ -7,7 +7,8 @@ import {
   getPages, 
   Page, 
   SiteDetails, 
-  importSitemap 
+  importSitemap,
+  addPage
 } from "../../../lib/api";
 import { DashboardLayout } from "../../../components/ui/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -39,10 +40,14 @@ import {
   AlertCircle,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  Send
 } from "lucide-react";
 import Link from "next/link";
 import Toast from "../../../components/Toast";
+import TrackerScriptModal from "../../../components/tracker-script-modal";
+import ContentDeploymentModal from "../../../components/content-deployment-modal";
+import TrackerAnalytics from "../../../components/tracker-analytics";
 
 interface ImportProgress {
   status: 'idle' | 'importing' | 'processing' | 'completed' | 'error';
@@ -71,6 +76,12 @@ export default function SiteDetailsPage() {
   const [scoreFilter, setScoreFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [importProgress, setImportProgress] = useState<ImportProgress>({ status: 'idle' });
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  
+  // Tracker modals state
+  const [showTrackerScript, setShowTrackerScript] = useState(false);
+  const [showContentDeployment, setShowContentDeployment] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -163,8 +174,8 @@ export default function SiteDetailsPage() {
         return;
       }
       
-      // Here you would call an API to add a single page
-      // For now, we'll simulate it
+      // Call the real API to add the page
+      const newPage = await addPage(token, siteId, manualUrl);
       setToast({ message: "Page added successfully!", type: "success" });
       setManualUrl("");
       
@@ -172,7 +183,8 @@ export default function SiteDetailsPage() {
       const pagesData = await getPages(token, siteId);
       setPages(pagesData);
     } catch (err: unknown) {
-      setToast({ message: "Failed to add page", type: "error" });
+      const errorMessage = err instanceof Error ? err.message : "Failed to add page";
+      setToast({ message: errorMessage, type: "error" });
     } finally {
       setAddingPage(false);
     }
@@ -341,7 +353,25 @@ export default function SiteDetailsPage() {
               )}
             </div>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
+            {/* Tab Navigation */}
+            <div className="flex items-center space-x-1 border rounded-lg p-1">
+              <Button
+                variant={activeTab === 'overview' ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveTab('overview')}
+              >
+                Overview
+              </Button>
+              <Button
+                variant={activeTab === 'analytics' ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setActiveTab('analytics')}
+              >
+                Analytics
+              </Button>
+            </div>
+            
             <Button variant="outline" onClick={refreshData}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -376,6 +406,9 @@ export default function SiteDetailsPage() {
             ))}
           </div>
         ) : site && (
+          <>
+            {/* Tab Content */}
+            {activeTab === 'overview' && (
           <>
             {/* Metrics Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -455,6 +488,40 @@ export default function SiteDetailsPage() {
                         {site.status}
                       </Badge>
                     </div>
+                  </div>
+                </div>
+                
+                {/* Tracker Actions */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Tracker Actions</h4>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowTrackerScript(true)}
+                      className="flex items-center justify-center"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Get Script
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowContentDeployment(true)}
+                      className="flex items-center justify-center"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Deploy Content
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setActiveTab('analytics')}
+                      className="flex items-center justify-center"
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      View Analytics
+                    </Button>
                   </div>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -732,7 +799,36 @@ export default function SiteDetailsPage() {
             </Card>
           </>
         )}
+            
+            {/* Analytics Tab Content */}
+            {activeTab === 'analytics' && site && (
+              <TrackerAnalytics 
+                siteId={siteId} 
+                siteName={site.name} 
+              />
+            )}
+          </>
+        )}
       </div>
+
+      {/* Tracker Modals */}
+      {site && (
+        <>
+          <TrackerScriptModal
+            isOpen={showTrackerScript}
+            onClose={() => setShowTrackerScript(false)}
+            siteId={siteId}
+            siteName={site.name}
+          />
+          
+          <ContentDeploymentModal
+            isOpen={showContentDeployment}
+            onClose={() => setShowContentDeployment(false)}
+            siteId={siteId}
+            siteName={site.name}
+          />
+        </>
+      )}
     </DashboardLayout>
   );
 } 
