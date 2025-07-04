@@ -59,7 +59,7 @@ export interface BillingInfo {
   amount: number;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
 async function handleResponse(res: Response) {
   if (!res.ok) {
@@ -137,16 +137,38 @@ export async function triggerAnalysis(token: string, pageId: string): Promise<{ 
   return handleResponse(res);
 }
 
-export async function importSitemap(token: string, siteId: string, sitemapUrl: string): Promise<{ jobId: string }> {
-  const res = await fetch(`${API_BASE}/sites/${siteId}/import-sitemap`, {
-    method: "POST",
+export async function importSitemap(token: string, siteId: string, sitemapUrl: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/sites/${siteId}/import-sitemap`, {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({ sitemapUrl }),
   });
-  return handleResponse(res);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to import sitemap');
+  }
+}
+
+export async function addPage(token: string, siteId: string, url: string, title?: string): Promise<Page> {
+  const response = await fetch(`${API_BASE}/sites/${siteId}/pages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ url, title }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to add page');
+  }
+
+  return response.json();
 }
 
 export async function getUserProfile(token: string): Promise<UserProfile> {

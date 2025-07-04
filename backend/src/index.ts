@@ -31,13 +31,25 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: [
+    process.env.CORS_ORIGIN || 'http://localhost:3000',
+    'http://localhost:3002',
+    'http://localhost:3001',
+    'http://localhost:8080',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3002',
+    'http://127.0.0.1:3001',
+    'http://127.0.0.1:8080'
+  ],
   credentials: true,
   optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// Serve static files for tracker script
+app.use('/tracker', express.static('public/tracker'));
 
 // Sentry request handler with context
 if (process.env.SENTRY_DSN) {
@@ -110,6 +122,7 @@ app.use('/api/v1/pages', pagesRouter);
 app.use('/api/v1/analysis', analysisRouter);
 app.use('/api/v1/injected-content', injectedContentRouter);
 app.use('/api/v1', trackerRouter);
+app.use('/tracker', trackerRouter); // Direct tracker routes for JavaScript
 
 // Error logging middleware - only for actual errors
 app.use(expressWinston.errorLogger({

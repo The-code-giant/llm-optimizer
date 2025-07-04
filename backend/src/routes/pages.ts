@@ -798,4 +798,52 @@ router.get('/:pageId/content-suggestions', authenticateJWT, async (req: Authenti
   }
 });
 
+// Get content for a specific page
+router.get('/:pageId/content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pageId } = req.params;
+    
+    // First verify the page belongs to the user
+    const pageArr = await db.select({
+      id: pages.id,
+      siteId: pages.siteId,
+      userId: sites.userId
+    })
+    .from(pages)
+    .innerJoin(sites, eq(pages.siteId, sites.id))
+    .where(eq(pages.id, pageId))
+    .limit(1);
+    
+    const page = pageArr[0];
+    if (!page || page.userId !== req.user!.userId) {
+      res.status(404).json({ error: 'Page not found' });
+      return;
+    }
+
+    // Get all content for this page
+    const content = await db.select({
+      id: pageContent.id,
+      contentType: pageContent.contentType,
+      originalContent: pageContent.originalContent,
+      optimizedContent: pageContent.optimizedContent,
+      isActive: pageContent.isActive,
+      version: pageContent.version,
+      metadata: pageContent.metadata,
+      createdAt: pageContent.createdAt,
+      updatedAt: pageContent.updatedAt
+    })
+    .from(pageContent)
+    .where(eq(pageContent.pageId, pageId))
+    .orderBy(pageContent.contentType);
+
+    res.json({ content });
+  } catch (error) {
+    console.error('Page content fetch error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
 export default router; 
