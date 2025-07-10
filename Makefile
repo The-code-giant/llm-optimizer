@@ -1,10 +1,14 @@
 # Cleaver Search - Development Commands
 
-.PHONY: help start stop logs clean build restart status shell db-migrate db-studio tools
+.PHONY: help dev first-time start stop logs clean build restart status shell db-migrate db-studio tools
 
 # Default target
 help:
 	@echo "🚀 Cleaver Search Development Commands"
+	@echo ""
+	@echo "Quick Start:"
+	@echo "  make dev       - Start development environment (full setup)"
+	@echo "  make first-time - Complete first-time setup (recommended for new users)"
 	@echo ""
 	@echo "Setup Commands:"
 	@echo "  make start     - Start all development services"
@@ -24,6 +28,16 @@ help:
 	@echo ""
 	@echo "Tools:"
 	@echo "  make tools     - Start management tools (pgAdmin, Redis Commander)"
+
+# Quick development start
+dev:
+	@echo "🚀 Starting development environment..."
+	@npm run dev
+
+# First-time setup
+first-time:
+	@echo "🚀 Running first-time setup..."
+	@npm run setup
 
 # Setup commands
 start:

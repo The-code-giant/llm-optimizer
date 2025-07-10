@@ -4,30 +4,38 @@ A SaaS platform to optimize website content for Large Language Models (LLMs) lik
 
 ## 🚀 Quick Start
 
-### First-Time Setup
+### First-Time Setup (Choose one)
 ```bash
-# Clone the repository
+# Option 1: Using Makefile (recommended)
+make first-time
+
+# Option 2: Using npm
+npm run setup
+
+# Option 3: Manual setup
 git clone <your-repo-url>
 cd Cleaver-Search
-
-# Complete first-time setup (starts all services + database migration)
-npm run dev:first-time
+npm run setup
 ```
 
 This will:
 - ✅ Copy environment variables from `env.example` to `.env`
 - ✅ Start all Docker services (PostgreSQL, Redis, Backend, Frontend)
+- ✅ Create database (`cleaver_search_dev`) automatically
 - ✅ Wait for services to be ready
 - ✅ Run database migrations to create all tables
 - ✅ Display success message with URLs
 
-### Subsequent Development
+### Subsequent Development (Choose one)
 ```bash
-# Start development environment
+# Option 1: Using Makefile (recommended)
+make dev
+
+# Option 2: Using npm
 npm run dev
 ```
 
-This automatically includes database migrations, so you're always up to date.
+This automatically includes database creation and migrations, so you're always up to date.
 
 ## 🌐 Access Points
 
@@ -63,20 +71,51 @@ npm run tools:start
 
 ## 🔧 Development Commands
 
+**Scripts have been simplified!** We reduced from 37 scripts to just 19 essential ones, organized logically.
+
+### Using Makefile (Recommended)
 ```bash
-# Environment
-npm run dev:stop              # Stop all services
-npm run dev:restart           # Restart all services
-npm run dev:logs              # View all logs
+# Quick Start
+make dev                      # Start development environment
+make first-time               # Complete first-time setup
+
+# Environment Management
+make start                    # Start all services
+make stop                     # Stop all services
+make restart                  # Restart all services
+make clean                    # Stop and remove all volumes
+make status                   # Show service status
+
+# Monitoring
+make logs                     # View all logs
+make shell                    # Access backend shell
 
 # Database
-npm run db:studio             # Open Drizzle Studio
+make db-migrate               # Run database migrations
+make db-studio                # Open Drizzle Studio
+
+# Tools
+make tools                    # Start pgAdmin & Redis Commander
+```
+
+### Using npm Scripts
+```bash
+# Environment
+npm run dev                   # Start development environment
+npm run setup                 # First-time setup
+npm run stop                  # Stop all services
+npm run clean                 # Stop and remove all volumes
+npm run logs                  # View all logs
+
+# Database
 npm run db:migrate            # Run migrations manually
+npm run db:studio             # Open Drizzle Studio
 
 # Code Quality
-npm run lint:all              # Lint all code
-npm run test:all              # Run all tests
-npm run build:all             # Build all projects
+npm run install               # Install all dependencies
+npm run lint                  # Lint all code
+npm run test                  # Run all tests
+npm run build                 # Build all projects
 ```
 
 ## 🎯 Pro Tips

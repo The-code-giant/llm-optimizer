@@ -25,6 +25,10 @@ docker compose up --build -d postgres redis
 echo "⏳ Waiting for database to be ready..."
 sleep 5
 
+# Create database if it doesn't exist
+echo "🗄️ Setting up database..."
+./scripts/create-db.sh
+
 # Start backend and frontend
 echo "🔧 Starting backend and frontend..."
 docker compose up --build -d backend frontend
