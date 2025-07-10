@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# LLM Optimizer Development Environment Logs Script
+# Cleaver Search Development Environment Logs Script
 
 SERVICE=${1:-""}
 

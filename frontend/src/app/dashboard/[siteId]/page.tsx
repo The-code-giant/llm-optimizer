@@ -8,7 +8,9 @@ import {
   Page, 
   SiteDetails, 
   importSitemap,
-  addPage
+  addPage,
+  deletePage,
+  deletePages
 } from "../../../lib/api";
 import { DashboardLayout } from "../../../components/ui/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
@@ -41,13 +43,15 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Send
+  Send,
+  ListPlus
 } from "lucide-react";
 import Link from "next/link";
 import Toast from "../../../components/Toast";
 import TrackerScriptModal from "../../../components/tracker-script-modal";
-import ContentDeploymentModal from "../../../components/content-deployment-modal";
+import PageContentDeploymentModal from "../../../components/content-deployment-modal";
 import TrackerAnalytics from "../../../components/tracker-analytics";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../../components/ui/dialog";
 
 interface ImportProgress {
   status: 'idle' | 'importing' | 'processing' | 'completed' | 'error';
@@ -79,8 +83,9 @@ export default function SiteDetailsPage() {
   
   // Tracker modals state
   const [showTrackerScript, setShowTrackerScript] = useState(false);
-  const [showContentDeployment, setShowContentDeployment] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showPageManagement, setShowPageManagement] = useState(false);
+  const [selectedPageForDeployment, setSelectedPageForDeployment] = useState<Page | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
 
   useEffect(() => {
@@ -236,12 +241,53 @@ export default function SiteDetailsPage() {
 
   const handleBulkDelete = async () => {
     if (selectedPages.size === 0) return;
-    if (confirm(`Delete ${selectedPages.size} selected pages?`)) {
+    
+    const pageCount = selectedPages.size;
+    const pageNames = Array.from(selectedPages)
+      .map(pageId => {
+        const page = pages.find(p => p.id === pageId);
+        return page?.title || page?.url || 'Unknown page';
+      })
+      .slice(0, 3); // Show first 3 page names
+    
+    const confirmMessage = pageCount === 1 
+      ? `Delete "${pageNames[0]}"?\n\nThis will permanently delete the page and all its related data (analysis results, content, suggestions, etc.).`
+      : `Delete ${pageCount} selected pages?\n\nPages: ${pageNames.join(', ')}${pageCount > 3 ? '...' : ''}\n\nThis will permanently delete all pages and their related data (analysis results, content, suggestions, etc.).`;
+    
+    if (!confirm(confirmMessage)) return;
+    
+    try {
       setToast({ 
-        message: `Deleting ${selectedPages.size} pages...`, 
+        message: `Deleting ${pageCount} page${pageCount > 1 ? 's' : ''}...`, 
         type: "info" 
       });
-      // Here you would implement bulk delete API call
+
+      const token = await getToken();
+      if (!token) {
+        setError("Failed to get authentication token");
+        return;
+      }
+
+      // Delete pages
+      const pageIds = Array.from(selectedPages);
+      await deletePages(token, pageIds);
+
+      // Clear selection
+      setSelectedPages(new Set());
+
+      // Refresh the pages list
+      const updatedPages = await getPages(token, siteId);
+      setPages(updatedPages);
+
+      setToast({ 
+        message: `Successfully deleted ${pageCount} page${pageCount > 1 ? 's' : ''}`, 
+        type: "success" 
+      });
+
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to delete pages";
+      setToast({ message: errorMessage, type: "error" });
+      console.error('Delete error:', err);
     }
   };
 
@@ -383,6 +429,147 @@ export default function SiteDetailsPage() {
           </div>
         </div>
 
+        {/* Top Action Buttons */}
+        {site && activeTab === 'overview' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Manage your site's tracker and content deployment
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap items-center gap-3">
+                <Button 
+                  onClick={() => setShowTrackerScript(true)}
+                  className="flex items-center"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Get Script
+                </Button>
+                <Dialog open={showPageManagement} onOpenChange={setShowPageManagement}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="outline"
+                      className="flex items-center"
+                    >
+                      <ListPlus className="h-4 w-4 mr-2" />
+                      Manage Pages
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Manage Pages</DialogTitle>
+                      <DialogDescription>
+                        Add pages to your site by importing from sitemap or adding individual URLs
+                      </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="grid gap-6 md:grid-cols-2 mt-6">
+                      {/* Sitemap Import */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Upload className="h-5 w-5 mr-2" />
+                            Import Sitemap
+                          </CardTitle>
+                          <CardDescription>
+                            Bulk import pages from your website's sitemap
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <form onSubmit={handleImportSitemap} className="space-y-4">
+                            <Input
+                              type="url"
+                              placeholder="https://yoursite.com/sitemap.xml"
+                              value={sitemapUrl}
+                              onChange={(e) => setSitemapUrl(e.target.value)}
+                              required
+                              disabled={importing}
+                            />
+                            
+                            {importProgress.status !== 'idle' && (
+                              <div className="p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center space-x-2">
+                                  {importProgress.status === 'importing' && (
+                                    <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
+                                  )}
+                                  {importProgress.status === 'processing' && (
+                                    <Clock className="h-4 w-4 text-yellow-600" />
+                                  )}
+                                  {importProgress.status === 'completed' && (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  )}
+                                  {importProgress.status === 'error' && (
+                                    <XCircle className="h-4 w-4 text-red-600" />
+                                  )}
+                                  <span className="text-sm">{importProgress.message}</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <Button type="submit" disabled={importing} className="w-full">
+                              {importing ? (
+                                <>
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                  Importing...
+                                </>
+                              ) : (
+                                <>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Import Sitemap
+                                </>
+                              )}
+                            </Button>
+                          </form>
+                        </CardContent>
+                      </Card>
+
+                      {/* Manual Page Addition */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add Single Page
+                          </CardTitle>
+                          <CardDescription>
+                            Manually add a specific page for analysis
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <form onSubmit={handleAddManualPage} className="space-y-4">
+                            <Input
+                              type="url"
+                              placeholder="https://yoursite.com/specific-page"
+                              value={manualUrl}
+                              onChange={(e) => setManualUrl(e.target.value)}
+                              required
+                              disabled={addingPage}
+                            />
+                            <Button type="submit" disabled={addingPage} className="w-full">
+                              {addingPage ? (
+                                <>
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                  Adding...
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Page
+                                </>
+                              )}
+                            </Button>
+                          </form>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {error && (
           <Card className="border-red-200 bg-red-50">
             <CardContent className="pt-6">
@@ -490,40 +677,6 @@ export default function SiteDetailsPage() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Tracker Actions */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Tracker Actions</h4>
-                  <div className="grid gap-2 md:grid-cols-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowTrackerScript(true)}
-                      className="flex items-center justify-center"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Get Script
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setShowContentDeployment(true)}
-                      className="flex items-center justify-center"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Deploy Content
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => setActiveTab('analytics')}
-                      className="flex items-center justify-center"
-                    >
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      View Analytics
-                    </Button>
-                  </div>
-                </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
                     <label className="text-sm font-medium text-gray-600">Created</label>
@@ -541,105 +694,7 @@ export default function SiteDetailsPage() {
               </CardContent>
             </Card>
 
-            {/* Page Management */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Sitemap Import */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Upload className="h-5 w-5 mr-2" />
-                    Import Sitemap
-                  </CardTitle>
-                  <CardDescription>
-                    Bulk import pages from your website's sitemap
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <form onSubmit={handleImportSitemap} className="space-y-4">
-                    <Input
-                      type="url"
-                      placeholder="https://yoursite.com/sitemap.xml"
-                      value={sitemapUrl}
-                      onChange={(e) => setSitemapUrl(e.target.value)}
-                      required
-                      disabled={importing}
-                    />
-                    
-                    {importProgress.status !== 'idle' && (
-                      <div className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          {importProgress.status === 'importing' && (
-                            <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
-                          )}
-                          {importProgress.status === 'processing' && (
-                            <Clock className="h-4 w-4 text-yellow-600" />
-                          )}
-                          {importProgress.status === 'completed' && (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          )}
-                          {importProgress.status === 'error' && (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          )}
-                          <span className="text-sm">{importProgress.message}</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <Button type="submit" disabled={importing} className="w-full">
-                      {importing ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Importing...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="h-4 w-4 mr-2" />
-                          Import Sitemap
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
 
-              {/* Manual Page Addition */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Add Single Page
-                  </CardTitle>
-                  <CardDescription>
-                    Manually add a specific page for analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleAddManualPage} className="space-y-4">
-                    <Input
-                      type="url"
-                      placeholder="https://yoursite.com/specific-page"
-                      value={manualUrl}
-                      onChange={(e) => setManualUrl(e.target.value)}
-                      required
-                      disabled={addingPage}
-                    />
-                    <Button type="submit" disabled={addingPage} className="w-full">
-                      {addingPage ? (
-                        <>
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Page
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Pages Management */}
             <Card>
@@ -784,11 +839,49 @@ export default function SiteDetailsPage() {
                           </div>
                           
                           <div className="flex items-center space-x-2 ml-4">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedPageForDeployment(page)}
+                            >
+                              <Send className="h-4 w-4 mr-1" />
+                              Deploy Content
+                            </Button>
                             <Link href={`/dashboard/${siteId}/pages/${page.id}`}>
                               <Button variant="outline" size="sm">
                                 View Analysis
                               </Button>
                             </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={async () => {
+                                const confirmMessage = `Delete "${page.title || page.url}"?\n\nThis will permanently delete the page and all its related data (analysis results, content, suggestions, etc.).`;
+                                if (confirm(confirmMessage)) {
+                                  try {
+                                    setToast({ message: "Deleting page...", type: "info" });
+                                    const token = await getToken();
+                                    if (!token) {
+                                      setError("Failed to get authentication token");
+                                      return;
+                                    }
+                                    await deletePage(token, page.id);
+                                    
+                                    // Refresh the pages list
+                                    const updatedPages = await getPages(token, siteId);
+                                    setPages(updatedPages);
+                                    
+                                    setToast({ message: "Page deleted successfully", type: "success" });
+                                  } catch (err: unknown) {
+                                    const errorMessage = err instanceof Error ? err.message : "Failed to delete page";
+                                    setToast({ message: errorMessage, type: "error" });
+                                  }
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 border-red-300 hover:border-red-400"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -821,12 +914,15 @@ export default function SiteDetailsPage() {
             siteName={site.name}
           />
           
-          <ContentDeploymentModal
-            isOpen={showContentDeployment}
-            onClose={() => setShowContentDeployment(false)}
-            siteId={siteId}
-            siteName={site.name}
-          />
+          {selectedPageForDeployment && (
+            <PageContentDeploymentModal
+              isOpen={!!selectedPageForDeployment}
+              onClose={() => setSelectedPageForDeployment(null)}
+              pageId={selectedPageForDeployment.id}
+              pageUrl={selectedPageForDeployment.url}
+              pageTitle={selectedPageForDeployment.title || "Untitled Page"}
+            />
+          )}
         </>
       )}
     </DashboardLayout>

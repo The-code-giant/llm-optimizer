@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Original Title - Cleaver Search Fast Test</title>
+    <meta name="description" content="Original description for testing fast content updates.">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .controls {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+        .injection-counter {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+            <h1>Cleaver Search Fast Performance Test</h1>
+    
+    <div class="status">
+        <h3>🚀 Fast Tracker Configuration</h3>
+        <p><strong>Site:</strong> localhost:3002</p>
+        <p><strong>Page:</strong> voice-controlled-expense-tracking-2025</p>
+        <p><strong>Update Interval:</strong> 500ms (Fast Mode)</p>
+        <p><strong>Timeout:</strong> 2000ms</p>
+    </div>
+
+    <div class="controls">
+        <h3>⚡ Manual Controls</h3>
+        <button onclick="refreshContent()">🔄 Refresh Content Now</button>
+        <button onclick="getStats()">📊 Get Stats</button>
+        <button onclick="enableDebug()">🔧 Enable Debug</button>
+        <button onclick="enableSuperFast()">⚡ Super Fast Mode (250ms)</button>
+        <button onclick="clearConsole()">🧹 Clear Console</button>
+    </div>
+
+    <div class="injection-counter">
+        <h3>📈 Injection Counters</h3>
+        <div id="counters">Loading...</div>
+    </div>
+
+    <div class="console-output" id="console-output">
+        <div>Console output will appear here...</div>
+    </div>
+
+    <h2>Original Content</h2>
+            <p>This is the original content that should be optimized by Cleaver Search. The title and meta description should be replaced with AI-optimized versions.</p>
+    
+    <h3>Test Features</h3>
+    <ul>
+        <li>Title replacement (should be instant)</li>
+        <li>Meta description optimization</li>
+        <li>Fast content polling (500ms intervals)</li>
+        <li>Manual refresh capability</li>
+        <li>Real-time debug logging</li>
+    </ul>
+
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const consoleOutput = document.getElementById('console-output');
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            const div = document.createElement('div');
+            div.textContent = args.join(' ');
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+
+        // Control functions
+        function refreshContent() {
+            if (window.LLMOptimizer) {
+                console.log('🔄 Manual refresh triggered...');
+                window.LLMOptimizer.refresh();
+            } else {
+                console.log('❌ Cleaver Search not loaded yet');
+            }
+        }
+
+        function getStats() {
+            if (window.LLMOptimizer) {
+                const stats = window.LLMOptimizer.getStats();
+                console.log('📊 Cleaver Search Stats:', JSON.stringify(stats, null, 2));
+            } else {
+                console.log('❌ Cleaver Search not loaded yet');
+            }
+        }
+
+        function enableDebug() {
+            if (window.LLMOptimizer) {
+                window.LLMOptimizer.enableDebug();
+            } else {
+                console.log('❌ Cleaver Search not loaded yet');
+            }
+        }
+
+        function enableSuperFast() {
+            if (window.LLMOptimizer) {
+                window.LLMOptimizer.enableFastMode();
+            } else {
+                console.log('❌ Cleaver Search not loaded yet');
+            }
+        }
+
+        function clearConsole() {
+            consoleOutput.innerHTML = '<div>Console cleared...</div>';
+        }
+
+        // Update counters every second
+        setInterval(() => {
+            const countersDiv = document.getElementById('counters');
+            if (window.LLMOptimizer) {
+                const stats = window.LLMOptimizer.getStats();
+                countersDiv.innerHTML = `
+                    <strong>Title:</strong> ${stats.injectionCounts?.title || 0} | 
+                    <strong>Meta:</strong> ${stats.injectionCounts?.meta || 0} | 
+                    <strong>FAQ:</strong> ${stats.injectionCounts?.faq || 0} | 
+                    <strong>Keywords:</strong> ${stats.injectionCounts?.keywords || 0}<br>
+                    <strong>Content Injected:</strong> ${stats.contentInjected ? 'Yes' : 'No'} | 
+                    <strong>Types:</strong> ${stats.contentTypes?.join(', ') || 'None'}
+                `;
+            } else {
+                countersDiv.innerHTML = 'Waiting for Cleaver Search to load...';
+            }
+        }, 1000);
+
+        console.log('🎯 Fast Performance Test Page Loaded');
+        console.log('📍 URL: ' + window.location.href);
+        console.log('⏱️ Page will check for optimized content every 500ms');
+    </script>
+
+    <!-- Cleaver Search Tracker with Fast Configuration -->
+    <script>
+        // Override the current URL to simulate the target website
+        window.LLM_OVERRIDE_URL = 'http://localhost:3002/blogs/voice-controlled-expense-tracking-2025';
+    </script>
+    <script 
+        src="http://localhost:3001/tracker/v1/tracker.js"
+        data-config='{
+            "API_BASE": "http://localhost:3001",
+            "SITE_ID": "016a5d03-7b3e-4715-a058-980fcaaa0af2",
+            "FAST_MODE": true,
+            "DEBUG_MODE": true,
+            "UPDATE_INTERVAL": 500,
+            "TIMEOUT": 2000,
+            "MAX_INTERVAL_DURATION": 120000,
+            "OVERRIDE_URL": "http://localhost:3002/blogs/voice-controlled-expense-tracking-2025"
+        }'
+        async>
+    </script>
+</body>
+</html> 

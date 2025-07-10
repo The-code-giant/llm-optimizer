@@ -82,7 +82,7 @@ export function Footer() {
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                     <SparklesIcon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xl font-bold">LLM Optimizer</span>
+                  <span className="text-xl font-bold">Cleaver Search</span>
                 </Link>
                 <p className="text-gray-300 mb-6 leading-relaxed">
                   Increase your website&apos;s visibility in ChatGPT, Claude, and Gemini responses. 
@@ -93,7 +93,7 @@ export function Footer() {
                 <div className="space-y-3">
                   <div className="flex items-center text-gray-300">
                     <EnvelopeIcon className="w-5 h-5 mr-3 text-blue-400" />
-                    <span>hello@llmoptimizer.com</span>
+                    <span>hello@cleaversearch.com</span>
                   </div>
                   <div className="flex items-center text-gray-300">
                     <PhoneIcon className="w-5 h-5 mr-3 text-blue-400" />
@@ -173,7 +173,7 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             {/* Copyright */}
             <div className="text-gray-400">
-              <p>&copy; 2024 LLM Optimizer. All rights reserved.</p>
+              <p>&copy; 2024 Cleaver Search. All rights reserved.</p>
             </div>
 
             {/* Legal Links */}

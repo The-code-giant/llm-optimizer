@@ -10,11 +10,8 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
 import { 
   Globe, 
   Check, 
@@ -27,97 +24,145 @@ import {
   AlertTriangle,
   Target,
   Zap,
-  BarChart3
+  BarChart3,
+  FileText,
+  MessageSquare,
+  Hash,
+  Code,
+  Type,
+  Play,
+  Square
 } from "lucide-react";
 import Toast from "./Toast";
+import { 
+  getDeployedPageContent, 
+  getPageContent, 
+  deployPageContent, 
+  undeployPageContent,
+  DeployedContent,
+  PageContentData
+} from "../lib/api";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
-interface ContentDeploymentModalProps {
+interface PageContentDeploymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  siteId: string;
-  siteName: string;
-  pageId?: string;
-  initialUrl?: string;
+  pageId: string;
+  pageUrl: string;
+  pageTitle: string;
 }
 
-interface DeploymentContent {
-  title?: string;
-  description?: string;
-  keywords?: string;
-  faq?: string;
+interface ContentTypeInfo {
+  type: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema';
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+  color: string;
 }
 
-interface DeploymentPreview {
-  url: string;
-  content: DeploymentContent;
-  isActive: boolean;
-  lastDeployed?: string;
-  performance?: {
-    views: number;
-    ctr: number;
-    avgLoadTime: number;
-  };
+const CONTENT_TYPES: ContentTypeInfo[] = [
+  {
+    type: 'title',
+    label: 'Page Title',
+    icon: Type,
+    description: 'SEO-optimized page title',
+    color: 'blue'
+  },
+  {
+    type: 'description',
+    label: 'Meta Description',
+    icon: FileText,
+    description: 'Page meta description for search results',
+    color: 'green'
+  },
+  {
+    type: 'keywords',
+    label: 'Keywords',
+    icon: Hash,
+    description: 'SEO keywords and phrases',
+    color: 'purple'
+  },
+  {
+    type: 'faq',
+    label: 'FAQ Section',
+    icon: MessageSquare,
+    description: 'Frequently asked questions',
+    color: 'orange'
+  },
+  {
+    type: 'paragraph',
+    label: 'Content Blocks',
+    icon: FileText,
+    description: 'Optimized content paragraphs',
+    color: 'indigo'
+  },
+  {
+    type: 'schema',
+    label: 'Schema Markup',
+    icon: Code,
+    description: 'Structured data for search engines',
+    color: 'red'
+  }
+];
+
+interface ContentStatus {
+  hasContent: boolean;
+  isDeployed: boolean;
+  content?: PageContentData;
+  deployedContent?: DeployedContent;
 }
 
-export default function ContentDeploymentModal({
+export default function PageContentDeploymentModal({
   isOpen,
   onClose,
-  siteId,
-  siteName,
   pageId,
-  initialUrl = ""
-}: ContentDeploymentModalProps) {
+  pageUrl,
+  pageTitle
+}: PageContentDeploymentModalProps) {
   const { getToken } = useAuth();
-  const [deploymentUrl, setDeploymentUrl] = useState(initialUrl);
-  const [content, setContent] = useState<DeploymentContent>({});
   const [loading, setLoading] = useState(false);
-  const [deploying, setDeploying] = useState(false);
-  const [existingDeployments, setExistingDeployments] = useState<DeploymentPreview[]>([]);
+  const [contentStatus, setContentStatus] = useState<Record<string, ContentStatus>>({});
+  const [deployingType, setDeployingType] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      loadExistingContent();
-      loadExistingDeployments();
+      loadContentStatus();
     }
   }, [isOpen, pageId]);
 
-  const loadExistingContent = async () => {
-    if (!pageId) return;
-    
+  const loadContentStatus = async () => {
     setLoading(true);
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch(`${API_BASE}/pages/${pageId}/content`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Load all content and deployed content
+      const [allContent, deployedContent] = await Promise.all([
+        getPageContent(token, pageId),
+        getDeployedPageContent(token, pageId)
+      ]);
 
-      if (!response.ok) {
-        throw new Error('Failed to load page content');
+      // Build status map
+      const statusMap: Record<string, ContentStatus> = {};
+      
+      for (const contentType of CONTENT_TYPES) {
+        const content = allContent.content.find(c => c.contentType === contentType.type);
+        const deployed = deployedContent.deployedContent.find(d => d.contentType === contentType.type);
+        
+        statusMap[contentType.type] = {
+          hasContent: !!content,
+          isDeployed: !!deployed,
+          content,
+          deployedContent: deployed
+        };
       }
 
-      const data = await response.json();
-      
-      // Transform the content data into our format
-      const contentMap: DeploymentContent = {};
-      data.content?.forEach((item: any) => {
-        if (item.contentType === 'title') contentMap.title = item.optimizedContent;
-        if (item.contentType === 'description') contentMap.description = item.optimizedContent;
-        if (item.contentType === 'keywords') contentMap.keywords = item.optimizedContent;
-        if (item.contentType === 'faq') contentMap.faq = item.optimizedContent;
-      });
-
-      setContent(contentMap);
+      setContentStatus(statusMap);
     } catch (error: any) {
       setToast({ 
-        message: error.message || 'Failed to load content', 
+        message: error.message || 'Failed to load content status', 
         type: 'error' 
       });
     } finally {
@@ -125,90 +170,21 @@ export default function ContentDeploymentModal({
     }
   };
 
-  const loadExistingDeployments = async () => {
+  const handleDeploy = async (contentType: string) => {
+    setDeployingType(contentType);
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch(`${API_BASE}/sites/${siteId}/deployments`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setExistingDeployments(data.deployments || []);
-      }
-    } catch (error) {
-      console.error('Failed to load existing deployments:', error);
-    }
-  };
-
-  const validateUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const handleDeploy = async () => {
-    if (!deploymentUrl.trim()) {
-      setToast({ message: 'Please enter a URL', type: 'error' });
-      return;
-    }
-
-    if (!validateUrl(deploymentUrl)) {
-      setToast({ message: 'Please enter a valid URL', type: 'error' });
-      return;
-    }
-
-    const hasContent = Object.values(content).some(value => value?.trim());
-    if (!hasContent) {
-      setToast({ message: 'Please add some content to deploy', type: 'error' });
-      return;
-    }
-
-    setDeploying(true);
-    try {
-      const token = await getToken();
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch(`${API_BASE}/sites/${siteId}/deploy-content`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          url: deploymentUrl,
-          content: content,
-          pageId: pageId
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to deploy content');
-      }
-
-      const result = await response.json();
+      await deployPageContent(token, pageId, contentType as any);
       
       setToast({ 
-        message: 'Content deployed successfully! Changes will be live within minutes.', 
+        message: `${CONTENT_TYPES.find(t => t.type === contentType)?.label} deployed successfully!`, 
         type: 'success' 
       });
 
-      // Refresh deployments list
-      await loadExistingDeployments();
-      
-      // Reset form
-      setDeploymentUrl("");
-      if (!pageId) {
-        setContent({});
-      }
+      // Refresh content status
+      await loadContentStatus();
       
     } catch (error: any) {
       setToast({ 
@@ -216,51 +192,49 @@ export default function ContentDeploymentModal({
         type: 'error' 
       });
     } finally {
-      setDeploying(false);
+      setDeployingType(null);
     }
   };
 
-  const toggleDeployment = async (url: string, isActive: boolean) => {
+  const handleUndeploy = async (contentType: string) => {
+    setDeployingType(contentType);
     try {
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch(`${API_BASE}/sites/${siteId}/deployments/${encodeURIComponent(url)}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isActive: !isActive })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update deployment');
-      }
-
+      await undeployPageContent(token, pageId, contentType as any);
+      
       setToast({ 
-        message: `Deployment ${!isActive ? 'activated' : 'deactivated'} successfully`, 
+        message: `${CONTENT_TYPES.find(t => t.type === contentType)?.label} undeployed successfully`, 
         type: 'success' 
       });
 
-      // Refresh deployments
-      await loadExistingDeployments();
+      // Refresh content status
+      await loadContentStatus();
       
     } catch (error: any) {
       setToast({ 
-        message: error.message || 'Failed to update deployment', 
+        message: error.message || 'Failed to undeploy content', 
         type: 'error' 
       });
+    } finally {
+      setDeployingType(null);
     }
   };
 
-  const getContentSummary = (content: DeploymentContent): string => {
-    const parts = [];
-    if (content.title) parts.push('Title');
-    if (content.description) parts.push('Description');
-    if (content.keywords) parts.push('Keywords');
-    if (content.faq) parts.push('FAQ');
-    return parts.length > 0 ? parts.join(', ') : 'No content';
+  const getStatusBadge = (status: ContentStatus) => {
+    if (status.isDeployed) {
+      return <Badge className="bg-green-100 text-green-800">Deployed</Badge>;
+    } else if (status.hasContent) {
+      return <Badge variant="secondary">Draft</Badge>;
+    } else {
+      return <Badge variant="outline">No Content</Badge>;
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
+    return new Date(dateString).toLocaleDateString();
   };
 
   return (
@@ -270,169 +244,106 @@ export default function ContentDeploymentModal({
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
               <Send className="h-5 w-5" />
-              <span>Deploy Content - {siteName}</span>
+              <span>Content Deployment</span>
             </DialogTitle>
             <DialogDescription>
-              Deploy optimized content to specific URLs. The content will be injected via your tracking script.
+              Manage deployed content for <strong>{pageTitle}</strong>
+              <br />
+              <span className="text-xs text-gray-500">{pageUrl}</span>
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            {/* Deployment Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Target className="h-5 w-5 text-blue-500" />
-                  <span>New Deployment</span>
-                </CardTitle>
-                <CardDescription>
-                  Deploy content to a specific URL on your website
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deployment-url">Target URL</Label>
-                  <Input
-                    id="deployment-url"
-                    type="url"
-                    placeholder="https://yoursite.com/page-to-optimize"
-                    value={deploymentUrl}
-                    onChange={(e) => setDeploymentUrl(e.target.value)}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Enter the full URL where you want to deploy this content
-                  </p>
-                </div>
-
-                {/* Content Preview */}
-                {Object.keys(content).length > 0 && (
-                  <div className="space-y-3">
-                    <Label>Content to Deploy</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {content.title && (
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <h4 className="font-medium text-sm text-blue-900">Title</h4>
-                          <p className="text-xs text-blue-700 mt-1">{content.title}</p>
-                        </div>
-                      )}
-                      {content.description && (
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                          <h4 className="font-medium text-sm text-green-900">Description</h4>
-                          <p className="text-xs text-green-700 mt-1">{content.description}</p>
-                        </div>
-                      )}
-                      {content.keywords && (
-                        <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                          <h4 className="font-medium text-sm text-purple-900">Keywords</h4>
-                          <p className="text-xs text-purple-700 mt-1">{content.keywords}</p>
-                        </div>
-                      )}
-                      {content.faq && (
-                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                          <h4 className="font-medium text-sm text-orange-900">FAQ</h4>
-                          <p className="text-xs text-orange-700 mt-1 line-clamp-2">{content.faq}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-3">
-                  <Button variant="outline" onClick={onClose}>
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleDeploy} 
-                    disabled={deploying || loading}
-                    className="flex items-center space-x-2"
-                  >
-                    {deploying ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                    <span>{deploying ? 'Deploying...' : 'Deploy Content'}</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Existing Deployments */}
-            {existingDeployments.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Globe className="h-5 w-5 text-green-500" />
-                    <span>Active Deployments</span>
-                    <Badge variant="outline">{existingDeployments.length}</Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your deployed content across different URLs
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {existingDeployments.map((deployment, index) => (
-                      <div key={index} className="border rounded-lg p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <h4 className="font-medium text-sm">{deployment.url}</h4>
-                              <Badge 
-                                variant={deployment.isActive ? "default" : "secondary"}
-                                className="text-xs"
-                              >
-                                {deployment.isActive ? 'Active' : 'Inactive'}
-                              </Badge>
+          <div className="space-y-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2">Loading content status...</span>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {CONTENT_TYPES.map((contentType) => {
+                  const status = contentStatus[contentType.type] || { hasContent: false, isDeployed: false };
+                  const IconComponent = contentType.icon;
+                  
+                  return (
+                    <Card key={contentType.type} className="border-l-4" style={{ borderLeftColor: `var(--${contentType.color}-500)` }}>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className={`p-2 rounded-lg bg-${contentType.color}-100`}>
+                              <IconComponent className={`h-5 w-5 text-${contentType.color}-600`} />
                             </div>
-                            <p className="text-xs text-gray-600 mt-1">
-                              Content: {getContentSummary(deployment.content)}
-                            </p>
-                            {deployment.lastDeployed && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                Last deployed: {new Date(deployment.lastDeployed).toLocaleDateString()}
-                              </p>
-                            )}
-                            {deployment.performance && (
-                              <div className="flex items-center space-x-4 mt-2">
-                                <span className="text-xs text-gray-600">
-                                  Views: {deployment.performance.views}
-                                </span>
-                                <span className="text-xs text-gray-600">
-                                  CTR: {deployment.performance.ctr}%
-                                </span>
-                                <span className="text-xs text-gray-600">
-                                  Load: {deployment.performance.avgLoadTime}ms
-                                </span>
+                            <div>
+                              <h3 className="font-medium text-sm">{contentType.label}</h3>
+                              <p className="text-xs text-gray-600">{contentType.description}</p>
+                              {status.deployedContent && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Deployed: {formatDate(status.deployedContent.deployedAt)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-3">
+                            {getStatusBadge(status)}
+                            
+                            {status.hasContent && (
+                              <div className="flex space-x-2">
+                                {status.isDeployed ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUndeploy(contentType.type)}
+                                    disabled={deployingType === contentType.type}
+                                  >
+                                    {deployingType === contentType.type ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                    ) : (
+                                      <Square className="h-4 w-4" />
+                                    )}
+                                    <span className="ml-1">Undeploy</span>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleDeploy(contentType.type)}
+                                    disabled={deployingType === contentType.type}
+                                  >
+                                    {deployingType === contentType.type ? (
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    ) : (
+                                      <Play className="h-4 w-4" />
+                                    )}
+                                    <span className="ml-1">Deploy</span>
+                                  </Button>
+                                )}
                               </div>
                             )}
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(deployment.url, '_blank')}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleDeployment(deployment.url, deployment.isActive)}
-                            >
-                              {deployment.isActive ? (
-                                <EyeOff className="h-4 w-4" />
-                              ) : (
-                                <Eye className="h-4 w-4" />
-                              )}
-                            </Button>
+                            
+                            {!status.hasContent && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled
+                              >
+                                No Content
+                              </Button>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                        
+                        {status.deployedContent && (
+                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                            <p className="text-xs text-gray-600 line-clamp-2">
+                              {status.deployedContent.optimizedContent}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             )}
 
             {/* Deployment Tips */}
@@ -447,25 +358,32 @@ export default function ContentDeploymentModal({
                 <div className="space-y-2">
                   <p className="text-sm">For best results:</p>
                   <ul className="text-sm space-y-1 ml-4">
-                    <li>• Ensure your tracking script is installed on the target page</li>
-                    <li>• Content updates are applied when the page loads</li>
-                    <li>• Changes are visible to search engines and crawlers</li>
-                    <li>• Monitor performance in the Analytics dashboard</li>
+                    <li>• Deploy content during low-traffic periods</li>
+                    <li>• Test deployed content on your website</li>
+                    <li>• Monitor analytics after deployment</li>
+                    <li>• Keep backup versions of your original content</li>
                   </ul>
                 </div>
               </CardContent>
             </Card>
+
+            <div className="flex justify-end space-x-3">
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+              <Button 
+                onClick={() => window.open(pageUrl, '_blank')}
+                className="flex items-center space-x-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span>View Page</span>
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </>
   );
 } 

@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, pages, analysisResults, pageContent, contentSuggestions } from '../db/schema';
+import { sites, pages, analysisResults, pageContent, contentSuggestions, pageInjectedContent, pageAnalytics } from '../db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { AnalysisService } from '../utils/analysisService';
@@ -221,35 +221,45 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
     console.log(`🚀 Starting analysis for page: ${page.url}`);
     
     try {
+      // Check if forced refresh is requested
+      const forceRefresh = req.body?.forceRefresh === true || req.query?.forceRefresh === 'true';
+      
       // Perform the actual analysis
       const analysisResult = await AnalysisService.analyzePage({
         url: page.url,
-        contentSnapshot: page.contentSnapshot || undefined
+        contentSnapshot: page.contentSnapshot || undefined,
+        forceRefresh
       });
 
-      // Store analysis results in database
+      // Always update the content snapshot after analysis (especially if it was refreshed)
+      await db.update(pages)
+        .set({ 
+          contentSnapshot: JSON.stringify(analysisResult.content),
+          title: analysisResult.content.title || page.title,
+          llmReadinessScore: analysisResult.score,
+          lastAnalysisAt: new Date(),
+          lastScannedAt: new Date()
+        })
+        .where(eq(pages.id, page.id));
+
+      // Store analysis results in database (including AI page summary)
       const newAnalysis = await db.insert(analysisResults).values({
         pageId: page.id,
         analyzedAt: new Date(),
         llmModelUsed: 'gpt-4o-mini',
         score: analysisResult.score,
-        recommendations: {
+        recommendations: JSON.stringify({
           issues: analysisResult.issues,
           recommendations: analysisResult.recommendations,
+          summary: analysisResult.summary,
+          pageSummary: analysisResult.pageSummary, // Store AI page summary
           contentQuality: analysisResult.contentQuality,
           technicalSEO: analysisResult.technicalSEO,
+          keywordAnalysis: analysisResult.keywordAnalysis,
           llmOptimization: analysisResult.llmOptimization
-        },
-        rawLlmOutput: analysisResult.summary,
+        }),
+        rawLlmOutput: JSON.stringify(analysisResult),
       }).returning();
-
-      // Update page's LLM readiness score and last analysis timestamp
-      await db.update(pages)
-        .set({ 
-          llmReadinessScore: analysisResult.score,
-          lastAnalysisAt: new Date()
-        })
-        .where(eq(pages.id, page.id));
 
       console.log(`✅ Analysis completed for ${page.url} - Score: ${analysisResult.score}/100`);
 
@@ -271,6 +281,86 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
       res.status(500).json({ 
         message: 'Analysis failed', 
         error: analysisError.message || 'Unknown error occurred during analysis'
+      });
+    }
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/refresh-content:
+ *   post:
+ *     summary: Force refresh page content from the live URL
+ *     tags: [Pages]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Content refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 content:
+ *                   type: object
+ *                 contentSnapshot:
+ *                   type: string
+ */
+// Force refresh page content from URL
+router.post('/:pageId/refresh-content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    console.log(`🔄 Force refreshing content for page: ${page.url}`);
+    
+    try {
+      // Fetch fresh content directly
+      const freshContent = await AnalysisService.fetchPageContent(page.url);
+      
+      // Update page with fresh content
+      await db.update(pages)
+        .set({ 
+          contentSnapshot: JSON.stringify(freshContent),
+          title: freshContent.title || page.title,
+          lastScannedAt: new Date()
+        })
+        .where(eq(pages.id, page.id));
+
+      console.log(`✅ Content refreshed for ${page.url}`);
+
+      res.json({
+        message: 'Content refreshed successfully',
+        content: freshContent,
+        contentSnapshot: JSON.stringify(freshContent),
+        refreshedAt: new Date().toISOString()
+      });
+    } catch (fetchError: any) {
+      console.error(`❌ Content refresh failed for ${page.url}:`, fetchError);
+      res.status(500).json({ 
+        message: 'Content refresh failed', 
+        error: fetchError.message || 'Unknown error occurred while fetching content'
       });
     }
   } catch (err) {
@@ -362,6 +452,19 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
       let prompt = '';
       let maxTokens = 300;
 
+      // Get page summary for better context
+      let pageSummary = '';
+      if (analysis?.recommendations) {
+        try {
+          const recommendations = typeof analysis.recommendations === 'string' 
+            ? JSON.parse(analysis.recommendations) 
+            : (analysis.recommendations || {});
+          pageSummary = recommendations.pageSummary || '';
+        } catch (error) {
+          console.log('Could not parse page summary from analysis');
+        }
+      }
+
       switch (contentType) {
         case 'title':
           prompt = `
@@ -369,6 +472,7 @@ Generate 5 SEO-optimized page titles for this webpage:
 
 URL: ${page.url}
 Current Title: ${currentContent || page.title || 'No title'}
+${pageSummary ? `\nPage Summary:\n${pageSummary}` : ''}
 Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
 Additional Context: ${additionalContext || ''}
 
@@ -378,6 +482,7 @@ Requirements:
 - Make it compelling and click-worthy
 - Focus on user intent and value proposition
 - Consider long-tail keyword opportunities
+- Use the page summary to understand the content's value proposition
 
 Return ONLY a JSON array of 5 title suggestions:
 ["title 1", "title 2", "title 3", "title 4", "title 5"]`;
@@ -390,6 +495,7 @@ Generate 3 SEO-optimized meta descriptions for this webpage:
 URL: ${page.url}
 Title: ${page.title || 'No title'}
 Current Description: ${currentContent || 'No description'}
+${pageSummary ? `\nPage Summary:\n${pageSummary}` : ''}
 Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
 Additional Context: ${additionalContext || ''}
 
@@ -399,6 +505,7 @@ Requirements:
 - Compelling call-to-action
 - Describe the page value clearly
 - Match search intent
+- Use the page summary to accurately describe the content's purpose and benefits
 
 Return ONLY a JSON array of 3 descriptions:
 ["description 1", "description 2", "description 3"]`;
@@ -580,7 +687,7 @@ Return ONLY a JSON object:
  *             properties:
  *               contentType:
  *                 type: string
- *                 enum: [title, description, faq, paragraph, keywords]
+ *                 enum: [title, description, faq, paragraph, keywords, schema]
  *               originalContent:
  *                 type: string
  *               optimizedContent:
@@ -589,14 +696,18 @@ Return ONLY a JSON object:
  *                 type: string
  *               metadata:
  *                 type: object
+ *               deployImmediately:
+ *                 type: boolean
+ *                 default: false
+ *                 description: Whether to deploy the content immediately after saving
  *     responses:
  *       200:
- *         description: Content saved successfully
+ *         description: Content saved and optionally deployed successfully
  */
 // Save optimized content for a page
 router.post('/:pageId/content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { contentType, originalContent, optimizedContent, generationContext, metadata } = req.body;
+    const { contentType, originalContent, optimizedContent, generationContext, metadata, deployImmediately = false } = req.body;
     
     const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
     const page = pageArr[0];
@@ -613,13 +724,15 @@ router.post('/:pageId/content', authenticateJWT, async (req: AuthenticatedReques
       return;
     }
 
-    // Deactivate existing content of the same type
-    await db.update(pageContent)
-      .set({ isActive: 0, updatedAt: new Date() })
-      .where(and(
-        eq(pageContent.pageId, req.params.pageId),
-        eq(pageContent.contentType, contentType)
-      ));
+    // Deactivate existing content of the same type if deploying immediately
+    if (deployImmediately) {
+      await db.update(pageContent)
+        .set({ isActive: 0, updatedAt: new Date() })
+        .where(and(
+          eq(pageContent.pageId, req.params.pageId),
+          eq(pageContent.contentType, contentType)
+        ));
+    }
 
     // Get the next version number
     const existingContent = await db.select()
@@ -641,16 +754,20 @@ router.post('/:pageId/content', authenticateJWT, async (req: AuthenticatedReques
       optimizedContent,
       aiModel: 'gpt-4o-mini',
       generationContext,
-      isActive: 1,
+      isActive: deployImmediately ? 1 : 0,
       version: nextVersion,
       metadata: metadata || {},
+      pageUrl: page.url,
+      deployedAt: deployImmediately ? new Date() : null,
+      deployedBy: deployImmediately ? req.user!.userId : null,
       createdAt: new Date(),
       updatedAt: new Date()
     }).returning();
 
     res.json({
-      message: 'Content saved successfully',
-      content: savedContent
+      message: `Content saved${deployImmediately ? ' and deployed' : ''} successfully`,
+      content: savedContent,
+      deployed: deployImmediately
     });
 
   } catch (err) {
@@ -705,17 +822,13 @@ router.get('/:pageId/content', authenticateJWT, async (req: AuthenticatedRequest
         .from(pageContent)
         .where(and(
           eq(pageContent.pageId, req.params.pageId),
-          eq(pageContent.contentType, contentType as string),
-          eq(pageContent.isActive, 1)
+          eq(pageContent.contentType, contentType as string)
         ))
         .orderBy(desc(pageContent.createdAt));
     } else {
       content = await db.select()
         .from(pageContent)
-        .where(and(
-          eq(pageContent.pageId, req.params.pageId),
-          eq(pageContent.isActive, 1)
-        ))
+        .where(eq(pageContent.pageId, req.params.pageId))
         .orderBy(desc(pageContent.createdAt));
     }
 
@@ -798,51 +911,458 @@ router.get('/:pageId/content-suggestions', authenticateJWT, async (req: Authenti
   }
 });
 
-// Get content for a specific page
-router.get('/:pageId/content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/content/{contentType}/deploy:
+ *   put:
+ *     summary: Deploy specific content type for a page
+ *     tags: [Page Content]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: contentType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [title, description, faq, paragraph, keywords, schema]
+ *     responses:
+ *       200:
+ *         description: Content deployed successfully
+ */
+// Deploy specific content type for a page
+router.put('/:pageId/content/:contentType/deploy', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const { pageId } = req.params;
+    const { pageId, contentType } = req.params;
     
-    // First verify the page belongs to the user
-    const pageArr = await db.select({
-      id: pages.id,
-      siteId: pages.siteId,
-      userId: sites.userId
-    })
-    .from(pages)
-    .innerJoin(sites, eq(pages.siteId, sites.id))
-    .where(eq(pages.id, pageId))
-    .limit(1);
-    
+    const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
     const page = pageArr[0];
-    if (!page || page.userId !== req.user!.userId) {
-      res.status(404).json({ error: 'Page not found' });
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
       return;
     }
 
-    // Get all content for this page
-    const content = await db.select({
+    // Find the latest content for this type
+    const contentArr = await db.select()
+      .from(pageContent)
+      .where(and(
+        eq(pageContent.pageId, pageId),
+        eq(pageContent.contentType, contentType)
+      ))
+      .orderBy(desc(pageContent.version))
+      .limit(1);
+
+    if (contentArr.length === 0) {
+      res.status(404).json({ message: `No ${contentType} content found for this page` });
+      return;
+    }
+
+    const content = contentArr[0];
+
+    // Deactivate any currently active content of this type
+    await db.update(pageContent)
+      .set({ 
+        isActive: 0, 
+        updatedAt: new Date() 
+      })
+      .where(and(
+        eq(pageContent.pageId, pageId),
+        eq(pageContent.contentType, contentType),
+        eq(pageContent.isActive, 1)
+      ));
+
+    // Deploy this specific content
+    await db.update(pageContent)
+      .set({ 
+        isActive: 1,
+        deployedAt: new Date(),
+        deployedBy: req.user!.userId,
+        pageUrl: page.url, // Ensure URL is set for tracker lookup
+        updatedAt: new Date()
+      })
+      .where(eq(pageContent.id, content.id));
+
+    res.json({
+      message: `${contentType} content deployed successfully`,
+      pageId,
+      contentType,
+      deployedAt: new Date()
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/content/{contentType}/undeploy:
+ *   delete:
+ *     summary: Undeploy specific content type for a page
+ *     tags: [Page Content]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: contentType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [title, description, faq, paragraph, keywords, schema]
+ *     responses:
+ *       200:
+ *         description: Content undeployed successfully
+ */
+// Undeploy specific content type for a page
+router.delete('/:pageId/content/:contentType/undeploy', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pageId, contentType } = req.params;
+    
+    const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    // Deactivate all content of this type for this page
+    const result = await db.update(pageContent)
+      .set({ 
+        isActive: 0,
+        updatedAt: new Date()
+      })
+      .where(and(
+        eq(pageContent.pageId, pageId),
+        eq(pageContent.contentType, contentType),
+        eq(pageContent.isActive, 1)
+      ));
+
+    res.json({
+      message: `${contentType} content undeployed successfully`,
+      pageId,
+      contentType
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/deployed-content:
+ *   get:
+ *     summary: Get all deployed content for a page
+ *     tags: [Page Content]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Deployed content retrieved successfully
+ */
+// Get all deployed content for a page
+router.get('/:pageId/deployed-content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pageId } = req.params;
+    
+    const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    // Get all deployed content for this page
+    const deployedContent = await db.select({
       id: pageContent.id,
       contentType: pageContent.contentType,
-      originalContent: pageContent.originalContent,
       optimizedContent: pageContent.optimizedContent,
-      isActive: pageContent.isActive,
       version: pageContent.version,
-      metadata: pageContent.metadata,
-      createdAt: pageContent.createdAt,
-      updatedAt: pageContent.updatedAt
+      deployedAt: pageContent.deployedAt,
+      deployedBy: pageContent.deployedBy,
+      metadata: pageContent.metadata
     })
     .from(pageContent)
-    .where(eq(pageContent.pageId, pageId))
+    .where(and(
+      eq(pageContent.pageId, pageId),
+      eq(pageContent.isActive, 1)
+    ))
     .orderBy(pageContent.contentType);
 
-    res.json({ content });
-  } catch (error) {
-    console.error('Page content fetch error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    res.json({
+      pageId,
+      pageUrl: page.url,
+      deployedContent
     });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/original-content:
+ *   get:
+ *     summary: Get original page content for pre-filling forms
+ *     tags: [Pages]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Original page content and context
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 pageId:
+ *                   type: string
+ *                 pageUrl:
+ *                   type: string
+ *                 originalContent:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: string
+ *                     metaDescription:
+ *                       type: string
+ *                     headings:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                 pageSummary:
+ *                   type: string
+ *                 analysisContext:
+ *                   type: object
+ *       404:
+ *         description: Page not found or not analyzed yet
+ */
+// Get original page content for pre-filling forms
+router.get('/:pageId/original-content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    let originalContent = null;
+    let pageSummary = null;
+    let analysisContext = null;
+
+    // Parse content snapshot if available
+    if (page.contentSnapshot) {
+      try {
+        const parsedSnapshot = JSON.parse(page.contentSnapshot);
+        originalContent = {
+          title: parsedSnapshot.title || page.title || '',
+          metaDescription: parsedSnapshot.metaDescription || '',
+          headings: parsedSnapshot.headings || [],
+          bodyText: parsedSnapshot.bodyText ? parsedSnapshot.bodyText.substring(0, 500) + '...' : '',
+          images: parsedSnapshot.images?.length || 0,
+          links: parsedSnapshot.links?.length || 0
+        };
+      } catch (error) {
+        console.error('Failed to parse content snapshot:', error);
+      }
+    }
+
+    // Get latest analysis for page summary and context
+    const analysisArr = await db.select()
+      .from(analysisResults)
+      .where(eq(analysisResults.pageId, req.params.pageId))
+      .orderBy(desc(analysisResults.createdAt))
+      .limit(1);
+
+    if (analysisArr.length > 0) {
+      const analysis = analysisArr[0];
+      try {
+        const recommendations = typeof analysis.recommendations === 'string' 
+          ? JSON.parse(analysis.recommendations) 
+          : (analysis.recommendations || {});
+        pageSummary = recommendations.pageSummary || null;
+        
+        analysisContext = {
+          score: analysis.score,
+          summary: recommendations.summary,
+          keywordAnalysis: recommendations.keywordAnalysis,
+          issues: recommendations.issues?.slice(0, 3), // First 3 issues
+          recommendations: recommendations.recommendations?.slice(0, 5), // First 5 recommendations
+          lastAnalyzedAt: analysis.createdAt
+        };
+      } catch (error) {
+        console.error('Failed to parse analysis data:', error);
+      }
+    }
+
+    // If no original content, try to extract from current page title at minimum
+    if (!originalContent) {
+      originalContent = {
+        title: page.title || '',
+        metaDescription: '',
+        headings: [],
+        bodyText: 'Content not yet analyzed. Run analysis to extract original content.',
+        images: 0,
+        links: 0
+      };
+    }
+
+    res.json({
+      pageId: req.params.pageId,
+      pageUrl: page.url,
+      originalContent,
+      pageSummary,
+      analysisContext,
+      needsAnalysis: !page.contentSnapshot
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}:
+ *   delete:
+ *     summary: Delete a page and all its related data
+ *     tags: [Pages]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Page deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 deletedPageId:
+ *                   type: string
+ *                 deletedRelatedData:
+ *                   type: object
+ *       404:
+ *         description: Page not found or not authorized
+ */
+// Delete a page and all its related data
+router.delete('/:pageId', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pageId } = req.params;
+    
+    const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    console.log(`🗑️ Deleting page ${pageId} (${page.url}) and all related data...`);
+
+    // Delete related data in correct order (respecting foreign key constraints)
+    const deletedData = {
+      analysisResults: 0,
+      pageInjectedContent: 0,
+      pageContent: 0,
+      contentSuggestions: 0,
+      pageAnalytics: 0
+    };
+
+    // 1. Delete analysis results
+    const analysisRes = await db.delete(analysisResults).where(eq(analysisResults.pageId, pageId));
+    deletedData.analysisResults = analysisRes.rowCount || 0;
+
+    // 2. Delete page-injected content relationships
+    const pageInjectedRes = await db.delete(pageInjectedContent).where(eq(pageInjectedContent.pageId, pageId));
+    deletedData.pageInjectedContent = pageInjectedRes.rowCount || 0;
+
+    // 3. Delete page content (optimized content)
+    const pageContentRes = await db.delete(pageContent).where(eq(pageContent.pageId, pageId));
+    deletedData.pageContent = pageContentRes.rowCount || 0;
+
+    // 4. Delete content suggestions
+    const contentSuggestionsRes = await db.delete(contentSuggestions).where(eq(contentSuggestions.pageId, pageId));
+    deletedData.contentSuggestions = contentSuggestionsRes.rowCount || 0;
+
+    // 5. Delete page analytics by URL (since it references pageUrl, not pageId)
+    const pageAnalyticsRes = await db.delete(pageAnalytics).where(eq(pageAnalytics.pageUrl, page.url));
+    deletedData.pageAnalytics = pageAnalyticsRes.rowCount || 0;
+
+    // 6. Finally, delete the page itself
+    await db.delete(pages).where(eq(pages.id, pageId));
+
+    console.log(`✅ Successfully deleted page ${pageId} and related data:`, deletedData);
+
+    res.json({
+      message: 'Page deleted successfully',
+      deletedPageId: pageId,
+      deletedRelatedData: deletedData
+    });
+
+  } catch (err) {
+    console.error(`❌ Failed to delete page ${req.params.pageId}:`, err);
+    next(err);
   }
 });
 

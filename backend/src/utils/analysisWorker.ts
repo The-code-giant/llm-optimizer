@@ -29,7 +29,18 @@ async function analyzePage(pageId: string) {
       contentSnapshot: page.contentSnapshot || undefined
     });
 
-    // Store analysis results in database (using existing schema fields)
+    // Save/update the page with original content snapshot and summary
+    await db.update(pages)
+      .set({
+        contentSnapshot: JSON.stringify(analysisResult.content),
+        title: analysisResult.content.title || page.title, // Update title if found
+        llmReadinessScore: analysisResult.score,
+        lastAnalysisAt: new Date(),
+        lastScannedAt: new Date()
+      })
+      .where(eq(pages.id, pageId));
+
+    // Store analysis results in database (including page summary)
     await db.insert(analysisResults).values({
       pageId,
       score: analysisResult.score,
@@ -37,6 +48,7 @@ async function analyzePage(pageId: string) {
         recommendations: analysisResult.recommendations,
         issues: analysisResult.issues,
         summary: analysisResult.summary,
+        pageSummary: analysisResult.pageSummary, // Store AI page summary
         contentQuality: analysisResult.contentQuality,
         technicalSEO: analysisResult.technicalSEO,
         keywordAnalysis: analysisResult.keywordAnalysis,
@@ -48,12 +60,11 @@ async function analyzePage(pageId: string) {
     });
 
     logger.info(`✅ Analysis completed for page ${pageId} - Score: ${analysisResult.score}/100`);
+    logger.info(`📝 Saved original content and AI summary for page ${pageId}`);
 
-    // Auto-generate content suggestions after analysis
+    // Auto-generate content suggestions after analysis (using the extracted content)
     try {
-      // We need to get the page content for auto-generation
-      const content = await AnalysisService.fetchPageContent(page.url);
-      await AnalysisService.autoGenerateContentSuggestions(pageId, content, analysisResult);
+      await AnalysisService.autoGenerateContentSuggestions(pageId, analysisResult.content, analysisResult);
       logger.info(`🤖 Auto-generated content suggestions for page ${pageId}`);
     } catch (contentError) {
       logger.error(`❌ Failed to auto-generate content for page ${pageId}:`, contentError);

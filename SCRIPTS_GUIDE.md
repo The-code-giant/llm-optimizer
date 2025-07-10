@@ -1,6 +1,6 @@
-# LLM Optimizer - Scripts Guide
+# Cleaver Search - Scripts Guide
 
-This guide covers all available npm scripts for the LLM Optimizer project.
+This guide covers all available npm scripts for the Cleaver Search project.
 
 ## 🚀 Root Project Scripts
 
@@ -160,7 +160,7 @@ docker compose exec frontend npm run build
 docker compose exec frontend npm run test
 
 # Quick database access
-docker compose exec postgres psql -U postgres -d llm_optimizer_dev
+docker compose exec postgres psql -U postgres -d cleaver_search_dev
 docker compose exec redis redis-cli
 ```
 

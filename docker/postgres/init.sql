@@ -1,4 +1,4 @@
--- LLM Optimizer Database Initialization Script
+-- Cleaver Search Database Initialization Script
 -- This script sets up the development database with proper configurations
 
 -- Enable UUID extension

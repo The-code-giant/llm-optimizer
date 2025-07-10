@@ -139,14 +139,63 @@ FOCUS ON:
 `;
 
   /**
+   * Intelligently translate URLs for Docker networking
+   * Only translates known internal services, leaves external URLs unchanged
+   */
+  private static translateUrlForDocker(url: string): string {
+    // Only translate in development mode and for Docker containers
+    if (process.env.NODE_ENV !== 'development') {
+      return url;
+    }
+
+    // Parse URL to understand what we're dealing with
+    let parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      // If URL is invalid, return as-is
+      return url;
+    }
+
+    // Only translate localhost URLs that we know are our internal services
+    if (parsedUrl.hostname === 'localhost') {
+      switch (parsedUrl.port) {
+        case '3000':
+          // This is our frontend service
+          console.log(`🔄 Translating frontend URL: ${url} -> Docker service`);
+          return url.replace('localhost:3000', 'cleaver-search-frontend:3000');
+        
+        case '3001':
+          // This is our backend service (shouldn't normally happen, but just in case)
+          console.log(`🔄 Translating backend URL: ${url} -> Docker service`);
+          return url.replace('localhost:3001', 'cleaver-search-backend:3001');
+        
+        default:
+          // Other localhost ports - use host.docker.internal to access host machine
+          console.log(`🔄 Translating external localhost URL: ${url} -> host machine access`);
+          return url.replace('localhost', 'host.docker.internal');
+      }
+    }
+
+    // For all other URLs (internet URLs, other local IPs, etc.), return unchanged
+    console.log(`🌐 Using external URL as-is: ${url}`);
+    return url;
+  }
+
+  /**
    * Fetch page content from URL
    */
   static async fetchPageContent(url: string): Promise<PageContent> {
+    // Translate URL for Docker networking if needed
+    const fetchUrl = this.translateUrlForDocker(url);
+
+    console.log(`🌐 Fetching content from: ${fetchUrl} (original: ${url})`);
+
     try {
-      const response = await axios.get(url, {
+      const response = await axios.get(fetchUrl, {
         timeout: 10000,
         headers: {
-          'User-Agent': 'LLM-Optimizer-Bot/1.0 (+https://llm-optimizer.com)',
+          'User-Agent': 'Cleaver-Search-Bot/1.0 (+https://cleaversearch.com)',
         },
       });
 
@@ -207,7 +256,7 @@ FOCUS ON:
       let bodyText = '';
       const contentSelectors = [
         'main',
-        'article', 
+        'article',
         '.content',
         '.post-content',
         '.entry-content',
@@ -242,7 +291,7 @@ FOCUS ON:
         links: links.slice(0, 15), // Limit to 15 links
       };
     } catch (error) {
-      console.error(`❌ Failed to fetch content from ${url}:`, error);
+      console.error(`❌ Failed to fetch content from ${url} (fetch URL: ${fetchUrl}):`, error);
       throw new Error(`Failed to fetch page content: ${error}`);
     }
   }
@@ -355,38 +404,62 @@ ${content.bodyText || 'No content found'}
   /**
    * Main analysis function - analyzes a page by URL or existing content
    */
-  static async analyzePage(pageData: { url: string; contentSnapshot?: string }): Promise<AnalysisResult> {
+  static async analyzePage(pageData: { url: string; contentSnapshot?: string; forceRefresh?: boolean }): Promise<AnalysisResult & { content: PageContent; pageSummary: string }> {
     console.log(`🔍 Starting analysis for: ${pageData.url}`);
-    
+
     let content: PageContent;
-    
-    // Use existing content snapshot if available, otherwise fetch fresh
-    if (pageData.contentSnapshot && pageData.contentSnapshot.length > 100) {
-      console.log('📄 Using existing content snapshot');
-      // Parse existing content (assuming it's stored as JSON or plain text)
+    let contentSource = 'fresh';
+
+    // Determine if we should use cached content or fetch fresh
+    const shouldUseCachedContent = !pageData.forceRefresh && 
+                                  pageData.contentSnapshot && 
+                                  pageData.contentSnapshot.length > 100;
+
+    if (shouldUseCachedContent) {
+      console.log('📄 Using existing content snapshot for analysis');
       try {
-        const parsedContent = JSON.parse(pageData.contentSnapshot);
-        content = {
-          url: pageData.url,
-          ...parsedContent
-        };
-      } catch {
-        // Treat as plain text
-        content = {
-          url: pageData.url,
-          bodyText: pageData.contentSnapshot
-        };
+        const parsedContent = JSON.parse(pageData.contentSnapshot!);
+        // Validate that parsed content has essential fields
+        if (parsedContent.title || parsedContent.bodyText || parsedContent.metaDescription) {
+          content = {
+            url: pageData.url,
+            ...parsedContent
+          };
+          contentSource = 'cached';
+          console.log(`✅ Successfully loaded cached content (${Object.keys(parsedContent).length} fields)`);
+        } else {
+          console.log('⚠️ Cached content appears incomplete, fetching fresh content...');
+          content = await this.fetchPageContent(pageData.url);
+        }
+      } catch (parseError) {
+        console.log('⚠️ Failed to parse cached content, fetching fresh content...');
+        content = await this.fetchPageContent(pageData.url);
       }
     } else {
       console.log('🌐 Fetching fresh content from URL');
       content = await this.fetchPageContent(pageData.url);
     }
 
+    // Ensure content has minimum required data
+    if (!content.title && !content.bodyText && !content.metaDescription) {
+      throw new Error('No meaningful content found on the page');
+    }
+
+    // Generate AI page summary for context
+    console.log('🤖 Generating AI page summary for context...');
+    const pageSummary = await this.generatePageSummary(content);
+
     // Analyze with OpenAI
     const result = await this.analyzeWithOpenAI(content);
-    
+
     console.log(`✅ Analysis completed for ${pageData.url} - Score: ${result.score}/100`);
-    return result;
+    console.log(`📊 Content source: ${contentSource}, Summary length: ${pageSummary.length} chars`);
+    
+    return {
+      ...result,
+      content,
+      pageSummary
+    };
   }
 
   /**
@@ -394,16 +467,16 @@ ${content.bodyText || 'No content found'}
    */
   static async generateContentSuggestions(content: PageContent, analysisResult: AnalysisResult): Promise<string[]> {
     const suggestions: string[] = [];
-    
+
     // Content Quality Suggestions
     if (!analysisResult.llmOptimization.faqsPresent) {
       suggestions.push('Add an FAQ section addressing common questions about this topic');
     }
-    
+
     if (!analysisResult.llmOptimization.definitionsPresent) {
       suggestions.push('Include clear definitions of key terms and concepts');
     }
-    
+
     if (analysisResult.contentQuality.completeness < 60) {
       suggestions.push('Add more comprehensive information and examples');
     }
@@ -450,16 +523,16 @@ ${content.bodyText || 'No content found'}
     if (analysisResult.llmOptimization.answerableQuestions < 60) {
       suggestions.push('Structure content to directly answer common user questions about this topic');
     }
-    
+
     return suggestions;
   }
 
   /**
    * Auto-generate all content types after analysis and save to database
    */
-  static async autoGenerateContentSuggestions(pageId: string, content: PageContent, analysisResult: AnalysisResult): Promise<void> {
+  static async autoGenerateContentSuggestions(pageId: string, content: PageContent, analysisResult: AnalysisResult & { pageSummary?: string }): Promise<void> {
     console.log(`🤖 Auto-generating content suggestions for page: ${pageId}`);
-    
+
     if (!process.env.OPENAI_API_KEY) {
       console.log('⚠️ OpenAI API key not configured, skipping auto-generation');
       return;
@@ -475,8 +548,8 @@ ${content.bodyText || 'No content found'}
 
     for (const { type, maxTokens } of contentTypes) {
       try {
-        const suggestions = await this.generateSpecificContentType(type as any, content, analysisResult, maxTokens);
-        
+        const suggestions = await this.generateSpecificContentType(type as any, content, analysisResult, maxTokens, analysisResult.pageSummary);
+
         // Replace existing suggestions for this content type
         await db.delete(contentSuggestions)
           .where(and(
@@ -503,23 +576,79 @@ ${content.bodyText || 'No content found'}
   }
 
   /**
+   * Generate AI page summary for context
+   */
+  static async generatePageSummary(content: PageContent): Promise<string> {
+    if (!process.env.OPENAI_API_KEY) {
+      return 'AI summary unavailable - OpenAI API key not configured';
+    }
+
+    try {
+      const prompt = `Analyze this webpage and provide a comprehensive 2-3 paragraph summary that captures:
+
+1. **Main Topic & Purpose**: What is this page about and what value does it provide?
+2. **Key Content Areas**: What are the main sections, topics, or themes covered?
+3. **Content Context**: What type of audience is this for and what problems does it solve?
+
+This summary will be used as context for generating optimized content recommendations.
+
+Webpage Details:
+- URL: ${content.url}
+- Title: ${content.title || 'No title'}
+- Meta Description: ${content.metaDescription || 'No meta description'}
+- Main Content: ${content.bodyText?.substring(0, 2000) || 'No content'}
+- Key Headings: ${content.headings?.slice(0, 10).join(', ') || 'No headings'}
+
+Provide a clear, informative summary that would help a content strategist understand the page's purpose and target audience.`;
+
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert content analyst. Provide clear, comprehensive summaries that capture the essence and purpose of web content.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 600,
+      });
+
+      const summary = completion.choices[0]?.message?.content?.trim();
+      return summary || 'Unable to generate page summary';
+    } catch (error) {
+      console.error('❌ Failed to generate page summary:', error);
+      return 'Page summary generation failed';
+    }
+  }
+
+  /**
    * Generate specific content type suggestions
    */
   private static async generateSpecificContentType(
     contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
     content: PageContent,
     analysisResult: AnalysisResult,
-    maxTokens: number
+    maxTokens: number,
+    pageSummary?: string
   ): Promise<any> {
     let prompt = '';
 
     const contextInfo = `
 URL: ${content.url}
 Current Title: ${content.title || 'No title'}
+Current Meta Description: ${content.metaDescription || 'No meta description'}
 Keywords Found: ${analysisResult.keywordAnalysis.primaryKeywords.join(', ')}
 Long-tail Keywords: ${analysisResult.keywordAnalysis.longTailKeywords.join(', ')}
 Missing Keywords: ${analysisResult.keywordAnalysis.missingKeywords.join(', ')}
 Content Summary: ${analysisResult.summary}
+${pageSummary ? `
+
+Page Context & Summary:
+${pageSummary}` : ''}
 `;
 
     switch (contentType) {

@@ -1,4 +1,4 @@
-# Technology Stack Recommendation: LLM Optimizer
+# Technology Stack Recommendation: Cleaver Search
 
 **Version: 1.0**
 **Date: June 25, 2025**
@@ -60,7 +60,7 @@ The recommended technology stack adopts a modern, service-oriented approach suit
 - **Analytics (Product Usage):** **Mixpanel or PostHog**
   - _Justification:_ Track how users interact with the dashboard and features (like content injection) to understand user behavior, measure key metrics, and inform product development.
 
-This stack provides a solid foundation for building the LLM Optimizer MVP, balancing rapid development, maintainability, and scalability for future growth.
+This stack provides a solid foundation for building the Cleaver Search MVP, balancing rapid development, maintainability, and scalability for future growth.
 
 ```
 

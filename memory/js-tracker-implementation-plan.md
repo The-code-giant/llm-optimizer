@@ -126,14 +126,14 @@
     }
 
     injectFAQ(data) {
-      const targetSelector = data.placement || '.llm-optimizer-faq';
+                const targetSelector = data.placement || '.cleaver-search-faq';
       let target = document.querySelector(targetSelector);
       
       if (!target) {
         // Create FAQ container at end of main content
         const mainContent = document.querySelector('main, article, .content, body');
         target = document.createElement('div');
-        target.className = 'llm-optimizer-faq';
+                    target.className = 'cleaver-search-faq';
         mainContent.appendChild(target);
       }
 
@@ -217,7 +217,7 @@
         });
       } catch (error) {
         // Silently fail for tracking to not affect user experience
-        console.warn('LLM Optimizer tracking failed:', error);
+                  console.warn('Cleaver Search tracking failed:', error);
       }
     }
 
@@ -440,7 +440,7 @@ app.get('/api/sites/:siteId/analytics', auth, async (req, res) => {
   script.defer = true;
   
   script.onerror = function() {
-    console.warn('LLM Optimizer script failed to load');
+              console.warn('Cleaver Search script failed to load');
   };
   
   var firstScript = document.getElementsByTagName('script')[0];

@@ -1,6 +1,6 @@
-# LLM Optimizer - Docker Development Setup
+# Cleaver Search - Docker Development Setup
 
-This Docker setup provides a complete development environment for the LLM Optimizer with all necessary services.
+This Docker setup provides a complete development environment for Cleaver Search with all necessary services.
 
 ## 🚀 Quick Start
 
@@ -87,7 +87,7 @@ docker compose ps
 
 # Access service shell
 docker compose exec backend sh
-docker compose exec postgres psql -U postgres -d llm_optimizer_dev
+docker compose exec postgres psql -U postgres -d cleaver_search_dev
 
 # Clean restart (removes volumes)
 docker compose down -v
@@ -97,19 +97,19 @@ docker compose up --build
 ## 🗄️ Database Details
 
 - **Host**: localhost:5432
-- **Database**: llm_optimizer_dev
+- **Database**: cleaver_search_dev
 - **Username**: postgres
 - **Password**: postgres123
 
 ### Connect with external tools:
 ```bash
 # Using psql
-psql -h localhost -p 5432 -U postgres -d llm_optimizer_dev
+psql -h localhost -p 5432 -U postgres -d cleaver_search_dev
 
 # Using DBeaver/pgAdmin external connection
 Host: localhost
 Port: 5432
-Database: llm_optimizer_dev
+Database: cleaver_search_dev
 Username: postgres
 Password: postgres123
 ```
