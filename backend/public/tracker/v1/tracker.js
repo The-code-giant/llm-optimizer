@@ -14,7 +14,7 @@
       configData = JSON.parse(currentScript.getAttribute('data-config'));
     }
   } catch (error) {
-    console.warn('LLM Optimizer: Failed to parse configuration, using defaults');
+    console.warn('Cleaver Search: Failed to parse configuration, using defaults');
   }
 
   // Configuration - merge with provided config or use defaults
@@ -23,9 +23,12 @@
     SITE_ID: configData.SITE_ID || '{{SITE_ID}}',
     VERSION: configData.VERSION || '1.0.0',
     RETRY_ATTEMPTS: configData.RETRY_ATTEMPTS || 3,
-    TIMEOUT: configData.TIMEOUT || 5000,
-    UPDATE_INTERVAL: configData.UPDATE_INTERVAL || 3000,
-    MAX_INTERVAL_DURATION: configData.MAX_INTERVAL_DURATION || 30000
+    TIMEOUT: configData.TIMEOUT || 2000, // Reduced from 5000ms to 2000ms
+    UPDATE_INTERVAL: configData.UPDATE_INTERVAL || 500, // Reduced from 3000ms to 500ms
+    MAX_INTERVAL_DURATION: configData.MAX_INTERVAL_DURATION || 60000, // Increased to 60 seconds
+    FAST_MODE: configData.FAST_MODE !== false, // Enable fast mode by default
+    DEBUG_MODE: configData.DEBUG_MODE || urlParams.has('cleaver-search-debug'),
+    OVERRIDE_URL: configData.OVERRIDE_URL || window.LLM_OVERRIDE_URL || null // URL override for testing
   };
 
   // Detect Next.js environment
@@ -33,12 +36,17 @@
 
   // Diagnostics helper
   const urlParams = new URLSearchParams(window.location.search);
-  const diagnosticsEnabled = urlParams.has('llm-optimizer-debug') || urlParams.has('diagnostics');
-  const consolePrint = (message) => {
-    if (diagnosticsEnabled) {
-      console.log(`[LLM Optimizer] ${message}`);
+  const diagnosticsEnabled = urlParams.has('cleaver-search-debug') || urlParams.has('diagnostics') || CONFIG.DEBUG_MODE;
+  const consolePrint = (message, force = false) => {
+    if (diagnosticsEnabled || force) {
+      console.log(`[Cleaver Search] ${message}`);
     }
   };
+
+  // Fast mode optimizations
+  if (CONFIG.FAST_MODE) {
+    consolePrint('🚀 Fast mode enabled - optimized for development', true);
+  }
 
   // Counters for diagnostics
   let injectionCounts = {
@@ -60,13 +68,18 @@
       this.contentInjected = false;
       this.contentTypes = [];
       this.isNextJS = isNextJS();
-      this.currentUrl = window.location.href;
+      this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
+      
+      if (CONFIG.OVERRIDE_URL) {
+        consolePrint(`🔄 URL Override: Using ${CONFIG.OVERRIDE_URL} instead of ${window.location.href}`, true);
+      }
+      
       this.init();
     }
 
     async init() {
       try {
-        consolePrint('Initializing LLM Optimizer Tracker');
+        consolePrint('Initializing Cleaver Search Tracker');
         consolePrint(`Environment: ${this.isNextJS ? 'Next.js' : 'Standard HTML'}`);
         
         // IMMEDIATE: Load SEO-critical content as early as possible
@@ -127,8 +140,8 @@
           updateIntervalId = null;
         }
 
-        // Update current URL
-        this.currentUrl = window.location.href;
+        // Update current URL (respect override if set)
+        this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
         
         // IMMEDIATE: Load SEO-critical content first for new page
         await this.loadContentEarly();
@@ -144,7 +157,7 @@
     removePreviousContent() {
       try {
         // Remove elements with our tracking attributes
-        const elementsToRemove = document.querySelectorAll('[data-llm-optimizer="injected"]');
+        const elementsToRemove = document.querySelectorAll('[data-cleaver-search="injected"]');
         elementsToRemove.forEach(element => {
           try {
             element.remove();
@@ -173,7 +186,7 @@
     // Early execution for SEO-critical elements
     async loadContentEarly() {
       if (CONFIG.SITE_ID === '{{SITE_ID}}') {
-        console.warn('LLM Optimizer: Invalid site ID. Please ensure script is properly configured.');
+        console.warn('Cleaver Search: Invalid site ID. Please ensure script is properly configured.');
         return;
       }
 
@@ -197,7 +210,7 @@
           await this.injectSEOCriticalContent(response.content);
         }
       } catch (error) {
-        console.warn('LLM Optimizer: Failed to load early content:', error.message);
+        console.warn('Cleaver Search: Failed to load early content:', error.message);
       }
     }
 
@@ -230,7 +243,7 @@
 
     async loadContent() {
       if (CONFIG.SITE_ID === '{{SITE_ID}}') {
-        console.warn('LLM Optimizer: Invalid site ID. Please ensure script is properly configured.');
+        console.warn('Cleaver Search: Invalid site ID. Please ensure script is properly configured.');
         return;
       }
 
@@ -257,7 +270,7 @@
           }
         }
       } catch (error) {
-        console.warn('LLM Optimizer: Failed to load content:', error.message);
+        console.warn('Cleaver Search: Failed to load content:', error.message);
       }
     }
 
@@ -266,10 +279,37 @@
         clearInterval(updateIntervalId);
       }
 
-      updateIntervalId = setInterval(() => {
-        consolePrint('Interval update - reapplying content');
-        this.injectContent(contentItems, true);
-      }, CONFIG.UPDATE_INTERVAL);
+      const intervalTime = CONFIG.FAST_MODE ? CONFIG.UPDATE_INTERVAL : CONFIG.UPDATE_INTERVAL * 2;
+      consolePrint(`Setting up interval updates every ${intervalTime}ms`);
+
+      updateIntervalId = setInterval(async () => {
+        consolePrint('Interval update - checking for new content');
+        
+        if (CONFIG.FAST_MODE) {
+          // In fast mode, also check for new content from server
+          try {
+            const response = await this.apiCall('/tracker/content', {
+              url: this.currentUrl,
+              siteId: CONFIG.SITE_ID,
+              userAgent: navigator.userAgent,
+              referrer: document.referrer,
+              sessionId: this.sessionId,
+              timestamp: new Date().toISOString(),
+              isNextJS: this.isNextJS,
+              fastMode: true
+            });
+
+            if (response.success && response.content && response.content.length > 0) {
+              this.injectContent(response.content, true);
+            }
+          } catch (error) {
+            consolePrint('Fast mode content check failed: ' + error.message);
+          }
+        } else {
+          // Standard mode - just reapply existing content
+          this.injectContent(contentItems, true);
+        }
+      }, intervalTime);
 
       // Clear interval after max duration
       setTimeout(() => {
@@ -311,7 +351,7 @@
               injected = this.injectParagraph(item.data);
               break;
             default:
-              console.warn('LLM Optimizer: Unknown content type:', item.type);
+              console.warn('Cleaver Search: Unknown content type:', item.type);
           }
           
           if (injected && !injectedTypes.includes(item.type)) {
@@ -388,7 +428,7 @@
         consolePrint(`Title updated: ${newTitle}`);
         return true;
       } catch (error) {
-        console.warn('LLM Optimizer: Title injection failed:', error);
+        console.warn('Cleaver Search: Title injection failed:', error);
       }
       return false;
     }
@@ -401,7 +441,7 @@
         if (!metaDesc) {
           metaDesc = document.createElement('meta');
           metaDesc.setAttribute('name', 'description');
-          metaDesc.setAttribute('data-llm-optimizer', 'injected');
+          metaDesc.setAttribute('data-cleaver-search', 'injected');
           document.head.appendChild(metaDesc);
         }
         
@@ -412,7 +452,7 @@
           return true;
         }
       } catch (error) {
-        console.warn('LLM Optimizer: Meta description injection failed:', error);
+        console.warn('Cleaver Search: Meta description injection failed:', error);
       }
       return false;
     }
@@ -429,7 +469,7 @@
           if (!metaKeywords) {
             metaKeywords = document.createElement('meta');
             metaKeywords.setAttribute('name', 'keywords');
-            metaKeywords.setAttribute('data-llm-optimizer', 'injected');
+            metaKeywords.setAttribute('data-cleaver-search', 'injected');
             document.head.appendChild(metaKeywords);
           }
           
@@ -446,15 +486,15 @@
           const target = document.querySelector(data.contentInjection.target);
           if (target) {
             // Remove existing keyword content
-            const existingKeywordContent = target.querySelector('.llm-optimizer-keywords[data-llm-optimizer="injected"]');
+            const existingKeywordContent = target.querySelector('.cleaver-search-keywords[data-cleaver-search="injected"]');
             if (existingKeywordContent) {
               existingKeywordContent.remove();
             }
 
             const keywordContent = document.createElement('div');
             keywordContent.innerHTML = data.contentInjection.html;
-            keywordContent.className = 'llm-optimizer-keywords';
-            keywordContent.setAttribute('data-llm-optimizer', 'injected');
+                    keywordContent.className = 'cleaver-search-keywords';
+        keywordContent.setAttribute('data-cleaver-search', 'injected');
             
             if (data.contentInjection.hidden) {
               keywordContent.style.display = 'none';
@@ -466,7 +506,7 @@
           }
         }
       } catch (error) {
-        console.warn('LLM Optimizer: Keywords injection failed:', error);
+        console.warn('Cleaver Search: Keywords injection failed:', error);
       }
       
       return injected;
@@ -476,7 +516,7 @@
       if (!data || !data.questions || !Array.isArray(data.questions)) return false;
       
       try {
-        const targetSelector = data.placement || '.llm-optimizer-faq';
+        const targetSelector = data.placement || '.cleaver-search-faq';
         let target = document.querySelector(targetSelector);
         
         if (!target) {
@@ -484,8 +524,8 @@
           const mainContent = document.querySelector('main, article, .content, #content, .main-content, body');
           if (mainContent) {
             target = document.createElement('div');
-            target.className = 'llm-optimizer-faq';
-            target.setAttribute('data-llm-optimizer', 'injected');
+                    target.className = 'cleaver-search-faq';
+        target.setAttribute('data-cleaver-search', 'injected');
             mainContent.appendChild(target);
           } else {
             return false;
@@ -509,7 +549,7 @@
           return true;
         }
       } catch (error) {
-        console.warn('LLM Optimizer: FAQ injection failed:', error);
+        console.warn('Cleaver Search: FAQ injection failed:', error);
       }
       return false;
     }
@@ -518,15 +558,15 @@
       if (!data || !data.content) return false;
       
       try {
-        const targetSelector = data.placement || '.llm-optimizer-content';
+        const targetSelector = data.placement || '.cleaver-search-content';
         let target = document.querySelector(targetSelector);
         
         if (!target) {
           const mainContent = document.querySelector('main, article, .content, #content, .main-content');
           if (mainContent) {
             target = document.createElement('div');
-            target.className = 'llm-optimizer-content';
-            target.setAttribute('data-llm-optimizer', 'injected');
+                    target.className = 'cleaver-search-content';
+        target.setAttribute('data-cleaver-search', 'injected');
             mainContent.appendChild(target);
           } else {
             return false;
@@ -534,15 +574,15 @@
         }
 
         // Remove existing paragraph content
-        const existingParagraph = target.querySelector('.llm-optimizer-paragraph[data-llm-optimizer="injected"]');
+        const existingParagraph = target.querySelector('.cleaver-search-paragraph[data-cleaver-search="injected"]');
         if (existingParagraph) {
           existingParagraph.remove();
         }
 
         const paragraph = document.createElement('div');
-        paragraph.className = 'llm-optimizer-paragraph';
+        paragraph.className = 'cleaver-search-paragraph';
         paragraph.innerHTML = data.content;
-        paragraph.setAttribute('data-llm-optimizer', 'injected');
+        paragraph.setAttribute('data-cleaver-search', 'injected');
         
         if (data.hidden) {
           paragraph.style.display = 'none';
@@ -553,7 +593,7 @@
         injectionCounts.paragraph++;
         return true;
       } catch (error) {
-        console.warn('LLM Optimizer: Paragraph injection failed:', error);
+        console.warn('Cleaver Search: Paragraph injection failed:', error);
       }
       return false;
     }
@@ -579,7 +619,7 @@
     addFAQSchema(questions) {
       try {
         // Remove existing schema
-        const existingSchema = document.querySelector('script[type="application/ld+json"][data-llm-optimizer="injected"]');
+        const existingSchema = document.querySelector('script[type="application/ld+json"][data-cleaver-search="injected"]');
         if (existingSchema) {
           existingSchema.remove();
         }
@@ -600,11 +640,11 @@
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.textContent = JSON.stringify(schema);
-        script.setAttribute('data-llm-optimizer', 'injected');
+        script.setAttribute('data-cleaver-search', 'injected');
         document.head.appendChild(script);
         consolePrint('FAQ schema added');
       } catch (error) {
-        console.warn('LLM Optimizer: FAQ schema injection failed:', error);
+        console.warn('Cleaver Search: FAQ schema injection failed:', error);
       }
     }
 
@@ -717,7 +757,7 @@
       } catch (error) {
         // Silently fail for tracking to not affect user experience
         if (console && console.warn) {
-          console.warn('LLM Optimizer tracking failed:', error.message);
+          console.warn('Cleaver Search tracking failed:', error.message);
         }
       }
     }
@@ -773,6 +813,26 @@
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
+
+    // Manual refresh function for immediate content updates
+    async refreshContent() {
+      consolePrint('🔄 Manual content refresh triggered', true);
+      
+      try {
+        // Remove previous content
+        this.removePreviousContent();
+        
+        // Load fresh content
+        await this.loadContentEarly();
+        await this.loadContent();
+        
+        consolePrint('✅ Manual refresh completed', true);
+        return true;
+      } catch (error) {
+        consolePrint('❌ Manual refresh failed: ' + error.message, true);
+        return false;
+      }
+    }
   }
 
   // Initialize tracker when script loads
@@ -781,22 +841,54 @@
     try {
       window.llmOptimizerTracker = new LLMOptimizerTracker();
       
+      // Expose global API for manual control
+      window.LLMOptimizer = {
+        refresh: () => window.llmOptimizerTracker?.refreshContent(),
+        getStats: () => ({
+          config: CONFIG,
+          injectionCounts: injectionCounts,
+          sessionId: window.llmOptimizerTracker?.sessionId,
+          currentUrl: window.llmOptimizerTracker?.currentUrl,
+          contentInjected: window.llmOptimizerTracker?.contentInjected,
+          contentTypes: window.llmOptimizerTracker?.contentTypes,
+          isNextJS: window.llmOptimizerTracker?.isNextJS
+        }),
+        enableDebug: () => {
+          CONFIG.DEBUG_MODE = true;
+          consolePrint('🔧 Debug mode enabled', true);
+        },
+        enableFastMode: () => {
+          CONFIG.FAST_MODE = true;
+          CONFIG.UPDATE_INTERVAL = 250; // Super fast updates
+          consolePrint('⚡ Super fast mode enabled - 250ms updates', true);
+        }
+      };
+      
       // Add diagnostics summary if enabled
       if (diagnosticsEnabled) {
         window.addEventListener('load', () => {
           setTimeout(() => {
-            console.log('=== LLM Optimizer Diagnostics ===');
+            console.log('=== Cleaver Search Diagnostics ===');
             console.log('Environment:', isNextJS() ? 'Next.js' : 'Standard HTML');
             console.log('Injection Counts:', injectionCounts);
             console.log('Site ID:', CONFIG.SITE_ID);
             console.log('Current URL:', window.location.href);
+            console.log('Fast Mode:', CONFIG.FAST_MODE);
+            console.log('Update Interval:', CONFIG.UPDATE_INTERVAL + 'ms');
+            console.log('Available Commands: LLMOptimizer.refresh(), LLMOptimizer.getStats()');
             console.log('================================');
           }, 2000);
         });
       }
+      
+      // Show load message
+      consolePrint('Cleaver Search Tracker v' + CONFIG.VERSION + ' loaded', true);
+      if (CONFIG.FAST_MODE) {
+        consolePrint('⚡ Fast mode active - updates every ' + CONFIG.UPDATE_INTERVAL + 'ms', true);
+      }
     } catch (error) {
       if (console && console.error) {
-        console.error('LLM Optimizer initialization failed:', error);
+        console.error('Cleaver Search initialization failed:', error);
       }
     }
   }

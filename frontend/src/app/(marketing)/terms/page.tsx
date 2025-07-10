@@ -10,7 +10,7 @@ export default function Terms() {
     {
       title: "Acceptance of Terms",
       content: [
-        "By accessing and using LLM Optimizer, you accept and agree to be bound by the terms and provision of this agreement.",
+        "By accessing and using Cleaver Search, you accept and agree to be bound by the terms and provision of this agreement.",
         "If you do not agree to abide by the above, please do not use this service.",
         "These terms apply to all visitors, users, and others who access or use the service."
       ]
@@ -18,7 +18,7 @@ export default function Terms() {
     {
       title: "Description of Service",
       content: [
-        "LLM Optimizer provides AI optimization tools and services to help businesses improve their visibility in large language model responses.",
+        "Cleaver Search provides AI optimization tools and services to help businesses improve their visibility in large language model responses.",
         "Our platform analyzes content, provides optimization recommendations, and offers tools for improving LLM citation rates.",
         "We reserve the right to modify or discontinue the service at any time without notice."
       ]
@@ -46,7 +46,7 @@ export default function Terms() {
       content: [
         "You retain ownership of any content you submit to our platform.",
         "By submitting content, you grant us a license to use, modify, and display that content as necessary to provide our services.",
-        "Our service and its original content, features, and functionality are owned by LLM Optimizer and are protected by copyright and other intellectual property laws.",
+        "Our service and its original content, features, and functionality are owned by Cleaver Search and are protected by copyright and other intellectual property laws.",
         "You may not reproduce, distribute, or create derivative works from our content without permission."
       ]
     },
@@ -101,7 +101,7 @@ export default function Terms() {
         "These terms are governed by the laws of the State of California, United States.",
         "Any disputes arising from these terms will be resolved in the courts of San Francisco County, California.",
         "If any provision of these terms is found to be unenforceable, the remaining provisions will remain in effect.",
-        "These terms constitute the entire agreement between you and LLM Optimizer regarding the service."
+        "These terms constitute the entire agreement between you and Cleaver Search regarding the service."
       ]
     }
   ];
@@ -122,7 +122,7 @@ export default function Terms() {
               Terms of Service
             </h1>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              These terms govern your use of LLM Optimizer and outline the rights 
+              These terms govern your use of Cleaver Search and outline the rights 
               and responsibilities of all parties.
             </p>
             <p className="text-gray-400">
@@ -145,8 +145,8 @@ export default function Terms() {
             <h2 className="text-3xl font-bold text-gray-900 mb-8">Introduction</h2>
             <div className="prose prose-lg text-gray-600 leading-relaxed">
               <p className="mb-6">
-                Welcome to LLM Optimizer. These Terms of Service (&quot;Terms&quot;) govern your use of our 
-                website, platform, and services (collectively, the &quot;Service&quot;) operated by LLM Optimizer 
+                              Welcome to Cleaver Search. These Terms of Service (&quot;Terms&quot;) govern your use of our
+              website, platform, and services (collectively, the &quot;Service&quot;) operated by Cleaver Search 
                 (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).
               </p>
               <p className="mb-6">
@@ -208,7 +208,7 @@ export default function Terms() {
             <div className="bg-gray-800 rounded-xl p-8 text-left max-w-2xl mx-auto">
               <h3 className="text-xl font-bold mb-6">Contact Information</h3>
               <div className="space-y-4 text-gray-300">
-                <p><strong className="text-white">Email:</strong> legal@llmoptimizer.com</p>
+                <p><strong className="text-white">Email:</strong> legal@cleaversearch.com</p>
                 <p><strong className="text-white">Address:</strong> 123 AI Street, Suite 100, San Francisco, CA 94102</p>
                 <p><strong className="text-white">Phone:</strong> +1 (555) 123-4567</p>
               </div>

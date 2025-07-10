@@ -1,4 +1,4 @@
-# LLM Optimizer - Project Progress
+# Cleaver Search - Project Progress
 
 ## Completed Work
 ✅ Backend and frontend scaffolding complete (TypeScript, Drizzle, PostgreSQL, Next.js)

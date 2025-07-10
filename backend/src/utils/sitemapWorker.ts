@@ -31,7 +31,7 @@ const sitemapWorker = new Worker('sitemap-import', async (job) => {
     const response = await axios.get(sitemapUrl, { 
       timeout: 30000,
       headers: {
-        'User-Agent': 'AI-SEO-Optimizer/1.0 (Sitemap Crawler)'
+        'User-Agent': 'Cleaver-Search/1.0 (Sitemap Crawler)'
       }
     });
     

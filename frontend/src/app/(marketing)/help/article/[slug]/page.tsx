@@ -43,7 +43,7 @@ export default function HelpArticle({ params }: ArticlePageProps) {
         content: `
 # Setting up your first site analysis
 
-Welcome to LLM Optimizer! This guide will walk you through setting up your first site analysis to start optimizing your content for AI citations.
+              Welcome to Cleaver Search! This guide will walk you through setting up your first site analysis to start optimizing your content for AI citations.
 
 ## Overview
 

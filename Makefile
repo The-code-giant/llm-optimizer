@@ -1,10 +1,10 @@
-# LLM Optimizer - Development Commands
+# Cleaver Search - Development Commands
 
 .PHONY: help start stop logs clean build restart status shell db-migrate db-studio tools
 
 # Default target
 help:
-	@echo "🚀 LLM Optimizer Development Commands"
+	@echo "🚀 Cleaver Search Development Commands"
 	@echo ""
 	@echo "Setup Commands:"
 	@echo "  make start     - Start all development services"
@@ -27,7 +27,7 @@ help:
 
 # Setup commands
 start:
-	@echo "🚀 Starting LLM Optimizer development environment..."
+	@echo "🚀 Starting Cleaver Search development environment..."
 	@./scripts/start-dev.sh
 
 stop:

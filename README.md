@@ -1,4 +1,4 @@
-# LLM Optimizer
+# Cleaver Search
 
 A SaaS platform to optimize website content for Large Language Models (LLMs) like ChatGPT, Claude, and others.
 
@@ -8,7 +8,7 @@ A SaaS platform to optimize website content for Large Language Models (LLMs) lik
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd AI-SEO-optimizer
+cd Cleaver-Search
 
 # Complete first-time setup (starts all services + database migration)
 npm run dev:first-time

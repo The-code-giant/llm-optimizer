@@ -39,7 +39,24 @@ export interface UserProfile {
   name?: string;
   createdAt: string;
   updatedAt: string;
-  // Add more fields as needed
+  preferences?: {
+    dashboardView?: 'grid' | 'list';
+    emailNotifications?: boolean;
+    autoAnalysis?: boolean;
+  };
+  statistics?: {
+    sitesCount: number;
+    pagesCount: number;
+    deploymentsCount: number;
+    analysisCount: number;
+    recentActivity: Array<{
+      id: string;
+      type: string;
+      pageUrl: string;
+      siteName: string;
+      timestamp: string;
+    }>;
+  };
 }
 
 export interface TeamMember {
@@ -171,8 +188,43 @@ export async function addPage(token: string, siteId: string, url: string, title?
   return response.json();
 }
 
+export interface DeletePageResult {
+  message: string;
+  deletedPageId: string;
+  deletedRelatedData: {
+    analysisResults: number;
+    pageInjectedContent: number;
+    pageContent: number;
+    contentSuggestions: number;
+    pageAnalytics: number;
+  };
+}
+
+export async function deletePage(token: string, pageId: string): Promise<DeletePageResult> {
+  const response = await fetch(`${API_BASE}/pages/${pageId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to delete page');
+  }
+
+  return response.json();
+}
+
+export async function deletePages(token: string, pageIds: string[]): Promise<DeletePageResult[]> {
+  const results = await Promise.all(
+    pageIds.map(pageId => deletePage(token, pageId))
+  );
+  return results;
+}
+
 export async function getUserProfile(token: string): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/users/me`, {
+  const res = await fetch(`${API_BASE}/users/profile`, {
     headers: { "Authorization": `Bearer ${token}` },
     cache: "no-store",
   });
@@ -180,8 +232,8 @@ export async function getUserProfile(token: string): Promise<UserProfile> {
 }
 
 export async function updateUserProfile(token: string, data: Partial<UserProfile>): Promise<UserProfile> {
-  const res = await fetch(`${API_BASE}/users/me`, {
-    method: "PATCH",
+  const res = await fetch(`${API_BASE}/users/profile`, {
+    method: "PUT",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`,
@@ -278,12 +330,13 @@ export interface PageContentData {
 export async function savePageContent(
   token: string,
   pageId: string,
-  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema',
   optimizedContent: string,
   originalContent?: string,
   generationContext?: string,
-  metadata?: any
-): Promise<{ message: string; content: PageContentData }> {
+  metadata?: any,
+  deployImmediately: boolean = false
+): Promise<{ message: string; content: PageContentData; deployed: boolean }> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/content`, {
     method: "POST",
     headers: {
@@ -292,11 +345,66 @@ export async function savePageContent(
     },
     body: JSON.stringify({
       contentType,
-      originalContent,
       optimizedContent,
+      originalContent,
       generationContext,
-      metadata
+      metadata,
+      deployImmediately
     }),
+  });
+  return handleResponse(res);
+}
+
+// Deploy specific content type for a page
+export async function deployPageContent(
+  token: string,
+  pageId: string,
+  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema'
+): Promise<{ message: string; pageId: string; contentType: string; deployedAt: string }> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/content/${contentType}/deploy`, {
+    method: "PUT",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  return handleResponse(res);
+}
+
+// Undeploy specific content type for a page
+export async function undeployPageContent(
+  token: string,
+  pageId: string,
+  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema'
+): Promise<{ message: string; pageId: string; contentType: string }> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/content/${contentType}/undeploy`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+  return handleResponse(res);
+}
+
+export interface DeployedContent {
+  id: string;
+  contentType: string;
+  optimizedContent: string;
+  version: number;
+  deployedAt: string | null;
+  deployedBy: string | null;
+  metadata: any;
+}
+
+// Get all deployed content for a page
+export async function getDeployedPageContent(
+  token: string,
+  pageId: string
+): Promise<{ pageId: string; pageUrl: string; deployedContent: DeployedContent[] }> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/deployed-content`, {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+    },
+    cache: "no-store",
   });
   return handleResponse(res);
 }
@@ -335,6 +443,54 @@ export async function getCachedContentSuggestions(
       "Authorization": `Bearer ${token}`,
     },
     cache: "no-store",
+  });
+  return handleResponse(res);
+}
+
+export interface OriginalPageContent {
+  pageId: string;
+  pageUrl: string;
+  originalContent: {
+    title: string;
+    metaDescription: string;
+    headings: string[];
+    bodyText: string;
+    images: number;
+    links: number;
+  };
+  pageSummary: string | null;
+  analysisContext: {
+    score: number;
+    summary: string;
+    keywordAnalysis: any;
+    issues: string[];
+    recommendations: string[];
+    lastAnalyzedAt: string;
+  } | null;
+  needsAnalysis: boolean;
+}
+
+export async function getOriginalPageContent(token: string, pageId: string): Promise<OriginalPageContent> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/original-content`, {
+    headers: { "Authorization": `Bearer ${token}` },
+    cache: "no-store",
+  });
+  return handleResponse(res);
+}
+
+// Refresh page content from live URL
+export async function refreshPageContent(token: string, pageId: string): Promise<{
+  message: string;
+  content: any;
+  contentSnapshot: string;
+  refreshedAt: string;
+}> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/refresh-content`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
   });
   return handleResponse(res);
 }

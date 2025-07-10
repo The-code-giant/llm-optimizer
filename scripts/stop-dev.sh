@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# LLM Optimizer Development Environment Stop Script
+# Cleaver Search Development Environment Stop Script
 
-echo "🛑 Stopping LLM Optimizer Development Environment..."
+echo "🛑 Stopping Cleaver Search Development Environment..."
 
 # Stop all services
 docker compose down

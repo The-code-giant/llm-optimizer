@@ -118,7 +118,7 @@ http://localhost:3000
 ### 4. Verify Database Persistence
 ```bash
 # Check the database directly
-docker compose exec postgres psql -U postgres -d llm_optimizer_dev
+docker compose exec postgres psql -U postgres -d cleaver_search_dev
 
 # Run these SQL queries:
 SELECT * FROM users;

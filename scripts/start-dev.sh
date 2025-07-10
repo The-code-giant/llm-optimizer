@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# LLM Optimizer Development Environment Startup Script
+# Cleaver Search Development Environment Startup Script
 
-echo "🚀 Starting LLM Optimizer Development Environment..."
+echo "🚀 Starting Cleaver Search Development Environment..."
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then

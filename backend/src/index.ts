@@ -1,12 +1,12 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRouter from './routes/auth';
 import sitesRouter from './routes/sites';
 import pagesRouter from './routes/pages';
 import analysisRouter from './routes/analysis';
 import injectedContentRouter from './routes/injectedContent';
 import trackerRouter from './routes/tracker';
+import usersRouter from './routes/users';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJSDoc from 'swagger-jsdoc';
 import winston from 'winston';
@@ -20,11 +20,16 @@ import { setSentryUser, setSentryRequest } from './utils/sentryContext';
 import './utils/sitemapWorker';
 import './utils/analysisWorker';
 
-dotenv.config();
-
 // Sentry initialization
-if (process.env.SENTRY_DSN) {
-  Sentry.init({ dsn: process.env.SENTRY_DSN });
+let sentryInitialized = false;
+if (process.env.SENTRY_DSN && process.env.SENTRY_DSN !== 'your-sentry-dsn-here') {
+  try {
+    Sentry.init({ dsn: process.env.SENTRY_DSN });
+    sentryInitialized = true;
+    console.log('✅ Sentry initialized successfully');
+  } catch (error) {
+    console.warn('⚠️  Failed to initialize Sentry:', error);
+  }
 }
 
 const app = express();
@@ -39,7 +44,8 @@ const corsOptions = {
     'http://127.0.0.1:3000',
     'http://127.0.0.1:3002',
     'http://127.0.0.1:3001',
-    'http://127.0.0.1:8080'
+    'http://127.0.0.1:8080',
+    'http://127.0.0.1:5500'
   ],
   credentials: true,
   optionsSuccessStatus: 200,
@@ -52,7 +58,7 @@ app.use(express.json());
 app.use('/tracker', express.static('public/tracker'));
 
 // Sentry request handler with context
-if (process.env.SENTRY_DSN) {
+if (sentryInitialized) {
   // @ts-ignore
   app.use((req, res, next) => {
     // @ts-ignore
@@ -98,9 +104,9 @@ const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'AI SEO Optimizer API',
-      version: '1.0.0',
-      description: 'API documentation for the AI SEO Optimizer backend',
+        title: 'Cleaver Search API',
+  version: '1.0.0',
+  description: 'API documentation for the Cleaver Search backend',
     },
   },
   apis: ['./src/routes/*.ts'],
@@ -121,6 +127,7 @@ app.use('/api/v1/sites', sitesRouter);
 app.use('/api/v1/pages', pagesRouter);
 app.use('/api/v1/analysis', analysisRouter);
 app.use('/api/v1/injected-content', injectedContentRouter);
+app.use('/api/v1/users', usersRouter);
 app.use('/api/v1', trackerRouter);
 app.use('/tracker', trackerRouter); // Direct tracker routes for JavaScript
 
@@ -140,7 +147,7 @@ app.use(expressWinston.errorLogger({
 app.use(errorMetricsMiddleware);
 
 // Sentry error handler
-if (process.env.SENTRY_DSN) {
+if (sentryInitialized) {
   // @ts-ignore
   app.use(Sentry.Handlers.errorHandler());
 }
@@ -150,7 +157,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   // Log error without sensitive information
   console.error(`❌ ERROR: ${err.message} - ${req.method} ${req.originalUrl}`);
   
-  if (process.env.SENTRY_DSN) {
+  if (sentryInitialized) {
     // @ts-ignore
     Sentry.withScope((scope: any) => {
       setSentryUser(scope, req);

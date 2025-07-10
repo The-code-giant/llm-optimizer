@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, users, pages, pageContent } from '../db/schema';
+import { sites, users, pages } from '../db/schema';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { sitemapImportQueue } from '../utils/queue';
@@ -608,7 +608,7 @@ router.get('/:siteId/tracker-script', authenticateJWT, async (req: Authenticated
       ? process.env.API_URL || 'https://api.llmoptimizer.com'
       : 'http://localhost:3001';
 
-    const scriptHtml = `<!-- LLM Optimizer Tracking Script -->
+    const scriptHtml = `<!-- Cleaver Search Tracking Script -->
 <script>
 (function() {
   'use strict';
@@ -632,7 +632,7 @@ router.get('/:siteId/tracker-script', authenticateJWT, async (req: Authenticated
   script.setAttribute('data-config', JSON.stringify(CONFIG));
   
   script.onerror = function() {
-    console.warn('LLM Optimizer script failed to load');
+            console.warn('Cleaver Search script failed to load');
   };
   
   // Insert script
@@ -652,7 +652,7 @@ router.get('/:siteId/tracker-script', authenticateJWT, async (req: Authenticated
       scriptHtml: scriptHtml,
       instructions: {
         installation: "Copy the script above and paste it in your website's <head> section, preferably near the top.",
-        verification: "After installation, visit your website and check the browser console for 'LLM Optimizer' messages to verify the script is working.",
+        verification: "After installation, visit your website and check the browser console for 'Cleaver Search' messages to verify the script is working.",
         support: "If you need help, contact our support team."
       }
     });
@@ -745,139 +745,7 @@ router.get('/:siteId/analytics', authenticateJWT, async (req: AuthenticatedReque
   }
 });
 
-// Get deployments for a site
-router.get('/:siteId/deployments', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
-    const site = siteArr[0];
-    
-    if (!site || site.userId !== req.user!.userId) {
-      res.status(404).json({ error: 'Site not found' });
-      return;
-    }
-
-    // Get deployed content from page_content table
-    const deployments = await db.select({
-      url: pageContent.pageUrl,
-      contentType: pageContent.contentType,
-      content: pageContent.optimizedContent,
-      isActive: pageContent.isActive,
-      lastDeployed: pageContent.updatedAt
-    })
-    .from(pageContent)
-    .innerJoin(pages, eq(pageContent.pageId, pages.id))
-    .where(and(
-      eq(pages.siteId, req.params.siteId),
-      eq(pageContent.isActive, 1)
-    ));
-
-    // Group by URL
-    const groupedDeployments = deployments.reduce((acc: any, deployment) => {
-      const url = deployment.url;
-      if (!url) return acc; // Skip deployments without URL
-      
-      if (!acc[url]) {
-        acc[url] = {
-          url: url,
-          content: {},
-          isActive: deployment.isActive === 1,
-          lastDeployed: deployment.lastDeployed,
-          performance: {
-            views: Math.floor(Math.random() * 500) + 50,
-            ctr: Math.floor(Math.random() * 10) + 2,
-            avgLoadTime: Math.floor(Math.random() * 500) + 800
-          }
-        };
-      }
-      acc[url].content[deployment.contentType] = deployment.content;
-      return acc;
-    }, {});
-
-    res.json({ deployments: Object.values(groupedDeployments) });
-  } catch (error) {
-    console.error('Deployments fetch error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
-    });
-  }
-});
-
-// Deploy content to a URL
-router.post('/:siteId/deploy-content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const { url, content, pageId } = req.body;
-    
-    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
-    const site = siteArr[0];
-    
-    if (!site || site.userId !== req.user!.userId) {
-      res.status(404).json({ error: 'Site not found' });
-      return;
-    }
-
-    // For each content type, create or update page_content records
-    for (const [contentType, contentValue] of Object.entries(content)) {
-      if (contentValue && typeof contentValue === 'string' && contentValue.trim()) {
-        await db.insert(pageContent).values({
-          pageId: pageId || null,
-          pageUrl: url,
-          contentType: contentType as any,
-          optimizedContent: contentValue as string,
-          isActive: 1,
-          version: 1,
-          metadata: { deployedVia: 'dashboard' }
-        }).onConflictDoUpdate({
-          target: [pageContent.pageUrl, pageContent.contentType],
-          set: {
-            optimizedContent: contentValue as string,
-            isActive: 1,
-            updatedAt: new Date()
-          }
-        });
-      }
-    }
-
-    res.json({ 
-      success: true, 
-      message: 'Content deployed successfully',
-      url: url
-    });
-  } catch (error) {
-    console.error('Content deployment error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
-    });
-  }
-});
-
-// Update deployment status
-router.patch('/:siteId/deployments/:url', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const { isActive } = req.body;
-    const url = decodeURIComponent(req.params.url);
-    
-    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
-    const site = siteArr[0];
-    
-    if (!site || site.userId !== req.user!.userId) {
-      res.status(404).json({ error: 'Site not found' });
-      return;
-    }
-
-    await db.update(pageContent)
-      .set({ isActive: isActive ? 1 : 0 })
-      .where(eq(pageContent.pageUrl, url));
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Deployment update error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
-    });
-  }
-});
+// Note: Site-wide deployment routes have been deprecated in favor of page-specific deployment.
+// Use the page-specific routes in /pages/{pageId}/content/{contentType}/deploy instead.
 
 export default router;

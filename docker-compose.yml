@@ -2,10 +2,10 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: llm-optimizer-postgres
+    container_name: cleaver-search-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: llm_optimizer_dev
+      POSTGRES_DB: cleaver_search_dev
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres123
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -15,9 +15,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - llm-optimizer-network
+      - cleaver-search-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d llm_optimizer_dev"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cleaver_search_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,14 +25,14 @@ services:
   # Redis Cache & Queue
   redis:
     image: redis:7-alpine
-    container_name: llm-optimizer-redis
+    container_name: cleaver-search-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
-      - llm-optimizer-network
+      - cleaver-search-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -44,21 +44,24 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
-    container_name: llm-optimizer-backend
+    container_name: cleaver-search-backend
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       NODE_ENV: development
       PORT: 3001
-      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/llm_optimizer_dev
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/cleaver_search_dev
       REDIS_URL: redis://redis:6379
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: your-jwt
       CLERK_SECRET_KEY: sk_test_j9z0Dda9JfUE7UVXN3D6spZl7dzWulNFIQfPMyFLGx
       JWT_EXPIRES_IN: 7d
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-your-openai-api-key-here}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CORS_ORIGIN: http://localhost:3000
+      CHOKIDAR_USEPOLLING: true
+      WATCHPACK_POLLING: true
+      FORCE_COLOR: 1
     ports:
       - "3001:3001"
       - "4983:4983"
@@ -67,7 +70,7 @@ services:
       - /app/node_modules
       - ./shared:/app/shared:cached
     networks:
-      - llm-optimizer-network
+      - cleaver-search-network
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,7 +83,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
-    container_name: llm-optimizer-frontend
+    container_name: cleaver-search-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: development
@@ -99,7 +102,7 @@ services:
       - /app/.next
       - ./shared:/app/shared:cached
     networks:
-      - llm-optimizer-network
+      - cleaver-search-network
     depends_on:
       - backend
     command: npm run dev
@@ -109,14 +112,14 @@ services:
   # Redis Commander for Redis Management (Optional)
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: llm-optimizer-redis-commander
+    container_name: cleaver-search-redis-commander
     restart: unless-stopped
     environment:
       REDIS_HOSTS: local:redis:6379
     ports:
       - "8081:8081"
     networks:
-      - llm-optimizer-network
+      - cleaver-search-network
     depends_on:
       - redis
     profiles:
@@ -129,5 +132,5 @@ volumes:
     driver: local
 
 networks:
-  llm-optimizer-network:
+  cleaver-search-network:
     driver: bridge

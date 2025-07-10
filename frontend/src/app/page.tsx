@@ -209,7 +209,7 @@ export default function Home() {
 
      const stats = [
      { number: 75, suffix: "%", label: "of users now ask LLMs for recommendations before making purchase decisions.", source: "According to Recent Studies" },
-     { number: 3, suffix: "x", label: "more likely to be cited when content follows LLM-optimized structure and formatting.", source: "LLM Optimizer Research" },
+             { number: 3, suffix: "x", label: "more likely to be cited when content follows LLM-optimized structure and formatting.", source: "Cleaver Search Research" },
      { number: 85, suffix: "%", label: "of websites lack proper structure for LLM understanding and citation.", source: "Industry Analysis" }
    ];
 
@@ -225,7 +225,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
                          <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-               Let&apos;s talk about what LLM Optimizer can do for your business.
+               Let&apos;s talk about what Cleaver Search can do for your business.
              </h1>
             <Link href="/register">
               <Button 
@@ -681,14 +681,14 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <span className="text-sm text-gray-400 uppercase tracking-wider mb-4 block">
-              LLM OPTIMIZER: AVAILABLE NOW
+              CLEAVER SEARCH: AVAILABLE NOW
             </span>
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 leading-tight">
               Get cited by ChatGPT, Claude, and Gemini.
             </h2>
             <p className="text-lg text-gray-300 mb-8 leading-relaxed">
               Customers and prospects increasingly turn to LLMs for information 
-              and recommendations. LLM Optimizer helps optimize your content 
+              and recommendations. Cleaver Search helps optimize your content 
               structure so these AI systems understand and cite your website, 
               driving qualified traffic and influence at every stage of the 
               customer journey.
@@ -780,7 +780,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-              Ensure your brand&apos;s visibility in LLM responses with LLM Optimizer.
+              Ensure your brand&apos;s visibility in LLM responses with Cleaver Search.
             </h2>
           </motion.div>
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { generateContentSuggestions, ContentSuggestion, getCachedContentSuggestions } from "../lib/api";
+import { generateContentSuggestions, ContentSuggestion, getCachedContentSuggestions, getOriginalPageContent, OriginalPageContent } from "../lib/api";
 import {
   Dialog,
   DialogContent,
@@ -27,7 +27,10 @@ import {
   MessageSquare,
   FileText,
   Hash,
-  Type
+  Type,
+  Globe,
+  Info,
+  BookOpen
 } from "lucide-react";
 import Toast from "./Toast";
 
@@ -68,6 +71,8 @@ export default function ContentEditorModal({
   const [editedContent, setEditedContent] = useState(currentContent);
   const [suggestions, setSuggestions] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingOriginal, setLoadingOriginal] = useState(false);
+  const [originalContent, setOriginalContent] = useState<OriginalPageContent | null>(null);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string>('');
   const [additionalContext, setAdditionalContext] = useState('');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
@@ -79,11 +84,54 @@ export default function ContentEditorModal({
     setSelectedSuggestion('');
     setAdditionalContext('');
     
-    // Load existing suggestions when modal opens
+    // Load original content and existing suggestions when modal opens
     if (isOpen) {
+      loadOriginalContent();
       loadExistingSuggestions();
     }
   }, [currentContent, isOpen]);
+
+  const loadOriginalContent = async () => {
+    setLoadingOriginal(true);
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const result = await getOriginalPageContent(token, pageId);
+      setOriginalContent(result);
+      
+      // If no current content, pre-fill with original content based on content type
+      if (!currentContent && result.originalContent) {
+        let prefillContent = '';
+        switch (contentType) {
+          case 'title':
+            prefillContent = result.originalContent.title || '';
+            break;
+          case 'description':
+            prefillContent = result.originalContent.metaDescription || '';
+            break;
+          case 'paragraph':
+            prefillContent = result.originalContent.bodyText?.substring(0, 300) || '';
+            break;
+          default:
+            break;
+        }
+        if (prefillContent) {
+          setEditedContent(prefillContent);
+        }
+      }
+      
+      // Set context from page summary if available
+      if (result.pageSummary && !additionalContext) {
+        setAdditionalContext(`Page context: ${result.pageSummary.substring(0, 200)}...`);
+      }
+    } catch (error) {
+      console.error('Failed to load original content:', error);
+      // Don't show error toast, just continue without original content
+    } finally {
+      setLoadingOriginal(false);
+    }
+  };
 
   const loadExistingSuggestions = async () => {
     try {
@@ -139,6 +187,30 @@ export default function ContentEditorModal({
     }
   };
 
+  const useOriginalContent = () => {
+    if (!originalContent?.originalContent) return;
+    
+    let content = '';
+    switch (contentType) {
+      case 'title':
+        content = originalContent.originalContent.title || '';
+        break;
+      case 'description':
+        content = originalContent.originalContent.metaDescription || '';
+        break;
+      case 'paragraph':
+        content = originalContent.originalContent.bodyText?.substring(0, 500) || '';
+        break;
+      default:
+        return;
+    }
+    
+    if (content) {
+      setEditedContent(content);
+      setToast({ message: 'Original content loaded!', type: 'info' });
+    }
+  };
+
   const copyToClipboard = async (text: string, index?: number) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -174,6 +246,140 @@ export default function ContentEditorModal({
       case 'keywords': return <Hash className="h-5 w-5" />;
       default: return <Edit3 className="h-5 w-5" />;
     }
+  };
+
+  const renderOriginalContentCard = () => {
+    if (loadingOriginal) {
+      return (
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm text-gray-600">Loading original content...</span>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (!originalContent?.originalContent) return null;
+
+    const getOriginalContentByType = () => {
+      switch (contentType) {
+        case 'title':
+          return originalContent.originalContent.title;
+        case 'description':
+          return originalContent.originalContent.metaDescription;
+        case 'paragraph':
+          return originalContent.originalContent.bodyText?.substring(0, 300) + '...';
+        default:
+          return null;
+      }
+    };
+
+    const originalContentText = getOriginalContentByType();
+    if (!originalContentText) return null;
+
+    return (
+      <Card className="mb-4 border-blue-200 bg-blue-50">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center space-x-2">
+            <Globe className="h-4 w-4" />
+            <span>Original Page Content</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-700 mb-3">{originalContentText}</p>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(originalContentText)}
+            >
+              <Copy className="h-4 w-4 mr-1" />
+              Copy
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={useOriginalContent}
+            >
+              <Edit3 className="h-4 w-4 mr-1" />
+              Use as Base
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderPageSummaryCard = () => {
+    if (!originalContent?.pageSummary) return null;
+
+    return (
+      <Card className="mb-4 border-green-200 bg-green-50">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center space-x-2">
+            <BookOpen className="h-4 w-4" />
+            <span>AI Page Summary</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-700 mb-3">{originalContent.pageSummary}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => copyToClipboard(originalContent.pageSummary!)}
+          >
+            <Copy className="h-4 w-4 mr-1" />
+            Copy Summary
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderAnalysisContextCard = () => {
+    if (!originalContent?.analysisContext) return null;
+
+    const { score, summary, issues, recommendations } = originalContent.analysisContext;
+
+    return (
+      <Card className="mb-4 border-purple-200 bg-purple-50">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center space-x-2">
+            <Info className="h-4 w-4" />
+            <span>SEO Analysis Context</span>
+            <Badge variant={score >= 80 ? "default" : score >= 60 ? "secondary" : "destructive"}>
+              {score}/100
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-700 mb-2">{summary}</p>
+          {issues.length > 0 && (
+            <div className="mb-2">
+              <p className="text-xs font-semibold text-red-700 mb-1">Key Issues:</p>
+              <ul className="text-xs text-red-600 space-y-1">
+                {issues.slice(0, 2).map((issue, index) => (
+                  <li key={index}>• {issue}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {recommendations.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-green-700 mb-1">Recommendations:</p>
+              <ul className="text-xs text-green-600 space-y-1">
+                {recommendations.slice(0, 2).map((rec, index) => (
+                  <li key={index}>• {rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
   };
 
   const renderSuggestions = () => {
@@ -350,6 +556,11 @@ export default function ContentEditorModal({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Side - Editor */}
             <div className="space-y-4">
+              {/* Original Content Context Cards */}
+              {renderPageSummaryCard()}
+              {renderOriginalContentCard()}
+              {renderAnalysisContextCard()}
+              
               <div>
                 <Label htmlFor="content">Current Content</Label>
                 {contentType === 'faq' ? (
@@ -373,12 +584,12 @@ export default function ContentEditorModal({
 
               <div>
                 <Label htmlFor="context">Additional Context (Optional)</Label>
-                <Input
+                <textarea
                   id="context"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 min-h-[80px]"
                   value={additionalContext}
                   onChange={(e) => setAdditionalContext(e.target.value)}
-                  placeholder="Any specific requirements or focus areas..."
-                  className="mt-1"
+                  placeholder="Any specific requirements, target keywords, or focus areas..."
                 />
               </div>
 

@@ -1,36 +1,140 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SEO Optimizer Frontend
 
-## Getting Started
+This is the frontend application for the SEO Optimizer, built with Next.js 15 and TypeScript.
 
-First, run the development server:
+## Features
+
+- ✅ Modern Next.js 15 App Router
+- ✅ TypeScript for type safety
+- ✅ Tailwind CSS for styling
+- ✅ Clerk for authentication
+- ✅ Responsive design
+- ✅ SEO-optimized with sitemap and robots.txt
+- ✅ Dashboard for managing sites and pages
+- ✅ Real-time content optimization
+- ✅ Comprehensive user profile management
+
+## SEO Features
+
+### Sitemap Generation
+The application automatically generates a sitemap.xml file that includes:
+- All marketing pages (about, contact, careers, etc.)
+- Solutions pages (agencies, enterprise)
+- Location-based service pages (Toronto, Vancouver, etc.)
+- Blog and help sections
+- Legal pages (privacy, terms, cookies)
+- Documentation pages
+
+The sitemap is accessible at `/sitemap.xml` and is automatically updated when the application is built.
+
+### Robots.txt
+The application includes a robots.txt file that:
+- Allows crawling of all marketing pages
+- Disallows crawling of dashboard, API, and admin areas
+- References the sitemap.xml file
+- Provides specific rules for different crawlers
+
+## Marketing Pages
+
+The application includes the following marketing pages:
+
+### Main Pages
+- `/` - Homepage
+- `/about` - About us
+- `/contact` - Contact information
+- `/careers` - Career opportunities
+- `/case-studies` - Customer case studies
+- `/demo` - Product demo
+- `/tutorials` - How-to guides
+- `/webinars` - Webinar listings
+- `/blog` - Blog posts
+- `/help` - Help center
+
+### Solutions
+- `/solutions/agencies` - Agency solutions
+- `/solutions/enterprise` - Enterprise solutions
+
+### Services (Location-based)
+- `/services` - Main services page
+- `/services/toronto-ontario` - Toronto services
+- `/services/vancouver-bc` - Vancouver services
+- `/services/calgary-alberta` - Calgary services
+- `/services/edmonton-alberta` - Edmonton services
+- `/services/ottawa-ontario` - Ottawa services
+- `/services/hamilton-ontario` - Hamilton services
+- `/services/london-ontario` - London services
+- `/services/surrey-bc` - Surrey services
+- `/services/burnaby-bc` - Burnaby services
+- `/services/victoria-bc` - Victoria services
+
+### Legal
+- `/privacy` - Privacy policy
+- `/terms` - Terms of service
+- `/cookies` - Cookie policy
+
+### Documentation
+- `/docs` - API documentation
+
+## Environment Variables
+
+Make sure to set the following environment variables:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Application URL (used in sitemap generation)
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+
+# API URL
+NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Install dependencies
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Run development server
+npm run dev
 
-## Learn More
+# Build for production
+npm run build
 
-To learn more about Next.js, take a look at the following resources:
+# Start production server
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Testing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# Run tests
+npm test
 
-## Deploy on Vercel
+# Run tests in watch mode
+npm run test:watch
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Run tests with coverage
+npm run test:coverage
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Sitemap Testing
+
+To test the sitemap:
+
+1. Start the development server: `npm run dev`
+2. Visit `http://localhost:3000/sitemap.xml`
+3. Verify all expected pages are listed
+4. Check `http://localhost:3000/robots.txt` for robots directives
+
+## Deployment
+
+The application is configured for deployment on Vercel or any other Next.js-compatible platform. Make sure to set the `NEXT_PUBLIC_APP_URL` environment variable to your production domain.
+
+## Technologies Used
+
+- Next.js 15 with App Router
+- TypeScript
+- Tailwind CSS
+- Clerk Authentication
+- Radix UI Components
+- Framer Motion
+- Lucide Icons
