@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AI SEO Optimizer - Ultra Cheap EC2 Deployment (~$3-5/month)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: ultra-cheap
+    Description: Environment name
+  
+  DatabaseUrl:
+    Type: String
+    NoEcho: true
+    Description: PostgreSQL connection string
+  
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Description: JWT secret key
+  
+  ClerkSecretKey:
+    Type: String
+    NoEcho: true
+    Description: Clerk secret key
+  
+  OpenAIApiKey:
+    Type: String
+    NoEcho: true
+    Description: OpenAI API key
+    Default: ""
+  
+  AnthropicApiKey:
+    Type: String
+    NoEcho: true
+    Description: Anthropic API key
+    Default: ""
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair for SSH access
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-vpc"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-public-subnet"
+
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  Route:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref RouteTable
+
+  # Security Group
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Ultra cheap security group
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3001
+          ToPort: 3001
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-sg"
+
+  # IAM Role for EC2
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:ai-seo/*"
+        - PolicyName: ECRAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                Resource: "*"
+
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+  # Secrets
+  DatabaseUrlSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "ai-seo/ultra-cheap/database-url"
+      SecretString: !Ref DatabaseUrl
+
+  JwtSecretSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "ai-seo/ultra-cheap/jwt-secret"
+      SecretString: !Ref JwtSecret
+
+  ClerkSecretSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "ai-seo/ultra-cheap/clerk-secret"
+      SecretString: !Ref ClerkSecretKey
+
+  OpenAISecretSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "ai-seo/ultra-cheap/openai-key"
+      SecretString: !Ref OpenAIApiKey
+
+  AnthropicSecretSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: !Sub "ai-seo/ultra-cheap/anthropic-key"
+      SecretString: !Ref AnthropicApiKey
+
+  # EC2 Instance
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2 AMI (us-east-1)
+      InstanceType: t3.nano  # Cheapest option - ~$3.8/month
+      KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Ref EC2InstanceProfile
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker aws-cli
+          
+          # Start Docker
+          service docker start
+          usermod -a -G docker ec2-user
+          
+          # Install Docker Compose
+          curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          
+          # Get secrets
+          DATABASE_URL=$(aws secretsmanager get-secret-value --secret-id ai-seo/ultra-cheap/database-url --query SecretString --output text --region ${AWS::Region})
+          JWT_SECRET=$(aws secretsmanager get-secret-value --secret-id ai-seo/ultra-cheap/jwt-secret --query SecretString --output text --region ${AWS::Region})
+          CLERK_SECRET_KEY=$(aws secretsmanager get-secret-value --secret-id ai-seo/ultra-cheap/clerk-secret --query SecretString --output text --region ${AWS::Region})
+          OPENAI_API_KEY=$(aws secretsmanager get-secret-value --secret-id ai-seo/ultra-cheap/openai-key --query SecretString --output text --region ${AWS::Region} 2>/dev/null || echo "")
+          ANTHROPIC_API_KEY=$(aws secretsmanager get-secret-value --secret-id ai-seo/ultra-cheap/anthropic-key --query SecretString --output text --region ${AWS::Region} 2>/dev/null || echo "")
+          
+          # Create environment file
+          cat > /home/ec2-user/.env << EOF
+          NODE_ENV=production
+          PORT=3001
+          DATABASE_URL=$DATABASE_URL
+          REDIS_URL=redis://localhost:6379
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          JWT_SECRET=$JWT_SECRET
+          CLERK_SECRET_KEY=$CLERK_SECRET_KEY
+          OPENAI_API_KEY=$OPENAI_API_KEY
+          ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+          CORS_ORIGIN=*
+          EOF
+          
+          # Create docker-compose file
+          cat > /home/ec2-user/docker-compose.yml << 'EOF'
+          version: '3.8'
+          services:
+            redis:
+              image: redis:7-alpine
+              restart: unless-stopped
+              ports:
+                - "6379:6379"
+              command: redis-server --appendonly no --maxmemory 128mb --maxmemory-policy allkeys-lru
+              
+            backend:
+              image: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ai-seo-backend:minimal
+              restart: unless-stopped
+              ports:
+                - "3001:3001"
+              env_file:
+                - .env
+              depends_on:
+                - redis
+          EOF
+          
+          # Login to ECR and start services
+          aws ecr get-login-password --region ${AWS::Region} | docker login --username AWS --password-stdin ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          
+          cd /home/ec2-user
+          docker-compose up -d
+          
+          # Setup auto-start
+          echo "cd /home/ec2-user && docker-compose up -d" >> /etc/rc.local
+          chmod +x /etc/rc.local
+          
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-instance"
+
+Outputs:
+  InstanceId:
+    Description: Instance ID
+    Value: !Ref EC2Instance
+
+  PublicIP:
+    Description: Public IP address
+    Value: !GetAtt EC2Instance.PublicIp
+
+  BackendURL:
+    Description: Backend URL
+    Value: !Sub "http://${EC2Instance.PublicIp}:3001"
+
+  SSHCommand:
+    Description: SSH command to connect
+    Value: !Sub "ssh -i your-key.pem ec2-user@${EC2Instance.PublicIp}"
+
+  CostEstimate:
+    Description: Estimated monthly cost
+    Value: "t3.nano: ~$3.8/month + $2 secrets + $1 data transfer = ~$6.8/month total" 

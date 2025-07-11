@@ -1,0 +1,124 @@
+{
+  "family": "ai-seo-optimizer-minimal",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::{ACCOUNT_ID}:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::{ACCOUNT_ID}:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "redis",
+      "image": "redis:7-alpine",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 6379,
+          "protocol": "tcp"
+        }
+      ],
+      "command": [
+        "redis-server",
+        "--appendonly",
+        "no",
+        "--maxmemory",
+        "64mb",
+        "--maxmemory-policy",
+        "allkeys-lru"
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "redis-cli ping"],
+        "interval": 60,
+        "timeout": 10,
+        "retries": 2,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-seo-optimizer-minimal",
+          "awslogs-region": "{AWS_REGION}",
+          "awslogs-stream-prefix": "redis"
+        }
+      },
+      "memory": 128
+    },
+    {
+      "name": "backend",
+      "image": "{ACCOUNT_ID}.dkr.ecr.{AWS_REGION}.amazonaws.com/ai-seo-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3001,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "PORT",
+          "value": "3001"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "localhost"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "REDIS_URL",
+          "value": "redis://localhost:6379"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:{AWS_REGION}:{ACCOUNT_ID}:secret:ai-seo/database-url"
+        },
+        {
+          "name": "JWT_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:{AWS_REGION}:{ACCOUNT_ID}:secret:ai-seo/jwt-secret"
+        },
+        {
+          "name": "CLERK_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:{AWS_REGION}:{ACCOUNT_ID}:secret:ai-seo/clerk-secret"
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:{AWS_REGION}:{ACCOUNT_ID}:secret:ai-seo/openai-key"
+        },
+        {
+          "name": "ANTHROPIC_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:{AWS_REGION}:{ACCOUNT_ID}:secret:ai-seo/anthropic-key"
+        }
+      ],
+      "dependsOn": [
+        {
+          "containerName": "redis",
+          "condition": "HEALTHY"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3001/health || exit 1"],
+        "interval": 60,
+        "timeout": 10,
+        "retries": 2,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/ai-seo-optimizer-minimal",
+          "awslogs-region": "{AWS_REGION}",
+          "awslogs-stream-prefix": "backend"
+        }
+      },
+      "memory": 384
+    }
+  ]
+} 
