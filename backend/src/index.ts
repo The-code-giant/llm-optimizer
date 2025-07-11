@@ -15,10 +15,12 @@ import * as Sentry from '@sentry/node';
 import client from 'prom-client';
 import { metricsMiddleware, errorMetricsMiddleware, metricsEndpoint } from './utils/metrics';
 import { setSentryUser, setSentryRequest } from './utils/sentryContext';
+import { generalRateLimit, dashboardRateLimit, authRateLimit } from './middleware/rateLimit';
 
 // Import workers to start background job processing
 import './utils/sitemapWorker';
 import './utils/analysisWorker';
+import './utils/eventProcessor';
 
 // Sentry initialization
 let sentryInitialized = false;
@@ -80,6 +82,9 @@ if (sentryInitialized) {
 // Prometheus metrics middleware
 app.use(metricsMiddleware);
 
+// General rate limiting for all requests
+app.use(generalRateLimit);
+
 // Clean, secure logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
@@ -117,17 +122,34 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Prometheus metrics endpoint
 app.get('/metrics', metricsEndpoint);
 
-// Health check endpoint
-app.get('/healthz', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+// Health check endpoint with Redis status
+app.get('/healthz', async (req, res) => {
+  try {
+    const redisHealthy = await require('./utils/redis').default.ping();
+    const cacheStats = await require('./utils/cache').default.getCacheStats();
+    
+    res.status(200).json({ 
+      status: 'ok',
+      redis: redisHealthy,
+      cache: cacheStats,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error',
+      redis: false,
+      error: 'Health check failed',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/sites', sitesRouter);
-app.use('/api/v1/pages', pagesRouter);
-app.use('/api/v1/analysis', analysisRouter);
-app.use('/api/v1/injected-content', injectedContentRouter);
-app.use('/api/v1/users', usersRouter);
+app.use('/api/v1/auth', authRateLimit, authRouter);
+app.use('/api/v1/sites', dashboardRateLimit, sitesRouter);
+app.use('/api/v1/pages', dashboardRateLimit, pagesRouter);
+app.use('/api/v1/analysis', dashboardRateLimit, analysisRouter);
+app.use('/api/v1/injected-content', dashboardRateLimit, injectedContentRouter);
+app.use('/api/v1/users', dashboardRateLimit, usersRouter);
 app.use('/api/v1', trackerRouter);
 app.use('/tracker', trackerRouter); // Direct tracker routes for JavaScript
 

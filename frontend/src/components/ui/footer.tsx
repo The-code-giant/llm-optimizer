@@ -25,11 +25,11 @@ export function Footer() {
     {
       title: "Solutions",
       links: [
-        { name: "For Agencies", href: "/agencies" },
-        { name: "For Enterprise", href: "/enterprise" },
-        { name: "For E-commerce", href: "/ecommerce" },
-        { name: "For Publishers", href: "/publishers" },
-        { name: "For SaaS", href: "/saas" },
+        { name: "For Agencies", href: "/solutions/agencies" },
+        { name: "For Enterprise", href: "/solutions/enterprise" },
+        { name: "For E-commerce", href: "/solutions/ecommerce" },
+        { name: "For Publishers", href: "/solutions/publishers" },
+        { name: "For SaaS", href: "/solutions/saas" },
         { name: "Case Studies", href: "/case-studies" }
       ]
     },

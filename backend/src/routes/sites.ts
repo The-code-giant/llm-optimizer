@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { sitemapImportQueue } from '../utils/queue';
 import { randomUUID } from 'crypto';
+import cache from '../utils/cache';
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -195,6 +196,9 @@ router.post('/', authenticateJWT, async (req: AuthenticatedRequest, res: Respons
       status,
     }).returning();
     
+    // Invalidate user sites cache
+    await cache.invalidateUserSites(req.user!.userId);
+    
     res.status(201).json(site);
   } catch (err) {
     next(err);
@@ -217,13 +221,26 @@ router.post('/', authenticateJWT, async (req: AuthenticatedRequest, res: Respons
  *               items:
  *                 $ref: '#/components/schemas/Site'
  */
-// List sites for the authenticated user
+// List sites for the authenticated user - Enhanced with Redis caching
 router.get('/', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    // Ensure user exists in our database
-    await ensureUserExists(req.user!.userId, req.user!.email);
+    const userId = req.user!.userId;
     
-    const userSites = await db.select().from(sites).where(eq(sites.userId, req.user!.userId));
+    // Try cache first
+    const cachedSites = await cache.getUserSites(userId);
+    if (cachedSites) {
+      res.json(cachedSites);
+      return;
+    }
+
+    // Ensure user exists in our database
+    await ensureUserExists(userId, req.user!.email);
+    
+    const userSites = await db.select().from(sites).where(eq(sites.userId, userId));
+    
+    // Cache the result for 5 minutes
+    await cache.setUserSites(userId, userSites);
+    
     res.json(userSites);
   } catch (err) {
     next(err);
@@ -323,6 +340,10 @@ router.put('/:siteId', authenticateJWT, async (req: AuthenticatedRequest, res: R
       .set({ ...parse.data, updatedAt: new Date() })
       .where(eq(sites.id, req.params.siteId))
       .returning();
+      
+    // Invalidate user sites cache
+    await cache.invalidateUserSites(req.user!.userId);
+    
     res.json(updated);
   } catch (err) {
     next(err);
@@ -357,6 +378,10 @@ router.delete('/:siteId', authenticateJWT, async (req: AuthenticatedRequest, res
       return;
     }
     await db.delete(sites).where(eq(sites.id, req.params.siteId));
+    
+    // Invalidate user sites cache
+    await cache.invalidateUserSites(req.user!.userId);
+    
     res.status(204).send();
   } catch (err) {
     next(err);
