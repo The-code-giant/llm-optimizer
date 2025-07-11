@@ -5,6 +5,18 @@ export interface Site {
   status: string;
 }
 
+export interface SiteWithMetrics extends Site {
+  trackerId: string;
+  lastScan?: string;
+  llmReadiness?: number;
+  pagesScanned?: number;
+  totalPages?: number;
+  improvements?: number;
+  settings?: Record<string, any>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface SiteDetails extends Site {
   trackerId: string;
   settings: Record<string, any>;
@@ -100,6 +112,88 @@ export async function getSites(token: string): Promise<Site[]> {
     cache: "no-store",
   });
   return handleResponse(res);
+}
+
+export async function getSitesWithMetrics(token: string): Promise<SiteWithMetrics[]> {
+  const sites = await getSites(token);
+  
+  // Enrich each site with metrics
+  const sitesWithMetrics = await Promise.all(
+    sites.map(async (site) => {
+      try {
+        // Get site details to get trackerId
+        const siteDetails = await getSiteDetails(token, site.id);
+        
+        // Get pages for this site
+        const pages = await getPages(token, site.id);
+        
+        // Calculate metrics
+        const totalPages = pages.length;
+        const pagesWithScores = pages.filter(p => p.llmReadinessScore != null);
+        const avgLLMReadiness = pagesWithScores.length > 0 
+          ? Math.round(pagesWithScores.reduce((sum, p) => sum + (p.llmReadinessScore || 0), 0) / pagesWithScores.length)
+          : 0;
+        
+        // Find most recent scan
+        const pagesWithScans = pages.filter(p => p.lastScannedAt);
+        const lastScan = pagesWithScans.length > 0 
+          ? pagesWithScans.sort((a, b) => new Date(b.lastScannedAt).getTime() - new Date(a.lastScannedAt).getTime())[0].lastScannedAt
+          : null;
+        
+        // Format last scan time
+        const formattedLastScan = lastScan 
+          ? formatRelativeTime(new Date(lastScan))
+          : "Never scanned";
+        
+        // Count improvements (pages with score > 60 as improvement indicator)
+        const improvements = pagesWithScores.filter(p => (p.llmReadinessScore || 0) > 60).length;
+        
+        return {
+          ...site,
+          trackerId: siteDetails.trackerId,
+          lastScan: formattedLastScan,
+          llmReadiness: avgLLMReadiness,
+          pagesScanned: pagesWithScans.length,
+          totalPages,
+          improvements,
+          settings: siteDetails.settings,
+          createdAt: siteDetails.createdAt,
+          updatedAt: siteDetails.updatedAt,
+        } as SiteWithMetrics;
+      } catch (error) {
+        console.error(`Failed to load metrics for site ${site.id}:`, error);
+        // Return site with default metrics if API calls fail
+        return {
+          ...site,
+          trackerId: '',
+          lastScan: "Error loading",
+          llmReadiness: 0,
+          pagesScanned: 0,
+          totalPages: 0,
+          improvements: 0,
+        } as SiteWithMetrics;
+      }
+    })
+  );
+  
+  return sitesWithMetrics;
+}
+
+// Helper function to format relative time
+function formatRelativeTime(date: Date): string {
+  const now = new Date();
+  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+  
+  if (diffInMinutes < 1) return "Just now";
+  if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hours ago`;
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} days ago`;
+  
+  return date.toLocaleDateString();
 }
 
 export async function addSite(token: string, name: string, url: string): Promise<Site> {

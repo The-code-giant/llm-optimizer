@@ -3,36 +3,24 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { getSites } from "@/lib/api";
+import { getSitesWithMetrics, SiteWithMetrics } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
+import Link from "next/link";
 import { Globe, BarChart3, Clock, Zap, TrendingUp, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import Toast from "@/components/Toast";
 
-interface Site {
-  id: string;
-  name: string;
-  url: string;
-  status: string;
-  lastScan?: string;
-  llmReadiness?: number;
-  pagesScanned?: number;
-  totalPages?: number;
-  improvements?: number;
-}
-
 interface DashboardClientProps {
-  initialSites?: Site[];
+  initialSites?: SiteWithMetrics[];
 }
 
 export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
   const router = useRouter();
   const { user, isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
-  const [sites, setSites] = useState<Site[]>(initialSites);
+  const [sites, setSites] = useState<SiteWithMetrics[]>(initialSites);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -50,18 +38,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
         return;
       }
       
-      const data = await getSites(token);
-      
-      // Add mock metrics for demo purposes
-      const sitesWithMetrics = data.map((site: Site) => ({
-        ...site,
-        lastScan: "2 hours ago",
-        llmReadiness: Math.floor(Math.random() * 40) + 60, // 60-100%
-        pagesScanned: Math.floor(Math.random() * 50) + 10,
-        totalPages: Math.floor(Math.random() * 100) + 50,
-        improvements: Math.floor(Math.random() * 10) + 5
-      }));
-      
+      const sitesWithMetrics = await getSitesWithMetrics(token);
       setSites(sitesWithMetrics);
     } catch (err: unknown) {
       console.error("Failed to fetch sites:", err);
@@ -264,6 +241,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sites.map(site => (
+                  <Link href={`/dashboard/${site.id}`} key={site.id}>
                   <Card key={site.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
@@ -316,7 +294,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                         </div>
                         <Button 
                           variant="outline" 
-                          className="text-xs h-8 px-3"
+                          className="text-xs h-8 px-3 cursor-pointer"
                           onClick={() => router.push(`/dashboard/${site.id}`)}
                         >
                           View Details
@@ -324,6 +302,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                       </div>
                     </CardContent>
                   </Card>
+                  </Link>
                 ))}
               </div>
             )}

@@ -18,7 +18,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.0.0",
+    "@clerk/nextjs": "^6.24.0",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-dialog": "^1.1.14",

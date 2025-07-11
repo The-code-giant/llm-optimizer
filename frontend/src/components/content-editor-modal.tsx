@@ -99,7 +99,7 @@ export default function ContentEditorModal({
 
       const result = await getOriginalPageContent(token, pageId);
       setOriginalContent(result);
-      
+      console.log(result);
       // If no current content, pre-fill with original content based on content type
       if (!currentContent && result.originalContent) {
         let prefillContent = '';
@@ -341,7 +341,7 @@ export default function ContentEditorModal({
 
   const renderAnalysisContextCard = () => {
     if (!originalContent?.analysisContext) return null;
-
+    console.log(originalContent.analysisContext)
     const { score, summary, issues, recommendations } = originalContent.analysisContext;
 
     return (
@@ -557,7 +557,7 @@ export default function ContentEditorModal({
             {/* Left Side - Editor */}
             <div className="space-y-4">
               {/* Original Content Context Cards */}
-              {renderPageSummaryCard()}
+              {/* {renderPageSummaryCard()} */}
               {renderOriginalContentCard()}
               {renderAnalysisContextCard()}
               
