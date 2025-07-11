@@ -41,6 +41,7 @@ interface TrackerScriptData {
   siteName: string;
   trackerId: string;
   scriptHtml: string;
+  nextJsScript: string; // Add Next.js Script format
   instructions: {
     installation: string;
     verification: string;
@@ -99,7 +100,7 @@ export default function TrackerScriptModal({
     if (!scriptData) return;
     
     try {
-      await navigator.clipboard.writeText(scriptData.scriptHtml);
+      await navigator.clipboard.writeText(scriptData.nextJsScript);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       setToast({ message: 'Script copied to clipboard!', type: 'success' });
@@ -219,7 +220,7 @@ export default function TrackerScriptModal({
                 <CardContent>
                   <div className="relative">
                     <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border">
-                      <code className="text-gray-800">{scriptData.scriptHtml}</code>
+                      <code className="text-gray-800">{scriptData.nextJsScript}</code>
                     </pre>
                   </div>
                 </CardContent>

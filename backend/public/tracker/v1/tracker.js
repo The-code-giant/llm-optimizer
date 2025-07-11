@@ -17,6 +17,9 @@
     console.warn('Clever Search: Failed to parse configuration, using defaults');
   }
 
+  // Initialize URL params early - needed for CONFIG object
+  const urlParams = new URLSearchParams(window.location.search);
+
   // Configuration - merge with provided config or use defaults
   const CONFIG = {
     API_BASE: configData.API_BASE || 'http://localhost:3001',
@@ -35,7 +38,6 @@
   const isNextJS = () => window?.next || window?.__NEXT_DATA__ || document.querySelector('[data-nextjs-scroll-focus-boundary]');
 
   // Diagnostics helper
-  const urlParams = new URLSearchParams(window.location.search);
   const diagnosticsEnabled = urlParams.has('clever-search-debug') || urlParams.has('diagnostics') || CONFIG.DEBUG_MODE;
   const consolePrint = (message, force = false) => {
     if (diagnosticsEnabled || force) {
@@ -69,6 +71,7 @@
       this.contentTypes = [];
       this.isNextJS = isNextJS();
       this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
+      this.cachedContent = null; // Cache content to avoid duplicate API calls
       
       if (CONFIG.OVERRIDE_URL) {
         consolePrint(`🔄 URL Override: Using ${CONFIG.OVERRIDE_URL} instead of ${window.location.href}`, true);
@@ -143,10 +146,13 @@
         // Update current URL (respect override if set)
         this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
         
+        // Clear cached content for new page
+        this.cachedContent = null;
+        
         // IMMEDIATE: Load SEO-critical content first for new page
         await this.loadContentEarly();
         
-        // Then load remaining content
+        // Then load remaining content (will use cached content)
         await this.loadContent();
         this.trackPageView();
       } catch (error) {
@@ -174,8 +180,8 @@
 
     async onDOMReady() {
       try {
-        consolePrint('DOM ready - loading content');
-        await this.loadContent();
+        consolePrint('DOM ready - loading remaining content');
+        await this.loadContent(); // Will use cached content, no duplicate API call
         this.trackPageView();
         this.setupPerformanceTracking();
       } catch (error) {
@@ -194,6 +200,8 @@
       
       try {
         consolePrint('Early content loading for SEO...');
+        
+        // Make API call and cache the result
         const response = await this.apiCall('/tracker/content', {
           url: url,
           siteId: CONFIG.SITE_ID,
@@ -206,6 +214,9 @@
         });
 
         if (response.success && response.content && response.content.length > 0) {
+          // Cache the content for later use
+          this.cachedContent = response.content;
+          
           // Inject only SEO-critical content immediately
           await this.injectSEOCriticalContent(response.content);
         }
@@ -247,26 +258,39 @@
         return;
       }
 
-      const url = this.currentUrl;
-      
       try {
-        const response = await this.apiCall('/tracker/content', {
-          url: url,
-          siteId: CONFIG.SITE_ID,
-          userAgent: navigator.userAgent,
-          referrer: document.referrer,
-          sessionId: this.sessionId,
-          timestamp: new Date().toISOString(),
-          isNextJS: this.isNextJS
-        });
+        let contentItems = this.cachedContent;
+        
+        // If no cached content, fetch it (fallback case)
+        if (!contentItems) {
+          consolePrint('No cached content - fetching from server');
+          const url = this.currentUrl;
+          
+          const response = await this.apiCall('/tracker/content', {
+            url: url,
+            siteId: CONFIG.SITE_ID,
+            userAgent: navigator.userAgent,
+            referrer: document.referrer,
+            sessionId: this.sessionId,
+            timestamp: new Date().toISOString(),
+            isNextJS: this.isNextJS
+          });
 
-        if (response.success && response.content && response.content.length > 0) {
+          if (response.success && response.content && response.content.length > 0) {
+            contentItems = response.content;
+            this.cachedContent = contentItems; // Cache for future use
+          }
+        } else {
+          consolePrint('Using cached content - no API call needed');
+        }
+
+        if (contentItems && contentItems.length > 0) {
           // Skip SEO-critical content as it was already injected early
-          await this.injectContent(response.content, false, true);
+          await this.injectContent(contentItems, false, true);
           
           // Set up interval updates for Next.js to handle React re-renders
           if (this.isNextJS) {
-            this.setupIntervalUpdates(response.content);
+            this.setupIntervalUpdates(contentItems);
           }
         }
       } catch (error) {
@@ -283,32 +307,11 @@
       consolePrint(`Setting up interval updates every ${intervalTime}ms`);
 
       updateIntervalId = setInterval(async () => {
-        consolePrint('Interval update - checking for new content');
+        consolePrint('Interval update - re-applying existing content');
         
-        if (CONFIG.FAST_MODE) {
-          // In fast mode, also check for new content from server
-          try {
-            const response = await this.apiCall('/tracker/content', {
-              url: this.currentUrl,
-              siteId: CONFIG.SITE_ID,
-              userAgent: navigator.userAgent,
-              referrer: document.referrer,
-              sessionId: this.sessionId,
-              timestamp: new Date().toISOString(),
-              isNextJS: this.isNextJS,
-              fastMode: true
-            });
-
-            if (response.success && response.content && response.content.length > 0) {
-              this.injectContent(response.content, true);
-            }
-          } catch (error) {
-            consolePrint('Fast mode content check failed: ' + error.message);
-          }
-        } else {
-          // Standard mode - just reapply existing content
-          this.injectContent(contentItems, true);
-        }
+        // Always just reapply existing content - no server polling
+        // The interval is only for DOM updates, not fetching new content
+        this.injectContent(contentItems, true);
       }, intervalTime);
 
       // Clear interval after max duration
@@ -821,6 +824,9 @@
       try {
         // Remove previous content
         this.removePreviousContent();
+        
+        // Clear cached content to force fresh fetch
+        this.cachedContent = null;
         
         // Load fresh content
         await this.loadContentEarly();

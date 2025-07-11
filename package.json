@@ -11,6 +11,7 @@
     "logs": "docker compose logs -f",
     "db:migrate": "docker compose exec backend npm run db:migrate:safe",
     "db:studio": "docker compose exec backend sh -c \"cd /app && npx drizzle-kit studio --port 4983 --host 0.0.0.0\"",
+    "install:backend&frontend": "npm run install:backend && npm run install:frontend",
     "install:backend": "cd backend && npm install",
     "install:frontend": "cd frontend && npm install --force",
     "lint": "npm run lint:backend && npm run lint:frontend",

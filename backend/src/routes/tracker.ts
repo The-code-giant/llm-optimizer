@@ -477,12 +477,31 @@ router.get('/script/:trackerId',
         return;
       }
 
-      // Generate the tracking script HTML
+      // Generate the API base URL
       const apiBase = process.env.NODE_ENV === 'production' 
         ? process.env.API_URL || 'https://api.llmoptimizer.com'
         : 'http://localhost:3001';
 
-      const scriptHtml = `<!-- Clever Search Tracking Script -->
+      // Generate Next.js Script component with full configuration
+      const nextScriptFormat = `<Script
+  id="clever-search-tracker"
+  src="${apiBase}/tracker/v1/tracker.js"
+  data-config={JSON.stringify({
+    "API_BASE": "${apiBase}",
+    "SITE_ID": "${site.trackerId}",
+    "VERSION": "1.0.0",
+    "RETRY_ATTEMPTS": 3,
+    "TIMEOUT": 2000,
+    "UPDATE_INTERVAL": 500,
+    "MAX_INTERVAL_DURATION": 120000,
+    "FAST_MODE": true
+  })}
+  async
+  strategy="beforeInteractive"
+/>`;
+
+      // Also provide legacy inline script for non-Next.js users
+      const legacyScriptHtml = `<!-- Clever Search Tracking Script -->
 <script>
 (function() {
   'use strict';
@@ -493,7 +512,10 @@ router.get('/script/:trackerId',
     SITE_ID: '${site.trackerId}',
     VERSION: '1.0.0',
     RETRY_ATTEMPTS: 3,
-    TIMEOUT: 5000
+    TIMEOUT: 2000,
+    UPDATE_INTERVAL: 500,
+    MAX_INTERVAL_DURATION: 120000,
+    FAST_MODE: true
   };
 
   console.log('Clever Search: Loading tracker with config:', CONFIG);
@@ -529,9 +551,21 @@ router.get('/script/:trackerId',
         siteId: site.id,
         siteName: site.name,
         trackerId: site.trackerId,
-        scriptHtml: scriptHtml,
+        nextJsScript: nextScriptFormat,
+        scriptHtml: legacyScriptHtml,
+        config: {
+          API_BASE: apiBase,
+          SITE_ID: site.trackerId,
+          VERSION: "1.0.0",
+          RETRY_ATTEMPTS: 3,
+          TIMEOUT: 2000,
+          UPDATE_INTERVAL: 500,
+          MAX_INTERVAL_DURATION: 120000,
+          FAST_MODE: true
+        },
         instructions: {
-          installation: "Copy the script above and paste it in your website's <head> section, preferably near the top.",
+          nextJs: "For Next.js projects, copy the 'nextJsScript' code and paste it in your component. Make sure to import Script from 'next/script'.",
+          legacy: "For other frameworks, copy the 'scriptHtml' code and paste it in your website's <head> section.",
           verification: "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
           support: "If you need help, contact our support team."
         }
