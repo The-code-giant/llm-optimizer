@@ -71,6 +71,11 @@ services:
       - ./shared:/app/shared:cached
     networks:
       - clever-search-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       postgres:
         condition: service_healthy

@@ -43,6 +43,13 @@
       "when": 1752087977513,
       "tag": "0005_previous_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1752216383894,
+      "tag": "0006_conscious_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }
