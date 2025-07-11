@@ -163,12 +163,12 @@ FOCUS ON:
         case '3000':
           // This is our frontend service
           console.log(`🔄 Translating frontend URL: ${url} -> Docker service`);
-          return url.replace('localhost:3000', 'cleaver-search-frontend:3000');
+          return url.replace('localhost:3000', 'clever-search-frontend:3000');
         
         case '3001':
           // This is our backend service (shouldn't normally happen, but just in case)
           console.log(`🔄 Translating backend URL: ${url} -> Docker service`);
-          return url.replace('localhost:3001', 'cleaver-search-backend:3001');
+          return url.replace('localhost:3001', 'clever-search-backend:3001');
         
         default:
           // Other localhost ports - use host.docker.internal to access host machine
@@ -195,7 +195,7 @@ FOCUS ON:
       const response = await axios.get(fetchUrl, {
         timeout: 10000,
         headers: {
-          'User-Agent': 'Cleaver-Search-Bot/1.0 (+https://cleaversearch.com)',
+          'User-Agent': 'Clever-Search-Bot/1.0 (+https://cleversearch.ai)',
         },
       });
 

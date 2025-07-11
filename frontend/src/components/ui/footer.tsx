@@ -93,7 +93,7 @@ export function Footer() {
                 <div className="space-y-3">
                   <div className="flex items-center text-gray-300">
                     <EnvelopeIcon className="w-5 h-5 mr-3 text-blue-400" />
-                    <span>hello@cleaversearch.com</span>
+                    <span>hello@cleversearch.ai</span>
                   </div>
                   <div className="flex items-center text-gray-300">
                     <PhoneIcon className="w-5 h-5 mr-3 text-blue-400" />

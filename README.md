@@ -14,7 +14,7 @@ npm run setup
 
 # Option 3: Manual setup
 git clone <your-repo-url>
-cd Cleaver-Search
+cd Clever-Search
 npm run setup
 ```
 
