@@ -5,6 +5,9 @@
 
 set -e
 
+# AWS Profile Configuration
+export AWS_PROFILE=Deploymaster
+
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -16,10 +19,20 @@ echo_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 echo_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 echo_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 echo_cost() { echo -e "${BLUE}[COST]${NC} $1"; }
+echo_profile() { echo -e "${BLUE}[AWS]${NC} $1"; }
 
 # Banner
 echo_info "🚀 AI SEO Optimizer - MINIMAL COST Deployment"
 echo_cost "💰 Estimated monthly cost: ~\$9-12 (excluding database)"
+
+# Verify AWS Profile
+echo_profile "🔍 Verifying AWS Profile: $AWS_PROFILE"
+if ! aws configure list --profile $AWS_PROFILE > /dev/null 2>&1; then
+    echo_error "AWS Profile '$AWS_PROFILE' not found or not configured."
+    echo_error "Available profiles:"
+    aws configure list-profiles 2>/dev/null || echo "No profiles found"
+    exit 1
+fi
 
 # Check prerequisites
 if ! command -v aws &> /dev/null; then
@@ -34,20 +47,25 @@ fi
 
 # Configuration
 ENVIRONMENT="minimal"
-AWS_REGION=${1:-us-east-1}
+AWS_REGION=${1:-us-west-2}
 STACK_NAME="ai-seo-optimizer-${ENVIRONMENT}"
 
 echo_info "Starting minimal cost deployment..."
 echo_info "Environment: $ENVIRONMENT"
 echo_info "Region: $AWS_REGION"
 echo_info "Stack: $STACK_NAME"
+echo_info "AWS Profile: $AWS_PROFILE"
 
-# Get account ID
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+# Get account ID and verify credentials
+echo_profile "🔐 Verifying AWS credentials..."
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
 if [ -z "$ACCOUNT_ID" ]; then
-    echo_error "Failed to get AWS Account ID"
+    echo_error "Failed to get AWS Account ID. Please check your AWS credentials for profile: $AWS_PROFILE"
     exit 1
 fi
+
+USER_ARN=$(aws sts get-caller-identity --query Arn --output text 2>/dev/null)
+echo_profile "✅ Authenticated as: $USER_ARN"
 
 echo_info "Account ID: $ACCOUNT_ID"
 

@@ -5,9 +5,12 @@
 
 set -e
 
+# AWS Profile Configuration
+export AWS_PROFILE=Deploymaster
+
 # Configuration
 ENVIRONMENT=${1:-production}
-AWS_REGION=${2:-us-east-1}
+AWS_REGION=${2:-us-west-2}
 PROJECT_NAME="ai-seo-optimizer"
 CLUSTER_NAME="${PROJECT_NAME}-${ENVIRONMENT}"
 SERVICE_NAME="${PROJECT_NAME}-${ENVIRONMENT}"
@@ -17,6 +20,7 @@ REPOSITORY_NAME="${PROJECT_NAME}-backend"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo_info() {
@@ -31,6 +35,23 @@ echo_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+echo_profile() {
+    echo -e "${BLUE}[AWS]${NC} $1"
+}
+
+# Verify AWS Profile
+echo_profile "🔍 Verifying AWS Profile: $AWS_PROFILE"
+if ! aws configure list --profile $AWS_PROFILE > /dev/null 2>&1; then
+    echo_error "AWS Profile '$AWS_PROFILE' not found or not configured."
+    echo_error "Available profiles:"
+    aws configure list-profiles 2>/dev/null || echo "No profiles found"
+    exit 1
+fi
+
+# Display current AWS configuration
+echo_profile "Current AWS Configuration:"
+aws configure list
+
 # Check if AWS CLI is installed and configured
 if ! command -v aws &> /dev/null; then
     echo_error "AWS CLI is not installed. Please install it first."
@@ -43,16 +64,34 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# Get AWS Account ID
-ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+# Get AWS Account ID and verify credentials
+echo_profile "🔐 Verifying AWS credentials..."
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text 2>/dev/null)
 if [ -z "$ACCOUNT_ID" ]; then
-    echo_error "Failed to get AWS Account ID. Please check your AWS credentials."
+    echo_error "Failed to get AWS Account ID. Please check your AWS credentials for profile: $AWS_PROFILE"
     exit 1
 fi
+
+USER_ARN=$(aws sts get-caller-identity --query Arn --output text 2>/dev/null)
+echo_profile "✅ Authenticated as: $USER_ARN"
 
 echo_info "Starting deployment for environment: ${ENVIRONMENT}"
 echo_info "AWS Region: ${AWS_REGION}"
 echo_info "AWS Account ID: ${ACCOUNT_ID}"
+echo_info "AWS Profile: ${AWS_PROFILE}"
+
+# Confirmation prompt for production
+if [ "$ENVIRONMENT" = "production" ]; then
+    echo_warn "⚠️  You are about to deploy to PRODUCTION environment!"
+    echo_warn "AWS Account: $ACCOUNT_ID"
+    echo_warn "Region: $AWS_REGION"
+    echo_warn "Profile: $AWS_PROFILE"
+    read -p "Are you sure you want to continue? (yes/no): " -r
+    if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+        echo_info "Deployment cancelled."
+        exit 0
+    fi
+fi
 
 # Step 1: Create ECR repository if it doesn't exist
 echo_info "Creating ECR repository..."
