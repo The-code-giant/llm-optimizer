@@ -4,6 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -167,5 +168,5 @@
 }
 
 .animation-delay-4000 {
-  animation-delay: 4s;
+  animation-delay: 3s;
 }
