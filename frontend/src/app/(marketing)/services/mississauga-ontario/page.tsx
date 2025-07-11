@@ -67,7 +67,7 @@ export default function MississaugaLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Mississauga Cleaver Search Services
+                              Mississauga Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Mississauga's corporate and logistics sectors. Increase your ChatGPT, Claude, and Gemini citations 

@@ -1,6 +1,6 @@
-# Cleaver Search - Scripts Guide
+# Clever Search - Scripts Guide
 
-This guide covers all available npm scripts for the Cleaver Search project.
+This guide covers all available npm scripts for the Clever Search project.
 
 ## 🚀 Root Project Scripts
 

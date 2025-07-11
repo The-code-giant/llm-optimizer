@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Cleaver Search Development Environment Stop Script
+# Clever Search Development Environment Stop Script
 
-echo "🛑 Stopping Cleaver Search Development Environment..."
+echo "🛑 Stopping Clever Search Development Environment..."
 
 # Stop all services
 docker compose down

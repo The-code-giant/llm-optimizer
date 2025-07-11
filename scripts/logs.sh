@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Cleaver Search Development Environment Logs Script
+# Clever Search Development Environment Logs Script
 
 SERVICE=${1:-""}
 

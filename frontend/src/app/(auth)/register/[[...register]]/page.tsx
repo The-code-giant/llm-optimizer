@@ -40,7 +40,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Get Started</h1>
-                        <p className="text-gray-600 mt-2">Create your Cleaver Search account</p>
+                        <p className="text-gray-600 mt-2">Create your Clever Search account</p>
         </div>
         <SignUp 
           path="/register" 

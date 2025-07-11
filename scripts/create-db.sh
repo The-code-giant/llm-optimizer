@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Database Creation Script for Cleaver Search
+# Database Creation Script for Clever Search
 
 echo "🗄️ Checking database setup..."
 

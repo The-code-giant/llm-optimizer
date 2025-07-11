@@ -608,7 +608,7 @@ router.get('/:siteId/tracker-script', authenticateJWT, async (req: Authenticated
       ? process.env.API_URL || 'https://api.llmoptimizer.com'
       : 'http://localhost:3001';
 
-    const scriptHtml = `<!-- Cleaver Search Tracking Script -->
+    const scriptHtml = `<!-- Clever Search Tracking Script -->
 <script>
 (function() {
   'use strict';
@@ -632,7 +632,7 @@ router.get('/:siteId/tracker-script', authenticateJWT, async (req: Authenticated
   script.setAttribute('data-config', JSON.stringify(CONFIG));
   
   script.onerror = function() {
-            console.warn('Cleaver Search script failed to load');
+            console.warn('Clever Search script failed to load');
   };
   
   // Insert script
@@ -652,7 +652,7 @@ router.get('/:siteId/tracker-script', authenticateJWT, async (req: Authenticated
       scriptHtml: scriptHtml,
       instructions: {
         installation: "Copy the script above and paste it in your website's <head> section, preferably near the top.",
-        verification: "After installation, visit your website and check the browser console for 'Cleaver Search' messages to verify the script is working.",
+        verification: "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
         support: "If you need help, contact our support team."
       }
     });

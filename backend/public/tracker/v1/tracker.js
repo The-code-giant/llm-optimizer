@@ -14,7 +14,7 @@
       configData = JSON.parse(currentScript.getAttribute('data-config'));
     }
   } catch (error) {
-    console.warn('Cleaver Search: Failed to parse configuration, using defaults');
+    console.warn('Clever Search: Failed to parse configuration, using defaults');
   }
 
   // Configuration - merge with provided config or use defaults
@@ -39,7 +39,7 @@
   const diagnosticsEnabled = urlParams.has('cleaver-search-debug') || urlParams.has('diagnostics') || CONFIG.DEBUG_MODE;
   const consolePrint = (message, force = false) => {
     if (diagnosticsEnabled || force) {
-      console.log(`[Cleaver Search] ${message}`);
+      console.log(`[Clever Search] ${message}`);
     }
   };
 
@@ -79,7 +79,7 @@
 
     async init() {
       try {
-        consolePrint('Initializing Cleaver Search Tracker');
+        consolePrint('Initializing Clever Search Tracker');
         consolePrint(`Environment: ${this.isNextJS ? 'Next.js' : 'Standard HTML'}`);
         
         // IMMEDIATE: Load SEO-critical content as early as possible
@@ -186,7 +186,7 @@
     // Early execution for SEO-critical elements
     async loadContentEarly() {
       if (CONFIG.SITE_ID === '{{SITE_ID}}') {
-        console.warn('Cleaver Search: Invalid site ID. Please ensure script is properly configured.');
+        console.warn('Clever Search: Invalid site ID. Please ensure script is properly configured.');
         return;
       }
 
@@ -210,7 +210,7 @@
           await this.injectSEOCriticalContent(response.content);
         }
       } catch (error) {
-        console.warn('Cleaver Search: Failed to load early content:', error.message);
+                  console.warn('Clever Search: Failed to load early content:', error.message);
       }
     }
 
@@ -243,7 +243,7 @@
 
     async loadContent() {
       if (CONFIG.SITE_ID === '{{SITE_ID}}') {
-        console.warn('Cleaver Search: Invalid site ID. Please ensure script is properly configured.');
+        console.warn('Clever Search: Invalid site ID. Please ensure script is properly configured.');
         return;
       }
 
@@ -270,7 +270,7 @@
           }
         }
       } catch (error) {
-        console.warn('Cleaver Search: Failed to load content:', error.message);
+                  console.warn('Clever Search: Failed to load content:', error.message);
       }
     }
 
@@ -351,7 +351,7 @@
               injected = this.injectParagraph(item.data);
               break;
             default:
-              console.warn('Cleaver Search: Unknown content type:', item.type);
+              console.warn('Clever Search: Unknown content type:', item.type);
           }
           
           if (injected && !injectedTypes.includes(item.type)) {
@@ -428,7 +428,7 @@
         consolePrint(`Title updated: ${newTitle}`);
         return true;
       } catch (error) {
-        console.warn('Cleaver Search: Title injection failed:', error);
+                  console.warn('Clever Search: Title injection failed:', error);
       }
       return false;
     }
@@ -452,7 +452,7 @@
           return true;
         }
       } catch (error) {
-        console.warn('Cleaver Search: Meta description injection failed:', error);
+                  console.warn('Clever Search: Meta description injection failed:', error);
       }
       return false;
     }
@@ -506,7 +506,7 @@
           }
         }
       } catch (error) {
-        console.warn('Cleaver Search: Keywords injection failed:', error);
+                  console.warn('Clever Search: Keywords injection failed:', error);
       }
       
       return injected;
@@ -549,7 +549,7 @@
           return true;
         }
       } catch (error) {
-        console.warn('Cleaver Search: FAQ injection failed:', error);
+                  console.warn('Clever Search: FAQ injection failed:', error);
       }
       return false;
     }
@@ -593,7 +593,7 @@
         injectionCounts.paragraph++;
         return true;
       } catch (error) {
-        console.warn('Cleaver Search: Paragraph injection failed:', error);
+                  console.warn('Clever Search: Paragraph injection failed:', error);
       }
       return false;
     }
@@ -644,7 +644,7 @@
         document.head.appendChild(script);
         consolePrint('FAQ schema added');
       } catch (error) {
-        console.warn('Cleaver Search: FAQ schema injection failed:', error);
+                  console.warn('Clever Search: FAQ schema injection failed:', error);
       }
     }
 
@@ -757,7 +757,7 @@
       } catch (error) {
         // Silently fail for tracking to not affect user experience
         if (console && console.warn) {
-          console.warn('Cleaver Search tracking failed:', error.message);
+          console.warn('Clever Search tracking failed:', error.message);
         }
       }
     }
@@ -868,7 +868,7 @@
       if (diagnosticsEnabled) {
         window.addEventListener('load', () => {
           setTimeout(() => {
-            console.log('=== Cleaver Search Diagnostics ===');
+            console.log('=== Clever Search Diagnostics ===');
             console.log('Environment:', isNextJS() ? 'Next.js' : 'Standard HTML');
             console.log('Injection Counts:', injectionCounts);
             console.log('Site ID:', CONFIG.SITE_ID);
@@ -882,13 +882,13 @@
       }
       
       // Show load message
-      consolePrint('Cleaver Search Tracker v' + CONFIG.VERSION + ' loaded', true);
+      consolePrint('Clever Search Tracker v' + CONFIG.VERSION + ' loaded', true);
       if (CONFIG.FAST_MODE) {
         consolePrint('⚡ Fast mode active - updates every ' + CONFIG.UPDATE_INTERVAL + 'ms', true);
       }
     } catch (error) {
       if (console && console.error) {
-        console.error('Cleaver Search initialization failed:', error);
+        console.error('Clever Search initialization failed:', error);
       }
     }
   }

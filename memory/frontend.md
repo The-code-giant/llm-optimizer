@@ -11,16 +11,16 @@ Okay, here is a frontend implementation guide for the LLM Optimizer, formatted i
 - User session and access control are managed via Clerk hooks and middleware.
 
 ```markdown
-# Frontend Implementation Guide: Cleaver Search Dashboard
+# Frontend Implementation Guide: Clever Search Dashboard
 
 **Version: 1.0**
 **Date: June 25, 2025**
 
 ## 1. Document Header
 
-This document provides a technical guide for the frontend implementation of the Cleaver Search User Dashboard. It outlines the architecture, state management, UI design considerations, API integration patterns, testing strategy, and provides code examples for key components. The target audience is frontend developers responsible for building and maintaining the dashboard application.
+This document provides a technical guide for the frontend implementation of the Clever Search User Dashboard. It outlines the architecture, state management, UI design considerations, API integration patterns, testing strategy, and provides code examples for key components. The target audience is frontend developers responsible for building and maintaining the dashboard application.
 
-The goal of Cleaver Search is to empower non-technical users (Marketing Managers, Founders) to improve their website's visibility and influence on Large Language Models (LLMs) by providing analysis, recommendations, and direct content injection capabilities via a user-friendly dashboard.
+The goal of Clever Search is to empower non-technical users (Marketing Managers, Founders) to improve their website's visibility and influence on Large Language Models (LLMs) by providing analysis, recommendations, and direct content injection capabilities via a user-friendly dashboard.
 
 ## 2. Component Architecture
 
@@ -379,7 +379,7 @@ const sampleSuggestedContent = `
 <h3>Frequently Asked Questions</h3>
 <p>Here are some common questions about our service:</p>
 <ul>
-  <li><strong>Q: What is Cleaver Search?</strong><br>A: It's a tool to help your website get noticed by AI like ChatGPT.</li>
+                  <li><strong>Q: What is Clever Search?</strong><br>A: It's a tool to help your website get noticed by AI like ChatGPT.</li>
   <li><strong>Q: How does it work?</strong><br>A: It analyzes your content and suggests improvements.</li>
 </ul>
 `;
@@ -515,7 +515,7 @@ export default ContentInjectionForm;
 
 These examples provide a starting point for implementing the core features. Remember to integrate them within your chosen framework's structure (routing, state management context, etc.).
 
-This guide covers the essential aspects for frontend developers to begin building the Cleaver Search Dashboard according to the MVP requirements.
+This guide covers the essential aspects for frontend developers to begin building the Clever Search Dashboard according to the MVP requirements.
 
 ```
 

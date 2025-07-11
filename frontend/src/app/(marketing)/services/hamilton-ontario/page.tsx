@@ -56,7 +56,7 @@ export default function HamiltonLLMServices() {
   const testimonials = [
     {
       company: "Hamilton Steel Manufacturing",
-      text: "Our technical product content now gets cited by Claude consistently. Cleaver Search helped us optimize complex manufacturing documentation for AI understanding."
+              text: "Our technical product content now gets cited by Claude consistently. Clever Search helped us optimize complex manufacturing documentation for AI understanding."
     },
     {
       company: "Hamilton Healthcare Network",
@@ -78,7 +78,7 @@ export default function HamiltonLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Hamilton Cleaver Search Services
+                              Hamilton Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Hamilton's manufacturing and healthcare sectors. Increase your ChatGPT, Claude, and Gemini citations 
@@ -220,7 +220,7 @@ export default function HamiltonLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              How Cleaver Search Works for Your Hamilton Business
+                              How Clever Search Works for Your Hamilton Business
             </h2>
           </motion.div>
           
@@ -262,7 +262,7 @@ export default function HamiltonLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              Hamilton Businesses Love Our Cleaver Search
+                              Hamilton Businesses Love Our Clever Search
             </h2>
           </motion.div>
           
@@ -302,7 +302,7 @@ export default function HamiltonLLMServices() {
               Ready to Boost Hamilton's LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 280+ Hamilton businesses using Cleaver Search to increase ChatGPT, Claude, and Gemini citations.
+                              Join 280+ Hamilton businesses using Clever Search to increase ChatGPT, Claude, and Gemini citations.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

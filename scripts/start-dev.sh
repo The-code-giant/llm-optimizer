@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Cleaver Search Development Environment Startup Script
+# Clever Search Development Environment Startup Script
 
-echo "🚀 Starting Cleaver Search Development Environment..."
+echo "🚀 Starting Clever Search Development Environment..."
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then

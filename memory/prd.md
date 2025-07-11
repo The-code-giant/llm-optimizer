@@ -2,7 +2,7 @@
 # LLM Optimizer Product Requirements Document (PRD)
 
 ## 1. Document Header
-*   **Product Name:** Cleaver Search
+*   **Product Name:** Clever Search
 *   **Version:** 1.0
 *   **Date:** June 25, 2025
 *   **Author:** [Your Name/Team Name]

@@ -56,7 +56,7 @@ export default function TorontoLLMServices() {
   const testimonials = [
     {
       company: "Toronto Financial Services Firm",
-      text: "Our investment content now gets cited by ChatGPT consistently. Cleaver Search helped us optimize complex financial documentation for AI understanding."
+                    text: "Our investment content now gets cited by ChatGPT consistently. Clever Search helped us optimize complex financial documentation for AI understanding."
     },
     {
       company: "Toronto Tech Startup",
@@ -78,7 +78,7 @@ export default function TorontoLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Toronto Cleaver Search Services
+                              Toronto Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Toronto's financial and tech sectors. Increase your ChatGPT, Claude, and Gemini citations 
@@ -220,7 +220,7 @@ export default function TorontoLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              How Cleaver Search Works for Your Toronto Business
+                              How Clever Search Works for Your Toronto Business
             </h2>
           </motion.div>
           
@@ -262,7 +262,7 @@ export default function TorontoLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              Toronto Businesses Love Our Cleaver Search
+                              Toronto Businesses Love Our Clever Search
             </h2>
           </motion.div>
           
@@ -302,7 +302,7 @@ export default function TorontoLLMServices() {
               Ready to Dominate Toronto's LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 800+ Toronto businesses using Cleaver Search to increase ChatGPT, Claude, and Gemini citations.
+                              Join 800+ Toronto businesses using Clever Search to increase ChatGPT, Claude, and Gemini citations.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

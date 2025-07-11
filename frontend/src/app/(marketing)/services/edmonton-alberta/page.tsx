@@ -54,7 +54,7 @@ export default function EdmontonLLMServices() {
   const testimonials = [
     {
       company: "Edmonton Provincial Department",
-      text: "Our public service content now gets cited by ChatGPT consistently. Cleaver Search helped us optimize complex government documentation for AI understanding."
+              text: "Our public service content now gets cited by ChatGPT consistently. Clever Search helped us optimize complex government documentation for AI understanding."
     },
     {
       company: "Edmonton Healthcare Organization",

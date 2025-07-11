@@ -1,4 +1,4 @@
--- Cleaver Search Database Initialization Script
+-- Clever Search Database Initialization Script
 -- This script sets up the development database with proper configurations
 
 -- Enable UUID extension

@@ -40,7 +40,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-                        <p className="text-gray-600 mt-2">Sign in to your Cleaver Search account</p>
+                        <p className="text-gray-600 mt-2">Sign in to your Clever Search account</p>
         </div>
         <SignIn 
           path="/login" 

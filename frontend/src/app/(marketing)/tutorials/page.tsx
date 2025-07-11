@@ -31,7 +31,7 @@ export default function Tutorials() {
   const tutorials = [
     {
       id: 1,
-              title: "Getting Started with Cleaver Search",
+              title: "Getting Started with Clever Search",
       description: "Complete walkthrough of setting up your first site analysis and understanding your dashboard",
       duration: "12:45",
       category: "getting-started",
@@ -113,7 +113,7 @@ export default function Tutorials() {
     {
       id: 9,
       title: "API Integration for Developers",
-              description: "Complete guide to integrating Cleaver Search via our REST API",
+              description: "Complete guide to integrating Clever Search via our REST API",
       duration: "22:15",
       category: "advanced",
       level: "Advanced",
@@ -460,7 +460,7 @@ export default function Tutorials() {
               Ready to optimize your content?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Start applying what you've learned with a free Cleaver Search account.
+              Start applying what you've learned with a free Clever Search account.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">

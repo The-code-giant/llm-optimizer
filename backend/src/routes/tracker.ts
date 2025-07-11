@@ -383,7 +383,7 @@ router.get('/script/:trackerId', async (req: Request, res: Response, next: NextF
       ? process.env.API_URL || 'https://api.llmoptimizer.com'
       : 'http://localhost:3001';
 
-    const scriptHtml = `<!-- Cleaver Search Tracking Script -->
+    const scriptHtml = `<!-- Clever Search Tracking Script -->
 <script>
 (function() {
   'use strict';
@@ -397,7 +397,7 @@ router.get('/script/:trackerId', async (req: Request, res: Response, next: NextF
     TIMEOUT: 5000
   };
 
-        console.log('Cleaver Search: Loading tracker with config:', CONFIG);
+        console.log('Clever Search: Loading tracker with config:', CONFIG);
 
   // Load the main tracker script
   const script = document.createElement('script');
@@ -409,11 +409,11 @@ router.get('/script/:trackerId', async (req: Request, res: Response, next: NextF
   script.setAttribute('data-config', JSON.stringify(CONFIG));
   
   script.onload = function() {
-            console.log('Cleaver Search: Tracker script loaded successfully');
+            console.log('Clever Search: Tracker script loaded successfully');
   };
   
   script.onerror = function() {
-            console.warn('Cleaver Search script failed to load');
+            console.warn('Clever Search script failed to load');
   };
   
   // Insert script
@@ -433,7 +433,7 @@ router.get('/script/:trackerId', async (req: Request, res: Response, next: NextF
       scriptHtml: scriptHtml,
       instructions: {
         installation: "Copy the script above and paste it in your website's <head> section, preferably near the top.",
-        verification: "After installation, visit your website and check the browser console for 'Cleaver Search' messages to verify the script is working.",
+        verification: "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
         support: "If you need help, contact our support team."
       }
     });
