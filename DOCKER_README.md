@@ -1,6 +1,6 @@
-# Cleaver Search - Docker Development Setup
+# Clever Search - Docker Development Setup
 
-This Docker setup provides a complete development environment for Cleaver Search with all necessary services.
+This Docker setup provides a complete development environment for Clever Search with all necessary services.
 
 ## 🚀 Quick Start
 

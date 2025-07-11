@@ -56,7 +56,7 @@ export default function WindsorLLMServices() {
   const testimonials = [
     {
       company: "Windsor Automotive Parts",
-      text: "Our automotive content now gets cited by Claude consistently. Cleaver Search helped us optimize complex manufacturing documentation for AI understanding."
+              text: "Our automotive content now gets cited by Claude consistently. Clever Search helped us optimize complex manufacturing documentation for AI understanding."
     },
     {
       company: "Windsor International Trade",
@@ -78,7 +78,7 @@ export default function WindsorLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Windsor Cleaver Search Services
+                              Windsor Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Windsor's automotive and manufacturing sectors. Increase your ChatGPT, Claude, and Gemini citations 
@@ -184,7 +184,7 @@ export default function WindsorLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              How Cleaver Search Works for Your Windsor Business
+                              How Clever Search Works for Your Windsor Business
             </h2>
           </motion.div>
           

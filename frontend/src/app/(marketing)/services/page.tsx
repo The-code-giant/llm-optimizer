@@ -81,7 +81,7 @@ export default function ServicesPage() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Cleaver Search Services
+                              Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Optimize your website content for ChatGPT, Claude, and Gemini citations. 
@@ -223,7 +223,7 @@ export default function ServicesPage() {
               Ready to Optimize for LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 1,000+ businesses using our Cleaver Search to increase ChatGPT, Claude, and Gemini citations.
+                              Join 1,000+ businesses using our Clever Search to increase ChatGPT, Claude, and Gemini citations.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

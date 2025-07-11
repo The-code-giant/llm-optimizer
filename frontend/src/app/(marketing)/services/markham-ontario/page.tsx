@@ -56,7 +56,7 @@ export default function MarkhamLLMServices() {
   const testimonials = [
     {
       company: "Markham Tech Solutions",
-      text: "Our technology content now gets cited by Claude consistently. Cleaver Search helped us optimize complex technical documentation for AI understanding."
+              text: "Our technology content now gets cited by Claude consistently. Clever Search helped us optimize complex technical documentation for AI understanding."
     },
     {
       company: "Markham Telecommunications",
@@ -78,7 +78,7 @@ export default function MarkhamLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Markham Cleaver Search Services
+                              Markham Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Markham's tech and telecommunications sectors. Increase your ChatGPT, Claude, and Gemini citations 
@@ -222,7 +222,7 @@ export default function MarkhamLLMServices() {
               Ready to Elevate Markham's LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 200+ Markham businesses using Cleaver Search to increase ChatGPT, Claude, and Gemini citations.
+                              Join 200+ Markham businesses using Clever Search to increase ChatGPT, Claude, and Gemini citations.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

@@ -1,6 +1,6 @@
 # Development Scripts
 
-This directory contains utility scripts for managing the Cleaver Search development environment.
+This directory contains utility scripts for managing the Clever Search development environment.
 
 ## Available Scripts
 

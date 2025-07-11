@@ -143,7 +143,7 @@ export default function Help() {
               How can we help you?
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Find answers, get support, and learn how to make the most of Cleaver Search.
+              Find answers, get support, and learn how to make the most of Clever Search.
             </p>
             
             {/* Search Bar */}

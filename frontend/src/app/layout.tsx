@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-      title: "Cleaver Search – Boost Your Site for LLMs & Search",
+      title: "Clever Search – Boost Your Site for LLMs & Search",
   description:
     "AI-powered SEO platform to optimize your website for search engines and large language models. Import sitemaps, analyze pages, inject content, and track LLM readiness.",
   keywords:

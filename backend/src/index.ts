@@ -104,9 +104,9 @@ const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: '3.0.0',
     info: {
-        title: 'Cleaver Search API',
-  version: '1.0.0',
-  description: 'API documentation for the Cleaver Search backend',
+            title: 'Clever Search API',
+    version: '1.0.0',
+    description: 'API documentation for the Clever Search backend',
     },
   },
   apis: ['./src/routes/*.ts'],

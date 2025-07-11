@@ -2,16 +2,16 @@ Okay, here is a project status template for the LLM Optimizer project, formatted
 
 ```markdown
 ---
-title: Cleaver Search - Project Status Report
+title: Clever Search - Project Status Report
 version: 1.0
 date: June 25, 2025
 ---
 
-# Cleaver Search - Project Status Report
+# Clever Search - Project Status Report
 
 ## 1. Project Summary
 
-**Goal:** The primary objective of the Cleaver Search project is to increase the visibility and citation of user websites by Large Language Models (LLMs) like ChatGPT, Claude, and Gemini. This is achieved by analyzing website content for LLM readiness and providing easy-to-implement recommendations and content injection capabilities, specifically targeting non-technical Marketing Managers and Founders.
+**Goal:** The primary objective of the Clever Search project is to increase the visibility and citation of user websites by Large Language Models (LLMs) like ChatGPT, Claude, and Gemini. This is achieved by analyzing website content for LLM readiness and providing easy-to-implement recommendations and content injection capabilities, specifically targeting non-technical Marketing Managers and Founders.
 
 **Current Phase:** [e.g., Development, Testing, Deployment Planning, Live]
 

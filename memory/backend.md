@@ -1,4 +1,4 @@
-# Cleaver Search Backend Implementation Guide
+# Clever Search Backend Implementation Guide
 
 **Version:** 1.0
 **Date:** June 25, 2025
@@ -440,5 +440,5 @@ def get_injected_content(tracker_id):
 # app.register_blueprint(tracker_bp)
 ```
 
-This implementation guide provides a solid foundation for building the backend of Cleaver Search, covering key aspects from API design and data modeling to business logic, security, performance, and practical code examples for core functionalities. The focus on asynchronous processing for heavy tasks and careful consideration of tracker script performance and security are crucial for a successful MVP.
+This implementation guide provides a solid foundation for building the backend of Clever Search, covering key aspects from API design and data modeling to business logic, security, performance, and practical code examples for core functionalities. The focus on asynchronous processing for heavy tasks and careful consideration of tracker script performance and security are crucial for a successful MVP.
 ```

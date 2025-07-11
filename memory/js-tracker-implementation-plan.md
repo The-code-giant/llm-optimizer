@@ -217,7 +217,7 @@
         });
       } catch (error) {
         // Silently fail for tracking to not affect user experience
-                  console.warn('Cleaver Search tracking failed:', error);
+                  console.warn('Clever Search tracking failed:', error);
       }
     }
 
@@ -440,7 +440,7 @@ app.get('/api/sites/:siteId/analytics', auth, async (req, res) => {
   script.defer = true;
   
   script.onerror = function() {
-              console.warn('Cleaver Search script failed to load');
+              console.warn('Clever Search script failed to load');
   };
   
   var firstScript = document.getElementsByTagName('script')[0];

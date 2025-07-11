@@ -1,10 +1,10 @@
-# Cleaver Search - Development Commands
+# Clever Search - Development Commands
 
 .PHONY: help dev first-time start stop logs clean build restart status shell db-migrate db-studio tools
 
 # Default target
 help:
-	@echo "🚀 Cleaver Search Development Commands"
+	@echo "🚀 Clever Search Development Commands"
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  make dev       - Start development environment (full setup)"
@@ -41,7 +41,7 @@ first-time:
 
 # Setup commands
 start:
-	@echo "🚀 Starting Cleaver Search development environment..."
+	@echo "🚀 Starting Clever Search development environment..."
 	@./scripts/start-dev.sh
 
 stop:

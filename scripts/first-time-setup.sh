@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# First-time Setup Script for Cleaver Search Development Environment
+# First-time Setup Script for Clever Search Development Environment
 
-echo "🚀 Cleaver Search - First Time Setup"
+echo "🚀 Clever Search - First Time Setup"
 echo "======================================"
 
 # Check if Docker is running
