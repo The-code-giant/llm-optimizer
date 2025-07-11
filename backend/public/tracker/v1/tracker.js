@@ -27,7 +27,7 @@
     UPDATE_INTERVAL: configData.UPDATE_INTERVAL || 500, // Reduced from 3000ms to 500ms
     MAX_INTERVAL_DURATION: configData.MAX_INTERVAL_DURATION || 60000, // Increased to 60 seconds
     FAST_MODE: configData.FAST_MODE !== false, // Enable fast mode by default
-    DEBUG_MODE: configData.DEBUG_MODE || urlParams.has('cleaver-search-debug'),
+    DEBUG_MODE: configData.DEBUG_MODE || urlParams.has('clever-search-debug'),
     OVERRIDE_URL: configData.OVERRIDE_URL || window.LLM_OVERRIDE_URL || null // URL override for testing
   };
 
@@ -36,7 +36,7 @@
 
   // Diagnostics helper
   const urlParams = new URLSearchParams(window.location.search);
-  const diagnosticsEnabled = urlParams.has('cleaver-search-debug') || urlParams.has('diagnostics') || CONFIG.DEBUG_MODE;
+  const diagnosticsEnabled = urlParams.has('clever-search-debug') || urlParams.has('diagnostics') || CONFIG.DEBUG_MODE;
   const consolePrint = (message, force = false) => {
     if (diagnosticsEnabled || force) {
       console.log(`[Clever Search] ${message}`);
@@ -157,7 +157,7 @@
     removePreviousContent() {
       try {
         // Remove elements with our tracking attributes
-        const elementsToRemove = document.querySelectorAll('[data-cleaver-search="injected"]');
+        const elementsToRemove = document.querySelectorAll('[data-clever-search="injected"]');
         elementsToRemove.forEach(element => {
           try {
             element.remove();
@@ -441,7 +441,7 @@
         if (!metaDesc) {
           metaDesc = document.createElement('meta');
           metaDesc.setAttribute('name', 'description');
-          metaDesc.setAttribute('data-cleaver-search', 'injected');
+          metaDesc.setAttribute('data-clever-search', 'injected');
           document.head.appendChild(metaDesc);
         }
         
@@ -469,7 +469,7 @@
           if (!metaKeywords) {
             metaKeywords = document.createElement('meta');
             metaKeywords.setAttribute('name', 'keywords');
-            metaKeywords.setAttribute('data-cleaver-search', 'injected');
+            metaKeywords.setAttribute('data-clever-search', 'injected');
             document.head.appendChild(metaKeywords);
           }
           
@@ -486,15 +486,15 @@
           const target = document.querySelector(data.contentInjection.target);
           if (target) {
             // Remove existing keyword content
-            const existingKeywordContent = target.querySelector('.cleaver-search-keywords[data-cleaver-search="injected"]');
+            const existingKeywordContent = target.querySelector('.clever-search-keywords[data-clever-search="injected"]');
             if (existingKeywordContent) {
               existingKeywordContent.remove();
             }
 
             const keywordContent = document.createElement('div');
             keywordContent.innerHTML = data.contentInjection.html;
-                    keywordContent.className = 'cleaver-search-keywords';
-        keywordContent.setAttribute('data-cleaver-search', 'injected');
+                    keywordContent.className = 'clever-search-keywords';
+        keywordContent.setAttribute('data-clever-search', 'injected');
             
             if (data.contentInjection.hidden) {
               keywordContent.style.display = 'none';
@@ -516,7 +516,7 @@
       if (!data || !data.questions || !Array.isArray(data.questions)) return false;
       
       try {
-        const targetSelector = data.placement || '.cleaver-search-faq';
+        const targetSelector = data.placement || '.clever-search-faq';
         let target = document.querySelector(targetSelector);
         
         if (!target) {
@@ -524,8 +524,8 @@
           const mainContent = document.querySelector('main, article, .content, #content, .main-content, body');
           if (mainContent) {
             target = document.createElement('div');
-                    target.className = 'cleaver-search-faq';
-        target.setAttribute('data-cleaver-search', 'injected');
+                    target.className = 'clever-search-faq';
+        target.setAttribute('data-clever-search', 'injected');
             mainContent.appendChild(target);
           } else {
             return false;
@@ -558,15 +558,15 @@
       if (!data || !data.content) return false;
       
       try {
-        const targetSelector = data.placement || '.cleaver-search-content';
+        const targetSelector = data.placement || '.clever-search-content';
         let target = document.querySelector(targetSelector);
         
         if (!target) {
           const mainContent = document.querySelector('main, article, .content, #content, .main-content');
           if (mainContent) {
             target = document.createElement('div');
-                    target.className = 'cleaver-search-content';
-        target.setAttribute('data-cleaver-search', 'injected');
+                                target.className = 'clever-search-content';
+            target.setAttribute('data-clever-search', 'injected');
             mainContent.appendChild(target);
           } else {
             return false;
@@ -574,15 +574,15 @@
         }
 
         // Remove existing paragraph content
-        const existingParagraph = target.querySelector('.cleaver-search-paragraph[data-cleaver-search="injected"]');
+        const existingParagraph = target.querySelector('.clever-search-paragraph[data-clever-search="injected"]');
         if (existingParagraph) {
           existingParagraph.remove();
         }
 
         const paragraph = document.createElement('div');
-        paragraph.className = 'cleaver-search-paragraph';
+        paragraph.className = 'clever-search-paragraph';
         paragraph.innerHTML = data.content;
-        paragraph.setAttribute('data-cleaver-search', 'injected');
+        paragraph.setAttribute('data-clever-search', 'injected');
         
         if (data.hidden) {
           paragraph.style.display = 'none';
@@ -619,7 +619,7 @@
     addFAQSchema(questions) {
       try {
         // Remove existing schema
-        const existingSchema = document.querySelector('script[type="application/ld+json"][data-cleaver-search="injected"]');
+        const existingSchema = document.querySelector('script[type="application/ld+json"][data-clever-search="injected"]');
         if (existingSchema) {
           existingSchema.remove();
         }
@@ -640,7 +640,7 @@
         const script = document.createElement('script');
         script.type = 'application/ld+json';
         script.textContent = JSON.stringify(schema);
-        script.setAttribute('data-cleaver-search', 'injected');
+        script.setAttribute('data-clever-search', 'injected');
         document.head.appendChild(script);
         consolePrint('FAQ schema added');
       } catch (error) {

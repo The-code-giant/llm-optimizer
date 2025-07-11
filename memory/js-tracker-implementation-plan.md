@@ -126,14 +126,14 @@
     }
 
     injectFAQ(data) {
-                const targetSelector = data.placement || '.cleaver-search-faq';
+                const targetSelector = data.placement || '.clever-search-faq';
       let target = document.querySelector(targetSelector);
       
       if (!target) {
         // Create FAQ container at end of main content
         const mainContent = document.querySelector('main, article, .content, body');
         target = document.createElement('div');
-                    target.className = 'cleaver-search-faq';
+                    target.className = 'clever-search-faq';
         mainContent.appendChild(target);
       }
 

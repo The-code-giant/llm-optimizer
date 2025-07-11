@@ -205,7 +205,7 @@ export default function Privacy() {
             <div className="bg-gray-800 rounded-xl p-8 text-left max-w-2xl mx-auto">
               <h3 className="text-xl font-bold mb-6">Contact Information</h3>
               <div className="space-y-4 text-gray-300">
-                <p><strong className="text-white">Email:</strong> privacy@cleaversearch.com</p>
+                <p><strong className="text-white">Email:</strong> privacy@cleversearch.ai</p>
                 <p><strong className="text-white">Address:</strong> 123 AI Street, Suite 100, San Francisco, CA 94102</p>
                 <p><strong className="text-white">Phone:</strong> +1 (555) 123-4567</p>
               </div>
