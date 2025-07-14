@@ -5,6 +5,7 @@ import { signToken, signRefreshToken, verifyToken } from '../utils/jwt';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
+import { randomUUID } from 'crypto';
 
 const router = Router();
 
@@ -73,6 +74,11 @@ router.post('/login', async (req: Request, res: Response, next) => {
     const userArr = await db.select().from(users).where(eq(users.email, email)).limit(1);
     const user = userArr[0];
     if (!user) {
+      res.status(401).json({ message: 'Invalid credentials' });
+      return;
+    }
+    // Add a check to ensure passwordHash is not null
+    if (!user.passwordHash) {
       res.status(401).json({ message: 'Invalid credentials' });
       return;
     }
@@ -208,7 +214,7 @@ router.post('/register', async (req: Request, res: Response, next) => {
       return;
     }
     const passwordHash = await bcrypt.hash(password, 10);
-    const [user] = await db.insert(users).values({ email, passwordHash }).returning();
+    const [user] = await db.insert(users).values({ id: randomUUID(), email, passwordHash }).returning();
     const token = signToken({ userId: user.id, email: user.email });
     const refreshToken = signRefreshToken({ userId: user.id, email: user.email });
     res.status(201).json({ token, refreshToken, user: { id: user.id, email: user.email } });
