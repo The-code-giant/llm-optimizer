@@ -3,6 +3,7 @@ import { pgTable, serial, uuid, varchar, text, timestamp, doublePrecision, jsonb
 export const users = pgTable('users', {
   id: varchar('id', { length: 255 }).primaryKey(), // Clerk user ID
   email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: varchar('password_hash', { length: 255 }),
   name: varchar('name', { length: 255 }),
   preferences: jsonb('preferences').default({}),
   createdAt: timestamp('created_at').defaultNow(),

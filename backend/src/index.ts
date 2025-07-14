@@ -47,7 +47,8 @@ const corsOptions = {
     'http://127.0.0.1:3002',
     'http://127.0.0.1:3001',
     'http://127.0.0.1:8080',
-    'http://127.0.0.1:5500'
+    'http://127.0.0.1:5500',
+    'https://www.cleversearch.ai/'
   ],
   credentials: true,
   optionsSuccessStatus: 200,
@@ -105,6 +106,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// Determine which files to use based on environment
+const isDevelopment = process.env.NODE_ENV !== 'production';
+const apiFiles = isDevelopment 
+  ? ['./src/routes/*.ts'] 
+  : ['./dist/routes/*.js'];
+
+console.log(`📚 Loading Swagger docs from: ${apiFiles.join(', ')}`);
+
 const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: '3.0.0',
@@ -114,7 +123,13 @@ const swaggerSpec = swaggerJSDoc({
     description: 'API documentation for the Clever Search backend',
     },
   },
-  apis: ['./src/routes/*.ts'],
+  apis: apiFiles,
+});
+
+// Serve the Swagger JSON specification
+app.get('/api-docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
