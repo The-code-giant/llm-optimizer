@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: us-west-2
   ECS_CLUSTER: ai-seo-cluster
   ECS_SERVICE: ai-seo-backend-service
   ECS_TASK_DEFINITION: ai-seo-backend-task
