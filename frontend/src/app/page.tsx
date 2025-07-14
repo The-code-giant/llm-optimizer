@@ -225,14 +225,14 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
                          <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-                                 Let&apos;s talk about what Clever Search can do for your business.
+                            Boost Your Site&apos;s AI & SEO Visibility in Minutes
              </h1>
             <Link href="/register">
               <Button 
                 size="lg" 
                 className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
               >
-                Get started
+                See it in action
               </Button>
             </Link>
           </motion.div>
