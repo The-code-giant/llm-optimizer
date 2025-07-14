@@ -8,7 +8,7 @@ on:
       - '.github/workflows/deploy-backend.yml'
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: us-west-2
   ECR_REPOSITORY: ai-seo-backend
   ECS_CLUSTER: ai-seo-cluster
   ECS_SERVICE: ai-seo-backend-service
