@@ -11,7 +11,7 @@ env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: ai-seo-backend
   ECS_CLUSTER: ai-seo-cluster
-  ECS_SERVICE: ai-seo-backend-service
+  ECS_SERVICE: ai-seo-cluster
   ECS_TASK_DEFINITION: deployment-backend
 
 jobs:
