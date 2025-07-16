@@ -50,6 +50,13 @@
       "when": 1752216383894,
       "tag": "0006_conscious_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1752600646590,
+      "tag": "0007_wet_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }

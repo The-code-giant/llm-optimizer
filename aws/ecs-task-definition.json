@@ -1,0 +1,121 @@
+{
+    "family": "ai-seo-backend-task",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": ["FARGATE"],
+    "cpu": "1024",
+    "memory": "3072",
+    "executionRoleArn": "arn:aws:iam::456859042895:role/ecsTaskExecutionRole",
+    "containerDefinitions": [
+        {
+            "name": "backend",
+            "image": "452100239402.dkr.ecr.us-east-1.amazonaws.com/ai-seo-backend:latest",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 3001,
+                    "protocol": "tcp"
+                }
+            ],
+            "environment": [
+                {
+                    "name": "NODE_ENV",
+                    "value": "production"
+                },
+                {
+                    "name": "REDIS_HOST",
+                    "value": "localhost"
+                },
+                {
+                    "name": "REDIS_PORT",
+                    "value": "6379"
+                },
+                {
+                    "name": "POSTGRES_HOST",
+                    "value": "localhost"
+                },
+                {
+                    "name": "POSTGRES_PORT",
+                    "value": "5432"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/ai-seo-backend",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "backend"
+                }
+            }
+        },
+        {
+            "name": "redis",
+            "image": "redis:7-alpine",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 6379,
+                    "protocol": "tcp"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/ai-seo-backend",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "redis"
+                }
+            }
+        },
+        {
+            "name": "postgres",
+            "image": "postgres:15",
+            "essential": true,
+            "portMappings": [
+                {
+                    "containerPort": 5432,
+                    "protocol": "tcp"
+                }
+            ],
+            "environment": [
+                {
+                    "name": "POSTGRES_USER",
+                    "value": "postgres"
+                },
+                {
+                    "name": "POSTGRES_DB",
+                    "value": "cleaver_search_prod"
+                }
+            ],
+            "secrets": [
+                {
+                    "name": "POSTGRES_PASSWORD",
+                    "valueFrom": "arn:aws:ssm:us-east-1:456859042895:parameter/postgres-password"
+                }
+            ],
+            "mountPoints": [
+                {
+                    "sourceVolume": "postgres-data",
+                    "containerPath": "/var/lib/postgresql/data",
+                    "readOnly": false
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/ai-seo-backend",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "postgres"
+                }
+            }
+        }
+    ],
+    "volumes": [
+        {
+            "name": "postgres-data",
+            "efsVolumeConfiguration": {
+                "fileSystemId": "fs-xxxxxxxx",
+                "rootDirectory": "/postgres"
+            }
+        }
+    ]
+} 
