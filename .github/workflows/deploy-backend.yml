@@ -47,12 +47,23 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
         
-    - name: Download task definition
+    - name: Check if task definition exists
+      id: check-task-def
       run: |
-        aws ecs describe-task-definition \
-          --task-definition $ECS_TASK_DEFINITION \
-          --query taskDefinition > task-definition.json
-
+        if aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} --region ${{ env.AWS_REGION }} &>/dev/null; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
+    - name: Download or create task definition
+      if: steps.check-task-def.outputs.exists == 'true'
+      run: |
+        aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} --query taskDefinition > task-definition.json
+    - name: Create new task definition if not exists
+      if: steps.check-task-def.outputs.exists == 'false'
+      run: |
+        echo '{"family": "${{ env.ECS_TASK_DEFINITION }}", "networkMode": "awsvpc", "requiresCompatibilities": ["FARGATE"], "cpu": "512", "memory": "1024", "executionRoleArn": "arn:aws:iam::456859042895:role/ecsTaskExecutionRole", "containerDefinitions": [{"name": "${{ env.CONTAINER_NAME }}", "image": "456859042895.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:latest", "essential": true, "portMappings": [{"containerPort": 3001, "protocol": "tcp"}], "logConfiguration": {"logDriver": "awslogs", "options": {"awslogs-group": "/ecs/ai-seo-backend", "awslogs-create-group": "true", "awslogs-region": "${{ env.AWS_REGION }}", "awslogs-stream-prefix": "backend"}}}]}' > task-definition.json
+        aws ecs register-task-definition --cli-input-json file://task-definition.json --region ${{ env.AWS_REGION }}
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
