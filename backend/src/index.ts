@@ -48,7 +48,9 @@ const corsOptions = {
     'http://127.0.0.1:3001',
     'http://127.0.0.1:8080',
     'http://127.0.0.1:5500',
-    'https://www.cleversearch.ai/'
+    'https://www.cleversearch.ai/',
+    'https://www.cleversearch.ai'
+
   ],
   credentials: true,
   optionsSuccessStatus: 200,
