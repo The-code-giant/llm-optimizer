@@ -12,7 +12,7 @@ env:
   ECR_REPOSITORY: ai-seo-backend
   ECS_CLUSTER: ai-seo-cluster
   ECS_SERVICE: ai-seo-backend-service
-  ECS_TASK_DEFINITION: ai-seo-backend-task
+  ECS_TASK_DEFINITION: deployment-backend
 
 jobs:
   deploy:
@@ -57,6 +57,16 @@ jobs:
           --task-definition $ECS_TASK_DEFINITION \
           --query 'taskDefinition' | \
           jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .placementConstraints, .compatibilities, .registeredAt, .registeredBy)')
+
+        # Debug: print the task definition
+        echo "Fetched task definition:"
+        echo "$TASK_DEF"
+
+        # Check if TASK_DEF is empty or contains an error
+        if [ -z "$TASK_DEF" ] || [[ "$TASK_DEF" == *"Unable to describe task definition"* ]]; then
+          echo "❌ Task definition not found or invalid. Please create it in the AWS Console first."
+          exit 1
+        fi
         
         # Update image URI in task definition
         UPDATED_TASK_DEF=$(echo $TASK_DEF | jq \
