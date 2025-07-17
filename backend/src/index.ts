@@ -59,7 +59,7 @@ const corsOptions = {
 // Public CORS for tracker static files - allow all origins
 app.use('/tracker', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS, POST');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   if (req.method === 'OPTIONS') {
     res.sendStatus(200);
