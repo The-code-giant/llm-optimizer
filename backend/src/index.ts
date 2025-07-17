@@ -56,11 +56,23 @@ const corsOptions = {
   optionsSuccessStatus: 200,
 };
 
+// Public CORS for tracker static files - allow all origins
+app.use('/tracker', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+
+// Serve static files for tracker script (MUST be after CORS middleware)
+app.use('/tracker', express.static('public/tracker'));
+
 app.use(cors(corsOptions));
 app.use(express.json());
-
-// Serve static files for tracker script
-app.use('/tracker', express.static('public/tracker'));
 
 // Sentry request handler with context
 if (sentryInitialized) {
