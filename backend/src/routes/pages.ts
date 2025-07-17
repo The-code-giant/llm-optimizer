@@ -5,6 +5,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { AnalysisService } from '../utils/analysisService';
 import OpenAI from 'openai';
+import cache from '../utils/cache';
 
 // Extend Express Request type to include user
 import type { Request } from 'express';
@@ -764,6 +765,12 @@ router.post('/:pageId/content', authenticateJWT, async (req: AuthenticatedReques
       updatedAt: new Date()
     }).returning();
 
+    // 🔥 CACHE INVALIDATION: If content was deployed immediately, invalidate cache
+    if (deployImmediately) {
+      console.log(`🗑️  Invalidating cache for deployed content: ${site.trackerId}:${page.url}`);
+      await cache.invalidateTrackerContent(site.trackerId, page.url);
+    }
+
     res.json({
       message: `Content saved${deployImmediately ? ' and deployed' : ''} successfully`,
       content: savedContent,
@@ -993,6 +1000,10 @@ router.put('/:pageId/content/:contentType/deploy', authenticateJWT, async (req: 
       })
       .where(eq(pageContent.id, content.id));
 
+    // 🔥 CACHE INVALIDATION: Invalidate cache after deployment
+    console.log(`🗑️  Invalidating cache for deployed content: ${site.trackerId}:${page.url} (${contentType})`);
+    await cache.invalidateTrackerContent(site.trackerId, page.url);
+
     res.json({
       message: `${contentType} content deployed successfully`,
       pageId,
@@ -1058,6 +1069,10 @@ router.delete('/:pageId/content/:contentType/undeploy', authenticateJWT, async (
         eq(pageContent.contentType, contentType),
         eq(pageContent.isActive, 1)
       ));
+
+    // 🔥 CACHE INVALIDATION: Invalidate cache after undeployment
+    console.log(`🗑️  Invalidating cache for undeployed content: ${site.trackerId}:${page.url} (${contentType})`);
+    await cache.invalidateTrackerContent(site.trackerId, page.url);
 
     res.json({
       message: `${contentType} content undeployed successfully`,

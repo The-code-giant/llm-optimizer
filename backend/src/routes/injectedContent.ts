@@ -1,9 +1,10 @@
 import { Router, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { injectedContent, sites } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { injectedContent, sites, pageInjectedContent, pages } from '../db/schema';
+import { eq, and } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { z } from 'zod';
+import cache from '../utils/cache';
 
 // Extend Express Request type to include user
 import type { Request } from 'express';
@@ -108,6 +109,14 @@ router.post('/sites/:siteId/injected-content', authenticateJWT, async (req: Auth
       ...parse.data,
       siteId: req.params.siteId,
     }).returning();
+
+    // 🔥 CACHE INVALIDATION: If content is active, invalidate cache for all pages
+    if (content.status === 'active') {
+      console.log(`🗑️  Invalidating cache for new injected content: ${site.trackerId} (${content.type})`);
+      // Note: We invalidate all pages for this tracker since injected content can affect multiple pages
+      await cache.invalidateTrackerContent(site.trackerId);
+    }
+
     res.status(201).json(content);
   } catch (err) {
     next(err);
@@ -213,6 +222,17 @@ router.put('/injected-content/:contentId', authenticateJWT, async (req: Authenti
       .set({ ...parse.data, updatedAt: new Date() })
       .where(eq(injectedContent.id, req.params.contentId))
       .returning();
+
+    // 🔥 CACHE INVALIDATION: If content status changed to/from active, or content was modified while active
+    const statusChanged = parse.data.status && parse.data.status !== content.status;
+    const contentModified = parse.data.content && parse.data.content !== content.content;
+    const isActiveContent = updated.status === 'active' || content.status === 'active';
+    
+    if (isActiveContent && (statusChanged || contentModified)) {
+      console.log(`🗑️  Invalidating cache for updated injected content: ${site.trackerId} (${updated.type})`);
+      await cache.invalidateTrackerContent(site.trackerId);
+    }
+
     res.json(updated);
   } catch (err) {
     next(err);
@@ -253,8 +273,20 @@ router.delete('/injected-content/:contentId', authenticateJWT, async (req: Authe
       res.status(404).json({ message: 'Not authorized' });
       return;
     }
+
+    // Delete page associations first
+    await db.delete(pageInjectedContent).where(eq(pageInjectedContent.injectedContentId, req.params.contentId));
+    
+    // Delete the content
     await db.delete(injectedContent).where(eq(injectedContent.id, req.params.contentId));
-    res.status(204).send();
+
+    // 🔥 CACHE INVALIDATION: If deleted content was active, invalidate cache
+    if (content.status === 'active') {
+      console.log(`🗑️  Invalidating cache for deleted injected content: ${site.trackerId} (${content.type})`);
+      await cache.invalidateTrackerContent(site.trackerId);
+    }
+
+    res.json({ message: 'Content deleted successfully' });
   } catch (err) {
     next(err);
   }
