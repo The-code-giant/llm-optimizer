@@ -277,6 +277,44 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+      <section id="pricing" className="py-20 bg-blue-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
+              Why an AI search and discovery strategy is critical.
+            </h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-12">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: index * 0.2 }}
+                className="text-center"
+              >
+                <div className="text-6xl lg:text-7xl font-light text-gray-900 mb-4">
+                  <AnimatedCounter end={stat.number} suffix={stat.suffix} />
+                </div>
+                <p className="text-lg text-gray-700 mb-4 leading-relaxed max-w-sm mx-auto">
+                  {stat.label}
+                </p>
+                <p className="text-sm text-gray-500 underline">
+                  {stat.source}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
    {/* Webinar CTA */}
    {/* <section className="py-12 bg-blue-100">
         <div className="max-w-4xl mx-auto px-4 text-center">
@@ -632,44 +670,7 @@ export default function Home() {
     
 
              {/* Statistics Section */}
-       <section id="pricing" className="py-20 bg-blue-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-              Why an AI search and discovery strategy is critical.
-            </h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                className="text-center"
-              >
-                <div className="text-6xl lg:text-7xl font-light text-gray-900 mb-4">
-                  <AnimatedCounter end={stat.number} suffix={stat.suffix} />
-                </div>
-                <p className="text-lg text-gray-700 mb-4 leading-relaxed max-w-sm mx-auto">
-                  {stat.label}
-                </p>
-                <p className="text-sm text-gray-500 underline">
-                  {stat.source}
-                </p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+  
 
       {/* Hero CTA Section - Dark */}
       <section className="bg-black text-white py-20">
