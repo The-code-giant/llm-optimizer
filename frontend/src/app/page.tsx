@@ -278,7 +278,7 @@ export default function Home() {
         </div>
       </section>
    {/* Webinar CTA */}
-   <section className="py-12 bg-blue-100">
+   {/* <section className="py-12 bg-blue-100">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -299,7 +299,7 @@ export default function Home() {
             </Link>
           </motion.div>
         </div>
-      </section>
+      </section> */}
   {/* AI Optimization Types Section */}
   <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
