@@ -54,7 +54,7 @@ export default function CalgaryLLMServices() {
   const testimonials = [
     {
       company: "Calgary Energy Corporation",
-      text: "Our technical content now gets cited by ChatGPT 400% more often. LLM Optimizer helped us optimize complex energy documentation for AI understanding."
+      text: "Our technical content now gets cited by ChatGPT 400% more often. Clever Search helped us optimize complex energy documentation for AI understanding."
     },
     {
       company: "Calgary Financial Services",
@@ -76,7 +76,7 @@ export default function CalgaryLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Calgary LLM Optimizer Services
+              Calgary Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Calgary's energy and financial sectors. Increase your ChatGPT, Claude, and Gemini citations 
@@ -218,7 +218,7 @@ export default function CalgaryLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              How LLM Optimizer Works for Your Calgary Business
+              How Clever Search Works for Your Calgary Business
             </h2>
           </motion.div>
           
@@ -260,7 +260,7 @@ export default function CalgaryLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              Calgary Businesses Love Our LLM Optimizer
+              Calgary Businesses Love Our Clever Search
             </h2>
           </motion.div>
           
@@ -300,7 +300,7 @@ export default function CalgaryLLMServices() {
               Ready to Dominate Calgary's LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 300+ Calgary businesses already using LLM Optimizer to increase their AI citations and technical content visibility.
+              Join 300+ Calgary businesses already using Clever Search to increase their AI citations and technical content visibility.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

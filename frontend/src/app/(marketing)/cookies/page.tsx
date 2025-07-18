@@ -24,7 +24,7 @@ export default function CookiePolicy() {
               Cookie Policy
             </h1>
             <p className="text-xl text-gray-300 leading-relaxed">
-              How we use cookies and similar technologies on LLM Optimizer
+              How we use cookies and similar technologies on Clever Search
             </p>
           </motion.div>
         </div>
@@ -50,7 +50,7 @@ export default function CookiePolicy() {
               <h2 className="text-3xl font-bold text-gray-900 mb-6">What are cookies?</h2>
               <p className="text-gray-700 leading-relaxed">
                 Cookies are small text files that are placed on your computer or mobile device when you visit our website. 
-                At LLM Optimizer, we use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
+                At Clever Search, we use cookies to enhance your browsing experience, analyze site traffic, and personalize content.
               </p>
             </div>
 

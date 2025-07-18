@@ -92,15 +92,15 @@ export function Footer() {
                 <div className="space-y-3">
                   <div className="flex items-center text-gray-300">
                     <EnvelopeIcon className="w-5 h-5 mr-3 text-blue-400" />
-                    <span>hello@cleversearch.ai</span>
+                    <span>hi@cleversearch.ai</span>
                   </div>
                   <div className="flex items-center text-gray-300">
                     <PhoneIcon className="w-5 h-5 mr-3 text-blue-400" />
-                    <span>+1 (555) 123-4567</span>
+                    <span>+1 (604) 705-0740</span>
                   </div>
                   <div className="flex items-center text-gray-300">
                     <MapPinIcon className="w-5 h-5 mr-3 text-blue-400" />
-                    <span>San Francisco, CA</span>
+                    <span>New West Minster, BC</span>
                   </div>
                 </div>
               </motion.div>

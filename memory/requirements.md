@@ -1,4 +1,4 @@
-# LLM Optimizer Requirements Document
+# Clever Search Requirements Document
 
 **Version:** 1.0
 **Date:** June 25, 2025
@@ -15,7 +15,7 @@
 ## 2. Project Overview
 
 **2.1 Purpose:**
-The purpose of the LLM Optimizer is to provide website owners, specifically non-technical marketing managers and founders, with a tool to analyze their website content's suitability for consumption and citation by Large Language Models (LLMs) and implement AI-driven optimizations to increase visibility and relevance in LLM responses.
+The purpose of the Clever Search is to provide website owners, specifically non-technical marketing managers and founders, with a tool to analyze their website content's suitability for consumption and citation by Large Language Models (LLMs) and implement AI-driven optimizations to increase visibility and relevance in LLM responses.
 
 **2.2 Goals:**
 
@@ -33,7 +33,7 @@ The primary target user group consists of:
   These users are typically focused on online presence and growth but may lack deep technical expertise for website code modifications.
 
 **2.4 Scope (MVP):**
-The Minimum Viable Product (MVP) of the LLM Optimizer will focus on the core functionalities identified: website scanning via sitemap, basic traffic/content collection via a tracker script, AI analysis and scoring, a user dashboard for viewing results and recommendations, and a mechanism for injecting managed content blocks (like FAQs) onto the user's website.
+The Minimum Viable Product (MVP) of the Clever Search will focus on the core functionalities identified: website scanning via sitemap, basic traffic/content collection via a tracker script, AI analysis and scoring, a user dashboard for viewing results and recommendations, and a mechanism for injecting managed content blocks (like FAQs) onto the user's website.
 
 ---
 
@@ -80,7 +80,7 @@ The Minimum Viable Product (MVP) of the LLM Optimizer will focus on the core fun
   - AC-004-1: The system shall provide a simple code snippet (e.g., a `<div>` with a specific ID and a corresponding JavaScript tag) that the user needs to place _once_ into their website template where they want the injected content block to appear.
   - AC-004-2: Via the dashboard, users shall be able to select specific suggested content (e.g., an AI-generated FAQ list for a page).
   - AC-004-3: Users shall be able to approve and activate this selected content to be displayed within the designated injection block on the corresponding live website page.
-  - AC-004-4: The content displayed within the injection block on the live site shall be controlled and updated solely from the LLM Optimizer dashboard.
+  - AC-004-4: The content displayed within the injection block on the live site shall be controlled and updated solely from the Clever Search dashboard.
   - AC-004-5: Users shall be able to preview the content before activating it.
   - AC-004-6: Users shall be able to toggle the visibility of the injected content block on the live site via the dashboard.
   - AC-004-7: Users shall be able to edit the text of the suggested/injected content within the dashboard.

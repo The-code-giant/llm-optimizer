@@ -130,7 +130,7 @@ export default function CaseStudies() {
               Real Results from Real Businesses
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              See how companies across industries are using LLM Optimizer to increase their 
+              See how companies across industries are using Clever Search to increase their 
               AI visibility and drive measurable business growth.
             </p>
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
