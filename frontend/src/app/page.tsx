@@ -83,7 +83,7 @@ function AIOptimizationTabs() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTab((prev) => (prev + 1) % tabs.length);
-    }, 5000); // Change tab every 5 seconds
+    }, 8000); // Change tab every 5 seconds
 
     return () => clearInterval(interval);
   }, [tabs.length]);
