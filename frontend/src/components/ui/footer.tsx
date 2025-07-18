@@ -40,7 +40,6 @@ export function Footer() {
         { name: "Documentation", href: "/docs" },
         { name: "Help Center", href: "/help" },
         { name: "LLM Optimization Guide", href: "/guide" },
-        { name: "Webinars", href: "/webinars" },
         { name: "Templates", href: "/templates" }
       ]
     },
