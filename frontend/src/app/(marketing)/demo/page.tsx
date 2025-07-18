@@ -99,7 +99,7 @@ export default function Demo() {
               transition={{ duration: 0.8 }}
             >
               <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-                See LLM Optimizer in action
+                See Clever Search in action
               </h1>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                 Book a personalized demo to discover how AI optimization can transform your content's visibility in ChatGPT, Claude, and Gemini responses.

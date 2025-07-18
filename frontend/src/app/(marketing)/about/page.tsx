@@ -87,7 +87,7 @@ export default function About() {
               We&apos;re building the future of AI visibility.
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              LLM Optimizer was founded to help businesses adapt to the AI-first world where 
+              Clever Search was founded to help businesses adapt to the AI-first world where 
               ChatGPT, Claude, and Gemini are becoming primary sources of information discovery.
             </p>
             <Link href="/contact">
@@ -142,7 +142,7 @@ export default function About() {
                 traditional SEO isn&apos;t enough.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                LLM Optimizer bridges this gap by providing the tools and insights needed 
+                Clever Search bridges this gap by providing the tools and insights needed 
                 to optimize content specifically for AI understanding and citation, ensuring 
                 businesses remain visible in the AI-driven future.
               </p>
@@ -241,7 +241,7 @@ export default function About() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-              Meet the team behind LLM Optimizer.
+              Meet the team behind Clever Search.
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               Our diverse team brings together expertise in AI, product development, and marketing.

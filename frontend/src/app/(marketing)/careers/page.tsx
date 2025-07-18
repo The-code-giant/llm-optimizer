@@ -20,7 +20,7 @@ export default function Careers() {
     {
       title: "Senior AI Engineer",
       department: "Engineering",
-      location: "San Francisco, CA / Remote",
+      location: "New West Minster, BC / Remote",
       type: "Full-time",
       salary: "$150k - $220k",
       description: "Build the next generation of LLM optimization algorithms and help shape the future of AI-driven content discovery."
@@ -28,7 +28,7 @@ export default function Careers() {
     {
       title: "Product Manager - AI",
       department: "Product",
-      location: "San Francisco, CA",
+      location: "New West Minster, BC",
       type: "Full-time", 
       salary: "$130k - $180k",
       description: "Lead product strategy for our LLM optimization platform and drive features that help businesses succeed in the AI era."
@@ -44,7 +44,7 @@ export default function Careers() {
     {
       title: "Data Scientist",
       department: "Data",
-      location: "San Francisco, CA / Remote",
+      location: "New West Minster, BC / Remote",
       type: "Full-time",
       salary: "$140k - $190k",
       description: "Analyze LLM citation patterns and develop insights that drive our optimization recommendations."
@@ -60,7 +60,7 @@ export default function Careers() {
     {
       title: "Customer Success Manager",
       department: "Customer Success",
-      location: "San Francisco, CA / Remote",
+      location: "New West Minster, BC / Remote",
       type: "Full-time",
       salary: "$80k - $120k",
       description: "Help our customers achieve their LLM optimization goals and drive product adoption."

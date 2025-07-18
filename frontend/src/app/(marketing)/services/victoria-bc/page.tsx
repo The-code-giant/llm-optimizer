@@ -54,7 +54,7 @@ export default function VictoriaLLMServices() {
   const testimonials = [
     {
       company: "Victoria BC Government",
-      text: "Our provincial service content now gets cited by ChatGPT consistently. LLM Optimizer helped us optimize complex government documentation for AI understanding."
+      text: "Our provincial service content now gets cited by ChatGPT consistently. Clever Search helped us optimize complex government documentation for AI understanding."
     },
     {
       company: "Victoria Tourism Company",
@@ -76,7 +76,7 @@ export default function VictoriaLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Victoria LLM Optimizer Services
+              Victoria Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Victoria's BC government and tourism sectors. Increase your ChatGPT, Claude, and Gemini citations 
@@ -218,7 +218,7 @@ export default function VictoriaLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              How LLM Optimizer Works for Your Victoria Business
+              How Clever Search Works for Your Victoria Business
             </h2>
           </motion.div>
           
@@ -260,7 +260,7 @@ export default function VictoriaLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              Victoria Businesses Love Our LLM Optimizer
+              Victoria Businesses Love Our Clever Search
             </h2>
           </motion.div>
           
@@ -300,7 +300,7 @@ export default function VictoriaLLMServices() {
               Ready to Dominate Victoria's LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 180+ Victoria organizations already using LLM Optimizer to increase their AI citations and tourism content visibility.
+              Join 180+ Victoria organizations already using Clever Search to increase their AI citations and tourism content visibility.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

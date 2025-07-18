@@ -54,7 +54,7 @@ export default function VancouverLLMServices() {
   const testimonials = [
     {
       company: "Downtown Vancouver Tech Startup",
-      text: "Our ChatGPT citations increased 300% after implementing LLM Optimizer. Our content now appears in AI responses consistently."
+      text: "Our ChatGPT citations increased 300% after implementing Clever Search. Our content now appears in AI responses consistently."
     },
     {
       company: "Vancouver Real Estate Agency", 
@@ -76,7 +76,7 @@ export default function VancouverLLMServices() {
             className="text-center mb-12"
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Vancouver LLM Optimizer Services
+              Vancouver Clever Search Services
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
               Specialized LLM optimization for Vancouver businesses. Increase your ChatGPT, Claude, and Gemini citations 
@@ -218,7 +218,7 @@ export default function VancouverLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              How LLM Optimizer Works for Your Vancouver Business
+              How Clever Search Works for Your Vancouver Business
             </h2>
           </motion.div>
           
@@ -260,7 +260,7 @@ export default function VancouverLLMServices() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-6 text-gray-900 leading-tight">
-              Vancouver Businesses Love Our LLM Optimizer
+              Vancouver Businesses Love Our Clever Search
             </h2>
           </motion.div>
           
@@ -300,7 +300,7 @@ export default function VancouverLLMServices() {
               Ready to Dominate Vancouver's LLM Citations?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Join 500+ Vancouver businesses already using LLM Optimizer to increase their AI citations and visibility.
+              Join 500+ Vancouver businesses already using Clever Search to increase their AI citations and visibility.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/demo">

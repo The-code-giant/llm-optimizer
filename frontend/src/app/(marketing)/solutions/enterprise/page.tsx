@@ -270,7 +270,7 @@ export default function ForEnterprise() {
               Enterprise success
             </h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-              See how enterprises are using LLM Optimizer to transform their content strategy.
+              See how enterprises are using Clever Search to transform their content strategy.
             </p>
           </motion.div>
 
@@ -318,7 +318,7 @@ export default function ForEnterprise() {
               Ready to scale enterprise-wide?
             </h2>
             <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-              Join leading enterprises already using LLM Optimizer to optimize content at scale.
+              Join leading enterprises already using Clever Search to optimize content at scale.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Button 

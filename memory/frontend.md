@@ -1,4 +1,4 @@
-Okay, here is a frontend implementation guide for the LLM Optimizer, formatted in Markdown as requested.
+Okay, here is a frontend implementation guide for the Clever Search, formatted in Markdown as requested.
 
 - The frontend will be implemented in **Next.js (TypeScript)** as of July 2024, per updated requirements.
 

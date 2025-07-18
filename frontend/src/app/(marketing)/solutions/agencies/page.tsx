@@ -74,7 +74,7 @@ export default function ForAgencies() {
   const caseStudy = {
     agency: "Digital Growth Partners",
     challenge: "Managing LLM optimization for 50+ e-commerce clients",
-    solution: "Implemented LLM Optimizer's agency solution with automated workflows",
+    solution: "Implemented Clever Search's agency solution with automated workflows",
     results: [
       "300% increase in LLM citations across client portfolio",
       "85% reduction in manual optimization time",
@@ -270,7 +270,7 @@ export default function ForAgencies() {
               Success story
             </h2>
             <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-              See how {caseStudy.agency} transformed their client services with LLM Optimizer.
+              See how {caseStudy.agency} transformed their client services with Clever Search.
             </p>
           </motion.div>
 
@@ -389,7 +389,7 @@ export default function ForAgencies() {
               Ready to scale your agency?
             </h2>
             <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-              Join hundreds of agencies already using LLM Optimizer to deliver better results for their clients.
+              Join hundreds of agencies already using Clever Search to deliver better results for their clients.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
               <Button 

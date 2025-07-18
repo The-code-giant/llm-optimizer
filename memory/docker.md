@@ -1,4 +1,4 @@
-# LLM Optimizer Docker Implementation Guide
+# Clever Search Docker Implementation Guide
 
 **Version:** 2.0
 **Date:** December 2024
@@ -6,7 +6,7 @@
 
 ## 1. Overview
 
-The LLM Optimizer uses a comprehensive Docker setup for development and production environments. The implementation includes:
+The Clever Search uses a comprehensive Docker setup for development and production environments. The implementation includes:
 
 - **Multi-service architecture** with PostgreSQL, Redis, Express backend, and Next.js frontend
 - **Hot reload** for both frontend and backend development
@@ -273,7 +273,7 @@ CMD ["npm", "run", "dev"]
 #!/bin/bash
 set -e
 
-echo "🚀 Starting LLM Optimizer development environment..."
+echo "🚀 Starting Clever Search development environment..."
 
 # Copy environment file if it doesn't exist
 if [ ! -f .env ]; then
@@ -316,7 +316,7 @@ echo "   npm run db:studio    - Open Drizzle Studio"
 #!/bin/bash
 set -e
 
-echo "🛑 Stopping LLM Optimizer development environment..."
+echo "🛑 Stopping Clever Search development environment..."
 docker compose down
 echo "✅ All services stopped"
 ```

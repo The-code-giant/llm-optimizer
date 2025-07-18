@@ -17,20 +17,19 @@ export default function Contact() {
     {
       icon: EnvelopeIcon,
       title: "Email",
-      details: "hello@llmoptimizer.com",
+      details: "hi@cleversearch.com",
       description: "Send us an email anytime"
     },
     {
       icon: PhoneIcon,
       title: "Phone",
-      details: "+1 (555) 123-4567",
+      details: "+1 (604) 704-0740",
       description: "Mon-Fri from 8am to 6pm PST"
     },
     {
       icon: MapPinIcon,
       title: "Office",
-      details: "San Francisco, CA",
-      description: "123 AI Street, Suite 100"
+      details: "New West Minster, BC",
     },
     {
       icon: ClockIcon,
@@ -228,7 +227,7 @@ export default function Contact() {
                   <Button 
                     size="lg" 
                     variant="outline"
-                    className="border-white text-white hover:bg-white hover:text-blue-600 rounded-lg px-6 py-3"
+                    className="border-white text-blue-600 hover:bg-white hover:text-blue-600 rounded-lg px-6 py-3"
                   >
                     Call Support
                   </Button>
@@ -253,7 +252,7 @@ export default function Contact() {
               Frequently asked questions
             </h2>
             <p className="text-lg text-gray-600">
-              Quick answers to common questions about LLM Optimizer.
+              Quick answers to common questions about Clever Search.
             </p>
           </motion.div>
 
@@ -264,7 +263,7 @@ export default function Contact() {
                 answer: "Most customers see their first LLM citations within 48-72 hours of implementing our recommendations. Full optimization typically takes 1-2 weeks."
               },
               {
-                question: "Do I need technical knowledge to use LLM Optimizer?",
+                question: "Do I need technical knowledge to use Clever Search?",
                 answer: "No! Our platform is designed for non-technical users. You can implement most optimizations through our dashboard without touching code."
               },
               {

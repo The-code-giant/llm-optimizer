@@ -1,4 +1,4 @@
-Okay, here is a project status template for the LLM Optimizer project, formatted in markdown as requested.
+Okay, here is a project status template for the Clever Search project, formatted in markdown as requested.
 
 ```markdown
 ---

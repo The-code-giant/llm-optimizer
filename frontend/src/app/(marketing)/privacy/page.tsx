@@ -120,7 +120,7 @@ export default function Privacy() {
             </h1>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
               Your privacy is important to us. This policy explains how we collect, 
-              use, and protect your information when you use LLM Optimizer.
+              use, and protect your information when you use Clever Search.
             </p>
             <p className="text-gray-400">
               Last updated: December 15, 2024
@@ -142,7 +142,7 @@ export default function Privacy() {
             <h2 className="text-3xl font-bold text-gray-900 mb-8">Introduction</h2>
             <div className="prose prose-lg text-gray-600 leading-relaxed">
               <p className="mb-6">
-                LLM Optimizer (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. 
+                Clever Search (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
                 when you visit our website and use our LLM optimization platform.
               </p>
@@ -205,9 +205,9 @@ export default function Privacy() {
             <div className="bg-gray-800 rounded-xl p-8 text-left max-w-2xl mx-auto">
               <h3 className="text-xl font-bold mb-6">Contact Information</h3>
               <div className="space-y-4 text-gray-300">
-                <p><strong className="text-white">Email:</strong> privacy@cleversearch.ai</p>
-                <p><strong className="text-white">Address:</strong> 123 AI Street, Suite 100, San Francisco, CA 94102</p>
-                <p><strong className="text-white">Phone:</strong> +1 (555) 123-4567</p>
+                <p><strong className="text-white">Email:</strong> mansi@cleversearch.ai</p>
+                <p><strong className="text-white">Address:</strong>  New West Minster, BC 94102</p>
+                <p><strong className="text-white">Phone:</strong> +1 (604) 704-0740</p>
               </div>
             </div>
           </motion.div>
