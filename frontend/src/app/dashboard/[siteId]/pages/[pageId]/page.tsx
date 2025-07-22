@@ -250,41 +250,20 @@ export default function PageAnalysisPage() {
         { characterCount: content.length },
         deployImmediately
       );
-      // Update local state
-      switch (contentType) {
-        case 'title':
-          setContentData(prev => ({ ...prev, title: content }));
-          break;
-        case 'description':
-          setContentData(prev => ({ ...prev, description: content }));
-          break;
-        case 'faq':
-          setContentData(prev => ({
-            ...prev,
-            faqs: [content] // Always replace with the latest deployed FAQ JSON
-          }));
-          break;
-        case 'paragraph':
-          setContentData(prev => ({ 
-            ...prev, 
-            paragraphs: [...prev.paragraphs, content]
-          }));
-          break;
-        case 'keywords':
-          try {
-            const keywordData = JSON.parse(content);
-            setContentData(prev => ({ ...prev, keywords: keywordData }));
-          } catch (error) {
-            setToast({ message: "Invalid keyword format", type: "error" });
-            return;
-          }
-          break;
-      }
-      if (deployImmediately) {
-        setToast({ message: `${contentType} saved and deployed successfully!`, type: "success" });
+      // Optimistically update contentVersions with the new deployed content if deployImmediately
+      if (response && response.content && deployImmediately) {
+        setContentVersions(prev => {
+          const updated = { ...prev };
+          // Remove any previous deployed version (isActive: 1) for this type
+          const filtered = (prev[contentType] || []).filter(c => c.id !== response.content.id && c.isActive !== 1);
+          updated[contentType] = [response.content, ...filtered];
+          return updated;
+        });
       } else {
-        setToast({ message: `${contentType} saved successfully!`, type: "success" });
+        // If not deploying, refresh all data to ensure consistency
+        await fetchData();
       }
+      setToast({ message: `${contentType} saved${deployImmediately ? ' and deployed' : ''} successfully!`, type: "success" });
     } catch (error: any) {
       setToast({ message: error.message || `Failed to save${deployImmediately ? ' and deploy' : ''} ${contentType}`, type: "error" });
     }
