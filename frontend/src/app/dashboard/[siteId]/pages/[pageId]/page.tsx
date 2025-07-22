@@ -368,6 +368,9 @@ export default function PageAnalysisPage() {
   const deployedDescription = (contentVersions.description || []).find(c => c.isActive === 1);
   const latestDescription = (contentVersions.description || [])[0];
 
+  // In the render logic for FAQ section:
+  const deployedFAQ = (contentVersions.faq || []).find(c => c.isActive === 1);
+
   return (
     <DashboardLayout>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -633,15 +636,15 @@ export default function PageAnalysisPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {contentData.faqs.length > 0 ? (
+                {deployedFAQ ? (
                   <Accordion type="multiple" className="w-full">
-                    {contentData.faqs.map((faqJson, index) => {
+                    {(() => {
                       let faqs: { question: string; answer: string }[] = [];
                       try {
-                        faqs = JSON.parse(faqJson);
+                        faqs = JSON.parse(deployedFAQ.optimizedContent);
                       } catch {}
                       return faqs.map((item, i) => (
-                        <AccordionItem key={`${index}-${i}`} value={`faq-${index}-${i}`} className="mb-2">
+                        <AccordionItem key={i} value={`faq-${i}`} className="mb-2">
                           <AccordionTrigger className="px-4 py-2 text-left font-semibold">
                             {item.question}
                           </AccordionTrigger>
@@ -650,7 +653,7 @@ export default function PageAnalysisPage() {
                           </AccordionContent>
                         </AccordionItem>
                       ));
-                    })}
+                    })()}
                   </Accordion>
                 ) : (
                   <div className="text-center py-8 text-gray-500">

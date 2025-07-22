@@ -839,14 +839,6 @@ export default function SiteDetailsPage() {
                           </div>
                           
                           <div className="flex items-center space-x-2 ml-4">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedPageForDeployment(page)}
-                            >
-                              <Send className="h-4 w-4 mr-1" />
-                              Deploy Content
-                            </Button>
                             <Link href={`/dashboard/${siteId}/pages/${page.id}`}>
                               <Button variant="outline" size="sm">
                                 View Analysis
