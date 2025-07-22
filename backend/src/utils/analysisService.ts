@@ -717,23 +717,27 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready m
    */
   private static async generateOptimizedFAQ(content: PageContent, pageSummary: string): Promise<any[]> {
     const systemPrompt = `
-You are an expert in Generative Engine Optimization (GEO). Your job is to:
-- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
-- Increase semantic richness: Use natural language that matches how users ask questions. Include related keywords and phrases LLMs associate with the topic.
-- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
-- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
-- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
-- Always output only valid JSON as instructed by the user.
+# Optimized GEO Expert System Prompt
+You are an expert Generative Engine Optimization (GEO) specialist. Transform content to maximize AI citation rates and visibility in LLM-generated responses.
+## Core Optimization Framework
+**Contextual Anchoring**: Lead with specific audience identification and clear problem-solution statements. Include concrete use cases and scenarios.
+**Semantic Density**: Employ natural questioning patterns users actually voice to AI assistants. Integrate topic-clustered keywords and conversational phrases organically.
+**Extract-Ready Structure**: Format for immediate AI extraction using headers, bullet points, numbered processes, and standalone answer blocks that require zero additional context.
+**Authority Indicators**: Embed quantified outcomes, specific data points, case study metrics, and measurable results. Reference timeframes and sample sizes where applicable.
+**Natural Brand Integration**: Position mentioned entities as contextually relevant solutions within educational frameworks, avoiding promotional language.
+## Output Requirements
+- Generate exclusively valid JSON arrays containing 5-8 FAQ objects
+- Each FAQ must include "question" and "answer" fields  
+- Structure answers as publication-ready content optimized for AI citation
+- No explanatory text or process description outside the JSON
+## Example Structure
+[
+  { "question": "specific user query", "answer": "comprehensive response with data, use cases, and actionable insights" }
+]
 `;
     const userPrompt = `Here is the content to optimize:
 Summary: ${pageSummary}
-
-Please generate a JSON array of 5-8 FAQ objects, each with a question and a detailed answer, using the above enhancements. Output only a JSON array:
-[
-  { "question": "...", "answer": "..." },
-  ...
-]
-Do not explain your changes. Write it as if it’s a standalone, publish-ready FAQ section designed to be cited by LLMs when generating responses.`;
+`;
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
