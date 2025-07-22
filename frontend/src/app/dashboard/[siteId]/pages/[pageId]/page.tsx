@@ -24,8 +24,7 @@ import {
   Globe, 
   BarChart3, 
   FileText, 
-  Calendar, 
-  TrendingUp, 
+
   ExternalLink,
   Play,
   RefreshCw,
