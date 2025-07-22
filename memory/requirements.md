@@ -100,6 +100,21 @@ The Minimum Viable Product (MVP) of the Clever Search will focus on the core fun
   - AC-005-8: The interface shall be intuitive and navigable for users without technical expertise, using clear labels and workflows.
   - AC-005-9: Users shall be able to configure basic account and website settings within the dashboard.
 
+**3.6 FR-006: Domain Ownership Verification**
+
+- **Requirement:** The system shall require users to verify ownership of any domain they add to their dashboard, using a user-friendly, low-developer-involvement process.
+- **Acceptance Criteria:**
+  - AC-006-1: The dashboard shall provide “Verify by Email” as the default method. The user enters/selects an email at their domain (e.g., admin@domain.com, info@domain.com), receives a verification link, and clicks to verify.
+  - AC-006-2: Only allow verification emails to common admin addresses (admin@, webmaster@, info@, contact@, support@, postmaster@) or custom addresses with a warning.
+  - AC-006-3: Verification links are unique, single-use, and expire after a short period (e.g., 1 hour).
+  - AC-006-4: If email is not accessible, the system shall offer meta tag, HTML file upload, or DNS TXT record as fallback verification methods.
+  - AC-006-5: The system shall restrict sensitive actions (content injection, analytics, etc.) to verified domains only.
+  - AC-006-6: The verification process shall be clearly explained in the UI, with help for common CMS platforms.
+
+---
+
+**Note:** As of July 2024, Docker is no longer used for development or deployment. The project uses direct process management, Neon serverless PostgreSQL, and external Redis. All requirements and documentation should reflect this non-Docker setup.
+
 ---
 
 ## 4. Non-Functional Requirements
@@ -183,7 +198,3 @@ The Minimum Viable Product (MVP) of the Clever Search will focus on the core fun
 
 - Backend: TypeScript (Node.js), Drizzle ORM, PostgreSQL
 - Frontend: Next.js (TypeScript)
-
-```
-
-```

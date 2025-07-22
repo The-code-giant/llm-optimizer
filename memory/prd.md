@@ -1,4 +1,3 @@
-```markdown
 # Clever Search Product Requirements Document (PRD)
 
 ## 1. Document Header
@@ -201,6 +200,32 @@ The Clever Search is a SaaS product designed to help website owners, particularl
 *   Analysis or injection operations take a long time or fail (dashboard needs to show processing states and errors clearly).
 *   Concurrency issues if multiple users manage the same site account simultaneously.
 *   User session expires during a long operation.
+
+### 5.6. Domain Ownership Verification
+
+**Description:** Before a user can activate sensitive features (such as content injection or analytics) for a domain, they must verify ownership of that domain. The default method is email-based verification, with meta tag, HTML file upload, and DNS TXT as fallback options.
+
+#### User Stories
+*   As a user, I want to easily prove I own a domain so I can use all features securely.
+*   As a user, I want to verify by receiving a link at a common admin email address (e.g., admin@domain.com).
+*   As a user, if I can't access email, I want alternative options (meta tag, HTML file, DNS TXT).
+*   As a user, I want clear instructions for my CMS or hosting provider.
+
+#### Acceptance Criteria
+*   The dashboard provides a “Verify by Email” workflow, defaulting to common admin addresses.
+*   Verification links are unique, single-use, and expire after a short period (e.g., 1 hour).
+*   If email is not accessible, the UI offers meta tag, HTML file upload, or DNS TXT as fallback.
+*   Only verified domains can use sensitive features (content injection, analytics, etc.).
+*   The UI clearly explains the verification process and provides help for common CMS platforms.
+
+#### Edge Cases
+*   User cannot access any admin email address.
+*   User’s DNS or site is slow to update.
+*   User attempts to verify a domain they do not control.
+
+---
+
+**Note:** As of July 2024, Docker is no longer used for development or deployment. The project uses direct process management, Neon serverless PostgreSQL, and external Redis. All documentation and setup instructions should reflect this non-Docker setup.
 
 ## 6. Technical Requirements
 
