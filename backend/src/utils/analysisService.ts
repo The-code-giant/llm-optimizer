@@ -143,42 +143,7 @@ FOCUS ON:
    * Only translates known internal services, leaves external URLs unchanged
    */
   private static translateUrlForDocker(url: string): string {
-    // Only translate in development mode and for Docker containers
-    if (process.env.NODE_ENV !== 'development') {
-      return url;
-    }
-
-    // Parse URL to understand what we're dealing with
-    let parsedUrl;
-    try {
-      parsedUrl = new URL(url);
-    } catch {
-      // If URL is invalid, return as-is
-      return url;
-    }
-
-    // Only translate localhost URLs that we know are our internal services
-    if (parsedUrl.hostname === 'localhost') {
-      switch (parsedUrl.port) {
-        case '3000':
-          // This is our frontend service
-          console.log(`🔄 Translating frontend URL: ${url} -> Docker service`);
-          return url.replace('localhost:3000', 'clever-search-frontend:3000');
-        
-        case '3001':
-          // This is our backend service (shouldn't normally happen, but just in case)
-          console.log(`🔄 Translating backend URL: ${url} -> Docker service`);
-          return url.replace('localhost:3001', 'clever-search-backend:3001');
-        
-        default:
-          // Other localhost ports - use host.docker.internal to access host machine
-          console.log(`🔄 Translating external localhost URL: ${url} -> host machine access`);
-          return url.replace('localhost', 'host.docker.internal');
-      }
-    }
-
-    // For all other URLs (internet URLs, other local IPs, etc.), return unchanged
-    console.log(`🌐 Using external URL as-is: ${url}`);
+    // Docker translation disabled: always return the original URL
     return url;
   }
 

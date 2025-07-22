@@ -2,7 +2,7 @@
 
 ## Completed Work
 ✅ Backend and frontend scaffolding complete (TypeScript, Drizzle, PostgreSQL, Next.js)
-✅ Docker development environment setup and tested
+✅ **Docker-based development and deployment removed**
 ✅ Memory bank documentation structure established
 ✅ **JavaScript Tracker Feature Planning Complete**
   - Comprehensive implementation plan created
@@ -19,6 +19,17 @@
 - **Phase:** Schema analysis completed, ready for implementation
 - **Next Priority:** Create database migration for tracker enhancements
 - **Focus:** Backend API endpoints implementation
+
+## Infrastructure Update (July 2025)
+- Docker is no longer used for local development or deployment.
+- All Docker Compose files and Dockerfiles have been removed.
+- The project now uses **Neon serverless PostgreSQL** and an **external Redis instance** (e.g., on EC2).
+- All services are run directly (not in containers).
+
+## Migration Notes
+- Remove any local Docker containers and volumes related to this project.
+- Update your `.env` file with Neon and Redis connection details.
+- Use direct process managers (e.g., PM2, systemd) for deployment.
 
 ## Key Findings from Schema Analysis
 

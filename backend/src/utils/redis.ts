@@ -12,27 +12,30 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 });
 
+console.log(process.env.REDIS_URL, process.env.REDIS_HOST, process.env.REDIS_PORT, process.env.REDIS_PASSWORD);
 // Redis connection configuration
-const redisConfig = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: Number(process.env.REDIS_PORT) || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  retryDelayOnFailover: 100,
-  maxRetriesPerRequest: 3,
-  lazyConnect: true,
-  keepAlive: 30000,
-  // Connection timeout
-  connectTimeout: 10000,
-  commandTimeout: 5000,
+const getRedisClient = () => {
+  if (process.env.REDIS_URL) {
+    logger.info(`Connecting to Redis using REDIS_URL: ${process.env.REDIS_URL}`);
+    return new Redis(process.env.REDIS_URL);
+  }
+  logger.info(`Connecting to Redis using host: ${process.env.REDIS_HOST}, port: ${process.env.REDIS_PORT}`);
+  return new Redis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: Number(process.env.REDIS_PORT) || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    lazyConnect: true,
+    connectTimeout: 10000,
+    maxRetriesPerRequest: 3,
+  });
 };
 
 // Create Redis client instance
 class RedisClient {
   private client: Redis;
-  private isConnected: boolean = false;
-
+  private isConnected = false;
   constructor() {
-    this.client = new Redis(redisConfig);
+    this.client = getRedisClient();
     this.setupEventHandlers();
     this.connect();
   }
@@ -41,30 +44,29 @@ class RedisClient {
     this.client.on('connect', () => {
       logger.info('🔴 Redis: Connecting...');
     });
-
     this.client.on('ready', () => {
       this.isConnected = true;
       logger.info('✅ Redis: Connected and ready');
     });
-
     this.client.on('error', (err) => {
       this.isConnected = false;
       logger.error(`❌ Redis error: ${err.message}`);
     });
-
     this.client.on('close', () => {
       this.isConnected = false;
       logger.warn('⚠️  Redis: Connection closed');
     });
-
     this.client.on('reconnecting', () => {
       logger.info('🔄 Redis: Reconnecting...');
+    });
+    this.client.on('end', () => {
+      logger.info('👋 Redis: Disconnected gracefully');
     });
   }
 
   private async connect() {
     try {
-      await this.client.connect();
+      await this.client.ping();
     } catch (error) {
       logger.error(`❌ Redis connection failed: ${error}`);
     }
@@ -212,8 +214,6 @@ class RedisClient {
   }
 }
 
-// Create singleton instance
 const redis = new RedisClient();
-
 export default redis;
 export { RedisClient }; 
