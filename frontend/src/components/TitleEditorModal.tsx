@@ -16,7 +16,7 @@ interface TitleEditorModalProps {
   onClose: () => void;
   pageId: string;
   currentContent?: string;
-  onSave: (content: string) => void;
+  onSave: (content: string, deployImmediately?: boolean) => void;
   title: string;
   description: string;
 }
@@ -108,11 +108,18 @@ export default function TitleEditorModal({
     setEditedContent(suggestion);
   };
 
-  const handleSave = () => {
-    if (editedContent.trim()) {
-      onSave(editedContent);
+  const [deploying, setDeploying] = useState(false);
+  const handleSaveAndDeploy = async () => {
+    if (!editedContent.trim()) return;
+    setDeploying(true);
+    try {
+      await onSave(editedContent, true);
+      setToast({ message: 'Title saved and deployed successfully!', type: 'success' });
       onClose();
-      setToast({ message: 'Content saved successfully!', type: 'success' });
+    } catch (error: any) {
+      setToast({ message: error?.message || 'Failed to deploy title', type: 'error' });
+    } finally {
+      setDeploying(false);
     }
   };
 
@@ -170,7 +177,10 @@ export default function TitleEditorModal({
           </div>
           <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2 mt-4">
             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleSave} disabled={!editedContent.trim()} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">Save Changes</Button>
+            <Button onClick={handleSaveAndDeploy} disabled={!editedContent.trim() || deploying} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+              {deploying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save & Deploy
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

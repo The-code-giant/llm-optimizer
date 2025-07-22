@@ -81,3 +81,27 @@ npm run build        # Build all projects
 
 ## 📄 License
 MIT License - see LICENSE file for details. 
+
+
+
+Backend usefull command
+# Check status
+pm2 status
+
+# View real-time logs
+pm2 logs cleversearch-backend --lines 50
+
+# Restart the application
+pm2 restart cleversearch-backend
+
+# Reload with zero downtime
+pm2 reload cleversearch-backend
+
+# Monitor resources
+pm2 monit
+
+# Stop the application
+pm2 stop cleversearch-backend
+
+# Delete the application from PM2
+pm2 delete cleversearch-backend
