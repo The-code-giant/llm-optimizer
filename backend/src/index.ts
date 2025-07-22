@@ -1,4 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
+
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import authRouter from './routes/auth';
 import sitesRouter from './routes/sites';
@@ -35,6 +40,9 @@ if (process.env.SENTRY_DSN && process.env.SENTRY_DSN !== 'your-sentry-dsn-here')
 }
 
 const app = express();
+
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../public')));
 
 // CORS configuration
 const corsOptions = {
@@ -222,7 +230,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.BACKEND_PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Swagger docs available at http://localhost:${PORT}/api-docs`);

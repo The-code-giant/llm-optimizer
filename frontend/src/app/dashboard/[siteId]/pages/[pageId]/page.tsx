@@ -339,6 +339,9 @@ export default function PageAnalysisPage() {
       </DashboardLayout>
     );
   }
+// convert analysis to json
+const analysisJson = JSON.parse(analysis?.summary as string);
+console.log(analysisJson);
 
   return (
     <DashboardLayout>
@@ -693,7 +696,7 @@ export default function PageAnalysisPage() {
                         Summary
                       </h3>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-gray-700">{analysis.summary}</p>
+                        <p className="text-gray-700">{analysisJson.summary}</p>
                       </div>
                     </div>
 
