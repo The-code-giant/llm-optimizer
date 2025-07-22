@@ -10,7 +10,9 @@ import {
   triggerAnalysis,
   getPageContent,
   savePageContent,
-  PageContentData
+  PageContentData,
+  undeployPageContent,
+  getOriginalPageContent
 } from "../../../../../lib/api";
 import { DashboardLayout } from "../../../../../components/ui/dashboard-layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../../components/ui/card";
@@ -36,11 +38,14 @@ import {
   MessageSquare,
   Type,
   Hash,
-  PenTool
+  PenTool,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import Toast from "../../../../../components/Toast";
 import ContentEditorModal from "../../../../../components/content-editor-modal";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../../../../../components/ui/accordion";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../../../../../components/ui/dialog";
 
 export default function PageAnalysisPage() {
   const router = useRouter();
@@ -77,6 +82,71 @@ export default function PageAnalysisPage() {
     }
   });
 
+  // Add state for original meta description
+  const [originalMetaDescription, setOriginalMetaDescription] = useState<string>('');
+
+  // Add state for all content versions
+  const [contentVersions, setContentVersions] = useState<{ [type: string]: PageContentData[] }>({});
+
+  // 1. Add state for undeploy dialog
+  const [undeployDialog, setUndeployDialog] = useState<{
+    open: boolean;
+    contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | null;
+  }>({ open: false, contentType: null });
+  const [undeploying, setUndeploying] = useState(false);
+
+  // Move fetchData to top-level scope so it can be called from handleUndeploy
+  async function fetchData() {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token || !pageId) {
+        setError("Failed to get authentication token");
+        return;
+      }
+      // Fetch page details, analysis, saved content, and original meta description
+      const [pageDetails, analysisData, savedContent, originalContentResult] = await Promise.allSettled([
+        getPageDetails(token, pageId),
+        getPageAnalysis(token, pageId),
+        getPageContent(token, pageId),
+        getOriginalPageContent(token, pageId)
+      ]);
+      if (originalContentResult.status === 'fulfilled') {
+        setOriginalMetaDescription(originalContentResult.value.originalContent?.metaDescription || '');
+      }
+      if (pageDetails.status === 'fulfilled') {
+        setPageData(pageDetails.value);
+      } else {
+        setError("Failed to load page details");
+        return;
+      }
+      if (savedContent.status === 'fulfilled') {
+        const content = savedContent.value.content;
+        const grouped: { [type: string]: PageContentData[] } = {
+          title: [],
+          description: [],
+          faq: [],
+          paragraph: [],
+          keywords: []
+        };
+        content.forEach((item: PageContentData) => {
+          if (grouped[item.contentType]) grouped[item.contentType].push(item);
+        });
+        setContentVersions(grouped);
+      }
+      if (analysisData.status === 'fulfilled') {
+        setAnalysis(analysisData.value);
+      } else {
+        setAnalysis(null);
+      }
+      setLoading(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load page data");
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     // Don't do anything until Clerk has finished loading
     if (!isLoaded) return;
@@ -93,86 +163,6 @@ export default function PageAnalysisPage() {
       return;
     }
 
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = await getToken();
-        if (!token || !pageId) {
-          setError("Failed to get authentication token");
-          return;
-        }
-        
-        // Fetch page details, analysis, and saved content
-        const [pageDetails, analysisData, savedContent] = await Promise.allSettled([
-          getPageDetails(token, pageId),
-          getPageAnalysis(token, pageId),
-          getPageContent(token, pageId)
-        ]);
-        
-        if (pageDetails.status === 'fulfilled') {
-          setPageData(pageDetails.value);
-          
-          // Initialize content data with saved content or page data
-          let initialContentData = {
-            title: pageDetails.value?.title || '',
-            description: '',
-            faqs: [] as string[],
-            paragraphs: [] as string[],
-            keywords: {
-              primary: [] as string[],
-              longTail: [] as string[],
-              semantic: [] as string[],
-              missing: [] as string[]
-            }
-          };
-
-          // Load saved content if available
-          if (savedContent.status === 'fulfilled') {
-            const content = savedContent.value.content;
-            content.forEach((item: PageContentData) => {
-              switch (item.contentType) {
-                case 'title':
-                  initialContentData.title = item.optimizedContent;
-                  break;
-                case 'description':
-                  initialContentData.description = item.optimizedContent;
-                  break;
-                case 'faq':
-                  initialContentData.faqs.push(item.optimizedContent);
-                  break;
-                case 'paragraph':
-                  initialContentData.paragraphs.push(item.optimizedContent);
-                  break;
-                case 'keywords':
-                  try {
-                    initialContentData.keywords = JSON.parse(item.optimizedContent);
-                  } catch (e) {
-                    console.warn('Failed to parse saved keywords:', e);
-                  }
-                  break;
-              }
-            });
-          }
-
-          setContentData(initialContentData);
-        } else {
-          setError("Failed to load page details");
-          return;
-        }
-        
-        if (analysisData.status === 'fulfilled') {
-          setAnalysis(analysisData.value);
-        } else {
-          // No analysis yet - this is okay
-          setAnalysis(null);
-        }
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : "Failed to load page data");
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchData();
   }, [isLoaded, isSignedIn, getToken, pageId, router]);
 
@@ -240,8 +230,15 @@ export default function PageAnalysisPage() {
         setToast({ message: "Authentication error", type: "error" });
         return;
       }
-      // Get original content for context
-      const originalContent = pageData?.title || '';
+      // Get correct original content for context
+      let originalContent = '';
+      if (contentType === 'title') {
+        originalContent = pageData?.title || '';
+      } else if (contentType === 'description') {
+        originalContent = originalMetaDescription || '';
+      } else {
+        originalContent = '';
+      }
       // Save to database (with deployImmediately if requested)
       const response = await savePageContent(
         token,
@@ -262,9 +259,9 @@ export default function PageAnalysisPage() {
           setContentData(prev => ({ ...prev, description: content }));
           break;
         case 'faq':
-          setContentData(prev => ({ 
-            ...prev, 
-            faqs: [...prev.faqs, content]
+          setContentData(prev => ({
+            ...prev,
+            faqs: [content] // Always replace with the latest deployed FAQ JSON
           }));
           break;
         case 'paragraph':
@@ -307,6 +304,23 @@ export default function PageAnalysisPage() {
     }));
   };
 
+  // 2. Add undeploy handler
+  const handleUndeploy = async (contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords') => {
+    setUndeploying(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      await undeployPageContent(token, pageId, contentType);
+      await fetchData(); // Refresh content from backend
+      setToast({ message: `${contentType.charAt(0).toUpperCase() + contentType.slice(1)} undeployed successfully!`, type: 'success' });
+    } catch (error: any) {
+      setToast({ message: error.message || 'Failed to undeploy content', type: 'error' });
+    } finally {
+      setUndeploying(false);
+      setUndeployDialog({ open: false, contentType: null });
+    }
+  };
+
   if (!isLoaded || loading) {
     return (
       <DashboardLayout>
@@ -347,6 +361,12 @@ export default function PageAnalysisPage() {
       analysisJson = null;
     }
   }
+
+  // In the render logic for each content type (e.g., title, description):
+  const deployedTitle = (contentVersions.title || []).find(c => c.isActive === 1);
+  const latestTitle = (contentVersions.title || [])[0];
+  const deployedDescription = (contentVersions.description || []).find(c => c.isActive === 1);
+  const latestDescription = (contentVersions.description || [])[0];
 
   return (
     <DashboardLayout>
@@ -442,38 +462,68 @@ export default function PageAnalysisPage() {
                     <Type className="h-5 w-5" />
                     <span>Page Title</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor('title', contentData.title || pageData.title || '', 'Edit Page Title', 'Generate optimized title suggestions for better SEO and click-through rates')}
-                    disabled={!analysis}
-                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
-                  >
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor('title', contentData.title || pageData.title || '', 'Edit Page Title', 'Generate optimized title suggestions for better SEO and click-through rates')}
+                      disabled={!analysis}
+                      className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
+                    >
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    {deployedTitle ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUndeployDialog({ open: true, contentType: 'title' })}
+                        disabled={undeploying}
+                        className="text-red-600 border-red-300 hover:text-red-800"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Undeploy
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUndeployDialog({ open: true, contentType: 'title' })}
+                        disabled={true}
+                        className="text-red-600 border-red-300 hover:text-red-800 cursor-not-allowed opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Undeploy
+                      </Button>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="p-4 bg-gray-50 rounded-lg flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <p className="text-gray-900 font-medium">
-                      {contentData.title ? contentData.title : pageData.title || 'No title set - click Edit to generate suggestions'}
-                    </p>
-                    {contentData.title && (
-                      <Badge variant="default">Deployed</Badge>
-                    )}
-                  </div>
-                  {(contentData.title || pageData.title) && (
-                    <div className="mt-1">
-                      <Badge variant={contentData.title && contentData.title.length >= 50 && contentData.title.length <= 60 ? "default" : "secondary"}>
-                        {(contentData.title || pageData.title).length} characters
-                      </Badge>
-                    </div>
-                  )}
+                  <p className="text-gray-900 font-medium">
+                    {deployedTitle
+                      ? deployedTitle.optimizedContent
+                      : pageData?.title || 'No title set - click Edit to generate suggestions'}
+                  </p>
                   {!analysis && (
                     <div className="text-xs text-gray-500 mt-2">Run analysis to enable editing.</div>
                   )}
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge className={
+                      (deployedTitle ? deployedTitle.optimizedContent.length : (pageData?.title?.length || 0)) >= 50 &&
+                      (deployedTitle ? deployedTitle.optimizedContent.length : (pageData?.title?.length || 0)) <= 60
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }>
+                      {deployedTitle ? deployedTitle.optimizedContent.length : (pageData?.title?.length || 0)} characters
+                    </Badge>
+                    {deployedTitle ? (
+                      <Badge className="bg-green-100 text-green-800">Deployed</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 border-gray-300">Not Deployed</Badge>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -486,30 +536,64 @@ export default function PageAnalysisPage() {
                     <FileText className="h-5 w-5" />
                     <span>Meta Description</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor('description', contentData.description || pageData.description || '', 'Edit Meta Description', 'Generate compelling meta descriptions that improve search result click-through rates')}
-                    disabled={!analysis}
-                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
-                  >
-                    <Edit3 className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor('description', contentData.description || pageData.description || '', 'Edit Meta Description', 'Generate compelling meta descriptions that improve search result click-through rates')}
+                      disabled={!analysis}
+                      className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
+                    >
+                      <Edit3 className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    {deployedDescription ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUndeployDialog({ open: true, contentType: 'description' })}
+                        disabled={undeploying}
+                        className="text-red-600 border-red-300 hover:text-red-800"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Undeploy
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUndeployDialog({ open: true, contentType: 'description' })}
+                        disabled={true}
+                        className="text-red-600 border-red-300 hover:text-red-800 cursor-not-allowed opacity-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Undeploy
+                      </Button>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-900">
-                    {contentData.description ? contentData.description : pageData.description || 'No meta description set - click Edit to generate suggestions'}
+                    {deployedDescription
+                      ? deployedDescription.optimizedContent
+                      : originalMetaDescription || 'No meta description set - click Edit to generate suggestions'}
                   </p>
-                  {contentData.description && (
-                    <div className="mt-2">
-                      <Badge variant={contentData.description.length >= 150 && contentData.description.length <= 160 ? "default" : "secondary"}>
-                        {contentData.description.length} characters
-                      </Badge>
-                    </div>
-                  )}
+                  <div className="mt-2 flex items-center gap-2">
+                    <Badge className={
+                      deployedDescription && deployedDescription.optimizedContent.length >= 150 && deployedDescription.optimizedContent.length <= 160
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    }>
+                      {deployedDescription ? deployedDescription.optimizedContent.length : (originalMetaDescription?.length || 0)} characters
+                    </Badge>
+                    {deployedDescription ? (
+                      <Badge className="bg-green-100 text-green-800">Deployed</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-gray-500 border-gray-300">Not Deployed</Badge>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -522,38 +606,52 @@ export default function PageAnalysisPage() {
                     <MessageSquare className="h-5 w-5" />
                     <span>FAQ Section</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor('faq', '', 'Add FAQ', 'Generate frequently asked questions based on page content and user intent')}
-                    disabled={!analysis}
-                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add FAQ
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor('faq', contentData.faqs[contentData.faqs.length - 1] || '', 'Add FAQ', 'Generate frequently asked questions based on page content and user intent')}
+                      disabled={!analysis}
+                      className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add FAQ
+                    </Button>
+                    {contentData.faqs.length > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setUndeployDialog({ open: true, contentType: 'faq' })}
+                        disabled={undeploying}
+                        className="text-red-600 border-red-300 hover:text-red-800"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Undeploy
+                      </Button>
+                    )}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {contentData.faqs.length > 0 ? (
-                  <div className="space-y-4">
-                    {contentData.faqs.map((faq, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg flex items-center gap-2">
-                        <div className="flex-1">
-                          <p className="text-gray-900 whitespace-pre-line">{faq}</p>
-                        </div>
-                        <Badge variant="default">Deployed</Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFAQ(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                  <Accordion type="multiple" className="w-full">
+                    {contentData.faqs.map((faqJson, index) => {
+                      let faqs: { question: string; answer: string }[] = [];
+                      try {
+                        faqs = JSON.parse(faqJson);
+                      } catch {}
+                      return faqs.map((item, i) => (
+                        <AccordionItem key={`${index}-${i}`} value={`faq-${index}-${i}`} className="mb-2">
+                          <AccordionTrigger className="px-4 py-2 text-left font-semibold">
+                            {item.question}
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4 flex flex-col gap-2">
+                            <p className="text-gray-700 whitespace-pre-line">{item.answer}</p>
+                          </AccordionContent>
+                        </AccordionItem>
+                      ));
+                    })}
+                  </Accordion>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -571,16 +669,18 @@ export default function PageAnalysisPage() {
                     <PenTool className="h-5 w-5" />
                     <span>Content Paragraphs</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor('paragraph', '', 'Add Content Paragraph', 'Generate optimized content paragraphs to improve page depth and keyword coverage')}
-                    disabled={!analysis}
-                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Paragraph
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor('paragraph', '', 'Add Content Paragraph', 'Generate optimized content paragraphs to improve page depth and keyword coverage')}
+                      disabled={!analysis}
+                      className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Paragraph
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -623,14 +723,16 @@ export default function PageAnalysisPage() {
                     <Hash className="h-5 w-5" />
                     <span>Keyword Analysis</span>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditor('keywords', JSON.stringify(contentData.keywords, null, 2), 'Keyword Analysis', 'Generate comprehensive keyword analysis including primary, long-tail, semantic, and missing keywords')}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Analyze
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditor('keywords', JSON.stringify(contentData.keywords, null, 2), 'Keyword Analysis', 'Generate comprehensive keyword analysis including primary, long-tail, semantic, and missing keywords')}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Analyze
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -810,6 +912,24 @@ export default function PageAnalysisPage() {
           description={editorModal.description}
         />
       )}
+
+      {/* Undeploy Confirmation Dialog */}
+      <Dialog open={undeployDialog.open} onOpenChange={open => setUndeployDialog(d => ({ ...d, open }))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Undeploy</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to undeploy this {undeployDialog.contentType}? This will revert to the original version.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUndeployDialog({ open: false, contentType: null })} disabled={undeploying}>Cancel</Button>
+            <Button variant="destructive" onClick={() => handleUndeploy(undeployDialog.contentType!)} disabled={undeploying}>
+              {undeploying ? 'Undeploying...' : 'Confirm Undeploy'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 } 
