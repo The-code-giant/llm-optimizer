@@ -231,32 +231,28 @@ export default function PageAnalysisPage() {
     });
   };
 
-  const handleContentSave = async (content: string) => {
+  const handleContentSave = async (content: string, deployImmediately?: boolean) => {
     if (!editorModal) return;
-
     const { contentType } = editorModal;
-    
     try {
       const token = await getToken();
       if (!token) {
         setToast({ message: "Authentication error", type: "error" });
         return;
       }
-
       // Get original content for context
       const originalContent = pageData?.title || '';
-
-      // Save to database
-      await savePageContent(
+      // Save to database (with deployImmediately if requested)
+      const response = await savePageContent(
         token,
         pageId,
         contentType,
         content,
         originalContent,
         editorModal.description,
-        { characterCount: content.length }
+        { characterCount: content.length },
+        deployImmediately
       );
-
       // Update local state
       switch (contentType) {
         case 'title':
@@ -287,10 +283,13 @@ export default function PageAnalysisPage() {
           }
           break;
       }
-
-      setToast({ message: `${contentType} saved successfully!`, type: "success" });
+      if (deployImmediately) {
+        setToast({ message: `${contentType} saved and deployed successfully!`, type: "success" });
+      } else {
+        setToast({ message: `${contentType} saved successfully!`, type: "success" });
+      }
     } catch (error: any) {
-      setToast({ message: error.message || `Failed to save ${contentType}`, type: "error" });
+      setToast({ message: error.message || `Failed to save${deployImmediately ? ' and deploy' : ''} ${contentType}`, type: "error" });
     }
   };
 
@@ -339,9 +338,15 @@ export default function PageAnalysisPage() {
       </DashboardLayout>
     );
   }
-// convert analysis to json
-const analysisJson = JSON.parse(analysis?.summary as string);
-console.log(analysisJson);
+  let analysisJson = null;
+  if (analysis?.summary && typeof analysis.summary === 'string') {
+    try {
+      analysisJson = JSON.parse(analysis.summary);
+    } catch (e) {
+      console.error('Failed to parse analysis.summary as JSON:', analysis.summary, e);
+      analysisJson = null;
+    }
+  }
 
   return (
     <DashboardLayout>
@@ -440,7 +445,9 @@ console.log(analysisJson);
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => openEditor('title', contentData.title, 'Edit Page Title', 'Generate optimized title suggestions for better SEO and click-through rates')}
+                    onClick={() => openEditor('title', contentData.title || pageData.title || '', 'Edit Page Title', 'Generate optimized title suggestions for better SEO and click-through rates')}
+                    disabled={!analysis}
+                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit
@@ -448,16 +455,24 @@ console.log(analysisJson);
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-gray-900">
-                    {contentData.title || 'No optimized title set - click Edit to generate suggestions'}
-                  </p>
-                  {contentData.title && (
-                    <div className="mt-2">
-                      <Badge variant={contentData.title.length >= 50 && contentData.title.length <= 60 ? "default" : "secondary"}>
-                        {contentData.title.length} characters
+                <div className="p-4 bg-gray-50 rounded-lg flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-900 font-medium">
+                      {contentData.title ? contentData.title : pageData.title || 'No title set - click Edit to generate suggestions'}
+                    </p>
+                    {contentData.title && (
+                      <Badge variant="default">Deployed</Badge>
+                    )}
+                  </div>
+                  {(contentData.title || pageData.title) && (
+                    <div className="mt-1">
+                      <Badge variant={contentData.title && contentData.title.length >= 50 && contentData.title.length <= 60 ? "default" : "secondary"}>
+                        {(contentData.title || pageData.title).length} characters
                       </Badge>
                     </div>
+                  )}
+                  {!analysis && (
+                    <div className="text-xs text-gray-500 mt-2">Run analysis to enable editing.</div>
                   )}
                 </div>
               </CardContent>
@@ -474,7 +489,9 @@ console.log(analysisJson);
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => openEditor('description', contentData.description, 'Edit Meta Description', 'Generate compelling meta descriptions that improve search result click-through rates')}
+                    onClick={() => openEditor('description', contentData.description || pageData.description || '', 'Edit Meta Description', 'Generate compelling meta descriptions that improve search result click-through rates')}
+                    disabled={!analysis}
+                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
                   >
                     <Edit3 className="h-4 w-4 mr-2" />
                     Edit
@@ -484,7 +501,7 @@ console.log(analysisJson);
               <CardContent>
                 <div className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-gray-900">
-                    {contentData.description || 'No meta description set - click Edit to generate suggestions'}
+                    {contentData.description ? contentData.description : pageData.description || 'No meta description set - click Edit to generate suggestions'}
                   </p>
                   {contentData.description && (
                     <div className="mt-2">
@@ -509,6 +526,8 @@ console.log(analysisJson);
                     variant="outline"
                     size="sm"
                     onClick={() => openEditor('faq', '', 'Add FAQ', 'Generate frequently asked questions based on page content and user intent')}
+                    disabled={!analysis}
+                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add FAQ
@@ -519,20 +538,19 @@ console.log(analysisJson);
                 {contentData.faqs.length > 0 ? (
                   <div className="space-y-4">
                     {contentData.faqs.map((faq, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="text-gray-900 whitespace-pre-line">{faq}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFAQ(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            Remove
-                          </Button>
+                      <div key={index} className="p-4 bg-gray-50 rounded-lg flex items-center gap-2">
+                        <div className="flex-1">
+                          <p className="text-gray-900 whitespace-pre-line">{faq}</p>
                         </div>
+                        <Badge variant="default">Deployed</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFAQ(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -557,6 +575,8 @@ console.log(analysisJson);
                     variant="outline"
                     size="sm"
                     onClick={() => openEditor('paragraph', '', 'Add Content Paragraph', 'Generate optimized content paragraphs to improve page depth and keyword coverage')}
+                    disabled={!analysis}
+                    className={!analysis ? 'bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed' : ''}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Paragraph
@@ -566,28 +586,27 @@ console.log(analysisJson);
               <CardContent>
                 {contentData.paragraphs.length > 0 ? (
                   <div className="space-y-4">
-                    {contentData.paragraphs.map((paragraph, index) => (
-                      <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <p className="text-gray-900">{paragraph}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeParagraph(index)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            Remove
-                          </Button>
+                    {contentData.paragraphs.map((para, index) => (
+                      <div key={index} className="p-4 bg-gray-50 rounded-lg flex items-center gap-2">
+                        <div className="flex-1">
+                          <p className="text-gray-900 whitespace-pre-line">{para}</p>
                         </div>
+                        <Badge variant="default">Deployed</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeParagraph(index)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Remove
+                        </Button>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-500">
                     <PenTool className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>No content paragraphs added yet - click "Add Paragraph" to generate suggestions</p>
+                    <p>No paragraphs added yet - click "Add Paragraph" to generate suggestions</p>
                   </div>
                 )}
               </CardContent>
@@ -696,7 +715,7 @@ console.log(analysisJson);
                         Summary
                       </h3>
                       <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-gray-700">{analysisJson.summary}</p>
+                        <p className="text-gray-700">{analysisJson?.summary}</p>
                       </div>
                     </div>
 
