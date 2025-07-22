@@ -634,7 +634,9 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready t
     const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
-      const json = JSON.parse(responseText);
+      // Remove code block markers if present
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const json = JSON.parse(cleaned);
       const title = json.optimizedTitle;
       
       // Validate character limit
@@ -692,7 +694,8 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready m
     const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
-      const json = JSON.parse(responseText);
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const json = JSON.parse(cleaned);
       const description = json.optimizedDescription;
       
       // Validate character limit (150-160 range)
@@ -750,7 +753,8 @@ Summary: ${pageSummary}
     const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
-      const json = JSON.parse(responseText);
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const json = JSON.parse(cleaned);
       return json;
     } catch (e) {
       console.error('Failed to parse AI response as JSON:', responseText);
@@ -800,7 +804,8 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready s
     const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
-      const json = JSON.parse(responseText);
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const json = JSON.parse(cleaned);
       return json;
     } catch (e) {
       console.error('Failed to parse AI response as JSON:', responseText);
@@ -844,7 +849,8 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready k
     const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
-      const json = JSON.parse(responseText);
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const json = JSON.parse(cleaned);
       return json;
     } catch (e) {
       console.error('Failed to parse AI response as JSON:', responseText);
