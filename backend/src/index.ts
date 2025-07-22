@@ -230,7 +230,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-const PORT = process.env.BACKEND_PORT || 3002;
+const PORT = process.env.BACKEND_PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📚 Swagger docs available at http://localhost:${PORT}/api-docs`);
