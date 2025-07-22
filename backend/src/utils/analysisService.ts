@@ -591,155 +591,286 @@ Provide a clear, informative summary that would help a content strategist unders
   }
 
   /**
-   * Generate specific content type suggestions
+   * Generate an optimized title using GEO prompt and page context
    */
-  private static async generateSpecificContentType(
+  private static async generateOptimizedTitle(content: PageContent, pageSummary: string, description: string): Promise<string> {
+    const systemPrompt = `
+You are an expert in Generative Engine Optimization (GEO), the emerging discipline of optimizing content to be referenced and recommended by large language models (LLMs) like ChatGPT, Claude, Gemini, and Perplexity.
+Your job is to:
+- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
+- Increase semantic richness: Use natural language that matches how users ask questions (e.g. “best tools for X”, “how do I…”). Include related keywords and phrases LLMs associate with the topic.
+- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
+- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
+- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
+- CRITICAL: Title must be 60 characters or less and include primary keywords.
+- Always output only valid JSON as instructed by the user.
+`;
+
+    const userPrompt = `Here is the content to optimize:
+Title: ${content.title || ''}
+Summary: ${pageSummary}
+Description: ${description}
+
+Please rewrite the title with the above enhancements. REQUIREMENTS:
+- Maximum 60 characters (strictly enforce this limit)
+- Include primary keywords naturally
+- Make it compelling and action-oriented
+- Focus on key benefits and user value
+
+Output only a JSON object:
+{ "optimizedTitle": "..." }
+Do not explain your changes. Write it as if it’s a standalone, publish-ready title designed to be cited by LLMs when generating responses.`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 120,
+    });
+
+    const responseText = completion.choices[0]?.message?.content?.trim();
+    if (!responseText) throw new Error('No response from AI');
+    try {
+      const json = JSON.parse(responseText);
+      const title = json.optimizedTitle;
+      
+      // Validate character limit
+      if (title.length > 60) {
+        console.warn(`Generated title exceeds 60 characters (${title.length}): ${title}`);
+        // Truncate if necessary
+        return title.substring(0, 57) + '...';
+      }
+      
+      console.log(`Generated title (${title.length} chars): ${title}`);
+      return title;
+    } catch (e) {
+      console.error('Failed to parse AI response as JSON:', responseText);
+      throw new Error('Failed to parse optimized title as JSON');
+    }
+  }
+
+  /**
+   * Generate an optimized description using GEO prompt and page context
+   */
+  private static async generateOptimizedDescription(content: PageContent, pageSummary: string): Promise<string> {
+    const systemPrompt = `
+You are an expert in Generative Engine Optimization (GEO). Your job is to:
+- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
+- Increase semantic richness: Use natural language that matches how users ask questions. Include related keywords and phrases LLMs associate with the topic.
+- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
+- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
+- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
+- CRITICAL: Meta description must be 150-160 characters and focus on key benefits.
+- Always output only valid JSON as instructed by the user.
+`;
+    const userPrompt = `Here is the content to optimize:
+Description: ${content.metaDescription || ''}
+Summary: ${pageSummary}
+
+Please rewrite the meta description with the above enhancements. REQUIREMENTS:
+- Length: 150-160 characters (strictly enforce this range)
+- Focus on key benefits and user value
+- Include compelling call-to-action
+- Describe the page value clearly
+- Match search intent
+
+Output only a JSON object:
+{ "optimizedDescription": "..." }
+Do not explain your changes. Write it as if it’s a standalone, publish-ready meta description designed to be cited by LLMs when generating responses.`;
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 180,
+    });
+    const responseText = completion.choices[0]?.message?.content?.trim();
+    if (!responseText) throw new Error('No response from AI');
+    try {
+      const json = JSON.parse(responseText);
+      const description = json.optimizedDescription;
+      
+      // Validate character limit (150-160 range)
+      if (description.length < 150) {
+        console.warn(`Generated description too short (${description.length} chars): ${description}`);
+      } else if (description.length > 160) {
+        console.warn(`Generated description too long (${description.length} chars): ${description}`);
+        // Truncate if necessary
+        return description.substring(0, 157) + '...';
+      }
+      
+      console.log(`Generated description (${description.length} chars): ${description}`);
+      return description;
+    } catch (e) {
+      console.error('Failed to parse AI response as JSON:', responseText);
+      throw new Error('Failed to parse optimized description as JSON');
+    }
+  }
+
+  /**
+   * Generate optimized FAQ using GEO prompt and page context
+   */
+  private static async generateOptimizedFAQ(content: PageContent, pageSummary: string): Promise<any[]> {
+    const systemPrompt = `
+You are an expert in Generative Engine Optimization (GEO). Your job is to:
+- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
+- Increase semantic richness: Use natural language that matches how users ask questions. Include related keywords and phrases LLMs associate with the topic.
+- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
+- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
+- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
+- Always output only valid JSON as instructed by the user.
+`;
+    const userPrompt = `Here is the content to optimize:
+Summary: ${pageSummary}
+
+Please generate a JSON array of 5-8 FAQ objects, each with a question and a detailed answer, using the above enhancements. Output only a JSON array:
+[
+  { "question": "...", "answer": "..." },
+  ...
+]
+Do not explain your changes. Write it as if it’s a standalone, publish-ready FAQ section designed to be cited by LLMs when generating responses.`;
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 800,
+    });
+    const responseText = completion.choices[0]?.message?.content?.trim();
+    if (!responseText) throw new Error('No response from AI');
+    try {
+      const json = JSON.parse(responseText);
+      return json;
+    } catch (e) {
+      console.error('Failed to parse AI response as JSON:', responseText);
+      throw new Error('Failed to parse optimized FAQ as JSON');
+    }
+  }
+
+  /**
+   * Generate optimized paragraphs using GEO prompt and page context
+   */
+  private static async generateOptimizedParagraph(content: PageContent, pageSummary: string): Promise<string[]> {
+    const systemPrompt = `
+You are an expert in Generative Engine Optimization (GEO). Your job is to:
+- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
+- Increase semantic richness: Use natural language that matches how users ask questions. Include related keywords and phrases LLMs associate with the topic.
+- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
+- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
+- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
+- Enhance headings: Make them descriptive and action-oriented with clear value propositions.
+- Always output only valid JSON as instructed by the user.
+`;
+    const userPrompt = `Here is the content to optimize:
+Summary: ${pageSummary}
+
+Please generate a JSON array of 3 optimized content paragraphs with descriptive, action-oriented headings, each 100-150 words, using the above enhancements. REQUIREMENTS:
+- Each paragraph should have a compelling, action-oriented heading
+- Headings should be descriptive and focus on user benefits
+- Content should be valuable and actionable
+- Include relevant keywords naturally
+
+Output only a JSON array of objects:
+[
+  { "heading": "Action-Oriented Heading 1", "content": "paragraph content..." },
+  { "heading": "Action-Oriented Heading 2", "content": "paragraph content..." },
+  { "heading": "Action-Oriented Heading 3", "content": "paragraph content..." }
+]
+Do not explain your changes. Write it as if it’s a standalone, publish-ready set of paragraphs designed to be cited by LLMs when generating responses.`;
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+    const responseText = completion.choices[0]?.message?.content?.trim();
+    if (!responseText) throw new Error('No response from AI');
+    try {
+      const json = JSON.parse(responseText);
+      return json;
+    } catch (e) {
+      console.error('Failed to parse AI response as JSON:', responseText);
+      throw new Error('Failed to parse optimized paragraphs as JSON');
+    }
+  }
+
+  /**
+   * Generate optimized keywords using GEO prompt and page context
+   */
+  private static async generateOptimizedKeywords(content: PageContent, pageSummary: string): Promise<any> {
+    const systemPrompt = `
+You are an expert in Generative Engine Optimization (GEO). Your job is to:
+- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
+- Increase semantic richness: Use natural language that matches how users ask questions. Include related keywords and phrases LLMs associate with the topic.
+- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
+- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
+- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
+- Always output only valid JSON as instructed by the user.
+`;
+    const userPrompt = `Here is the content to optimize:
+Summary: ${pageSummary}
+
+Please generate a JSON object with the following fields, using the above enhancements:
+{
+  "primary": ["keyword1", "keyword2"],
+  "longTail": ["long tail phrase 1", "specific query phrase 2"],
+  "semantic": ["related term 1", "synonym 2"],
+  "missing": ["opportunity 1", "gap 2"]
+}
+Do not explain your changes. Write it as if it’s a standalone, publish-ready keyword analysis designed to be cited by LLMs when generating responses.`;
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 300,
+    });
+    const responseText = completion.choices[0]?.message?.content?.trim();
+    if (!responseText) throw new Error('No response from AI');
+    try {
+      const json = JSON.parse(responseText);
+      return json;
+    } catch (e) {
+      console.error('Failed to parse AI response as JSON:', responseText);
+      throw new Error('Failed to parse optimized keywords as JSON');
+    }
+  }
+
+  /**
+   * Generate specific content type suggestions (refactored)
+   */
+  public static async generateSpecificContentType(
     contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
     content: PageContent,
     analysisResult: AnalysisResult,
     maxTokens: number,
     pageSummary?: string
   ): Promise<any> {
-    let prompt = '';
-
-    const contextInfo = `
-URL: ${content.url}
-Current Title: ${content.title || 'No title'}
-Current Meta Description: ${content.metaDescription || 'No meta description'}
-Keywords Found: ${analysisResult.keywordAnalysis.primaryKeywords.join(', ')}
-Long-tail Keywords: ${analysisResult.keywordAnalysis.longTailKeywords.join(', ')}
-Missing Keywords: ${analysisResult.keywordAnalysis.missingKeywords.join(', ')}
-Content Summary: ${analysisResult.summary}
-${pageSummary ? `
-
-Page Context & Summary:
-${pageSummary}` : ''}
-`;
-
     switch (contentType) {
       case 'title':
-        prompt = `Generate 5 SEO-optimized page titles for this webpage:
-
-${contextInfo}
-
-Requirements:
-- 50-60 characters optimal length
-- Include primary keywords naturally
-- Make it compelling and click-worthy
-- Focus on user intent and value proposition
-- Consider long-tail keyword opportunities
-
-Return ONLY a JSON array of 5 title suggestions:
-["title 1", "title 2", "title 3", "title 4", "title 5"]`;
-        break;
-
+        return await this.generateOptimizedTitle(content, pageSummary || '', content.metaDescription || '');
       case 'description':
-        prompt = `Generate 3 SEO-optimized meta descriptions for this webpage:
-
-${contextInfo}
-
-Requirements:
-- 150-160 characters optimal length
-- Include primary keywords naturally
-- Compelling call-to-action
-- Describe the page value clearly
-- Match search intent
-
-Return ONLY a JSON array of 3 descriptions:
-["description 1", "description 2", "description 3"]`;
-        break;
-
+        return await this.generateOptimizedDescription(content, pageSummary || '');
       case 'faq':
-        prompt = `Generate a comprehensive FAQ section for this webpage:
-
-${contextInfo}
-
-Generate 6-8 relevant questions and detailed answers that:
-- Address common user queries about this topic
-- Include naturally integrated keywords
-- Provide comprehensive, helpful answers
-- Are structured for LLM understanding
-- Focus on user intent and value
-
-Return ONLY a JSON array of FAQ objects:
-[
-  {
-    "question": "Question 1?",
-    "answer": "Detailed answer..."
-  },
-  {
-    "question": "Question 2?",
-    "answer": "Detailed answer..."
-  }
-]`;
-        break;
-
+        return await this.generateOptimizedFAQ(content, pageSummary || '');
       case 'paragraph':
-        prompt = `Generate 3 optimized content paragraphs for this webpage:
-
-${contextInfo}
-
-Generate paragraphs that:
-- Are 100-150 words each
-- Include relevant keywords naturally
-- Provide valuable, actionable information
-- Are structured for LLM understanding
-- Address user search intent
-
-Return ONLY a JSON array of 3 paragraphs:
-["paragraph 1 content...", "paragraph 2 content...", "paragraph 3 content..."]`;
-        break;
-
+        return await this.generateOptimizedParagraph(content, pageSummary || '');
       case 'keywords':
-        prompt = `Generate comprehensive keyword analysis for this webpage:
-
-${contextInfo}
-
-Generate:
-- 5-7 primary keywords (main topics)
-- 8-10 long-tail keyword phrases (4+ words)
-- 5-7 semantic/LSI keywords
-- 3-5 missing keyword opportunities
-
-Return ONLY a JSON object:
-{
-  "primary": ["keyword1", "keyword2"],
-  "longTail": ["long tail phrase 1", "specific query phrase 2"],
-  "semantic": ["related term 1", "synonym 2"],
-  "missing": ["opportunity 1", "gap 2"]
-}`;
-        break;
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert content strategist and SEO specialist. Generate high-quality, optimized content that helps pages rank better and get cited by LLMs. Always return valid JSON as requested.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: maxTokens,
-    });
-
-    const responseText = completion.choices[0]?.message?.content;
-    if (!responseText) {
-      throw new Error('No response from AI');
-    }
-
-    // Parse JSON response
-    try {
-      const jsonMatch = responseText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      const jsonString = jsonMatch ? jsonMatch[0] : responseText;
-      return JSON.parse(jsonString);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', responseText);
-      throw new Error('Failed to parse content suggestions');
+        return await this.generateOptimizedKeywords(content, pageSummary || '');
+      default:
+        throw new Error('Unknown content type');
     }
   }
 } 

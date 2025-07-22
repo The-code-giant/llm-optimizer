@@ -448,11 +448,6 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
     const analysis = analysisArr[0];
     
     try {
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-      
-      let prompt = '';
-      let maxTokens = 300;
-
       // Get page summary for better context
       let pageSummary = '';
       if (analysis?.recommendations) {
@@ -466,169 +461,88 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
         }
       }
 
-      switch (contentType) {
-        case 'title':
-          prompt = `
-Generate 5 SEO-optimized page titles for this webpage:
+      // Create PageContent object for the new functions
+      const pageContentObj = {
+        title: page.title || currentContent || '',
+        metaDescription: currentContent || '',
+        url: page.url
+      };
 
-URL: ${page.url}
-Current Title: ${currentContent || page.title || 'No title'}
-${pageSummary ? `\nPage Summary:\n${pageSummary}` : ''}
-Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
-Additional Context: ${additionalContext || ''}
+             // Generate multiple suggestions using the new functions
+       let suggestions;
+       try {
+         // Create a minimal AnalysisResult object for the function
+         const analysisResult = {
+           score: analysis?.score || 0,
+           summary: analysis?.rawLlmOutput || '',
+           issues: [],
+           recommendations: [],
+           contentQuality: { 
+             clarity: 0,
+             structure: 0,
+             completeness: 0
+           },
+           technicalSEO: { 
+             headingStructure: 0,
+             semanticMarkup: 0,
+             contentDepth: 0,
+             titleOptimization: 0,
+             metaDescription: 0,
+             schemaMarkup: 0
+           },
+           keywordAnalysis: { 
+             primaryKeywords: [],
+             longTailKeywords: [],
+             keywordDensity: 0,
+             semanticKeywords: [],
+             missingKeywords: []
+           },
+           llmOptimization: {
+             definitionsPresent: false,
+             faqsPresent: false,
+             structuredData: false,
+             citationFriendly: false,
+             topicCoverage: 0,
+             answerableQuestions: 0
+           }
+         };
 
-Requirements:
-- 50-60 characters optimal length
-- Include primary keywords naturally
-- Make it compelling and click-worthy
-- Focus on user intent and value proposition
-- Consider long-tail keyword opportunities
-- Use the page summary to understand the content's value proposition
-
-Return ONLY a JSON array of 5 title suggestions:
-["title 1", "title 2", "title 3", "title 4", "title 5"]`;
-          break;
-
-        case 'description':
-          prompt = `
-Generate 3 SEO-optimized meta descriptions for this webpage:
-
-URL: ${page.url}
-Title: ${page.title || 'No title'}
-Current Description: ${currentContent || 'No description'}
-${pageSummary ? `\nPage Summary:\n${pageSummary}` : ''}
-Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
-Additional Context: ${additionalContext || ''}
-
-Requirements:
-- 150-160 characters optimal length
-- Include primary keywords naturally
-- Compelling call-to-action
-- Describe the page value clearly
-- Match search intent
-- Use the page summary to accurately describe the content's purpose and benefits
-
-Return ONLY a JSON array of 3 descriptions:
-["description 1", "description 2", "description 3"]`;
-          break;
-
-        case 'faq':
-          maxTokens = 800;
-          prompt = `
-Generate a comprehensive FAQ section for this webpage based on the analysis:
-
-URL: ${page.url}
-Title: ${page.title || 'No title'}
-Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
-Current FAQ Content: ${currentContent || 'No existing FAQ'}
-Additional Context: ${additionalContext || ''}
-
-Generate 5-8 relevant questions and detailed answers that:
-- Address common user queries about this topic
-- Include naturally integrated keywords
-- Provide comprehensive, helpful answers
-- Are structured for LLM understanding
-- Focus on user intent and value
-
-Return ONLY a JSON object:
-{
-  "faqs": [
-    {
-      "question": "Question 1?",
-      "answer": "Detailed answer..."
-    },
-    {
-      "question": "Question 2?", 
-      "answer": "Detailed answer..."
-    }
-  ]
-}`;
-          break;
-
-        case 'paragraph':
-          maxTokens = 500;
-          prompt = `
-Generate 3 optimized content paragraphs for this webpage:
-
-URL: ${page.url}
-Title: ${page.title || 'No title'}
-Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
-Current Content Context: ${currentContent || 'No existing content'}
-Additional Context: ${additionalContext || ''}
-
-Generate paragraphs that:
-- Are 100-150 words each
-- Include relevant keywords naturally
-- Provide valuable, actionable information
-- Are structured for LLM understanding
-- Address user search intent
-
-Return ONLY a JSON array of 3 paragraphs:
-["paragraph 1 content...", "paragraph 2 content...", "paragraph 3 content..."]`;
-          break;
-
-        case 'keywords':
-          prompt = `
-Generate keyword optimization suggestions for this webpage:
-
-URL: ${page.url}
-Title: ${page.title || 'No title'}
-Page Analysis: ${analysis?.rawLlmOutput || 'No analysis available'}
-Current Keywords Focus: ${currentContent || 'No current focus'}
-Additional Context: ${additionalContext || ''}
-
-Generate:
-- 5-7 primary keywords
-- 8-10 long-tail keyword phrases (4+ words)
-- 5-7 semantic/LSI keywords
-- 3-5 missing keyword opportunities
-
-Return ONLY a JSON object:
-{
-  "primary": ["keyword1", "keyword2"],
-  "longTail": ["long tail phrase 1", "specific query phrase 2"],
-  "semantic": ["related term 1", "synonym 2"],
-  "missing": ["opportunity 1", "gap 2"]
-}`;
-          break;
-
-        default:
-          res.status(400).json({ message: 'Invalid content type' });
-          return;
-      }
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert content strategist and SEO specialist. Generate high-quality, optimized content that helps pages rank better and get cited by LLMs. Always return valid JSON as requested.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: maxTokens,
-      });
-
-      const responseText = completion.choices[0]?.message?.content;
-      if (!responseText) {
-        throw new Error('No response from AI');
-      }
-
-      // Parse JSON response
-      let suggestions;
-      try {
-        // Extract JSON from response (in case there's extra text)
-        const jsonMatch = responseText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-        const jsonString = jsonMatch ? jsonMatch[0] : responseText;
-        suggestions = JSON.parse(jsonString);
-      } catch (parseError) {
-        console.error('Failed to parse AI response:', responseText);
-        throw new Error('Failed to parse content suggestions');
-      }
+         // Generate multiple suggestions based on content type
+         if (contentType === 'title') {
+           // Generate 5 title suggestions
+           const titlePromises = Array(5).fill(null).map(() => 
+             AnalysisService.generateSpecificContentType('title', pageContentObj, analysisResult, 1000, pageSummary)
+           );
+           const titles = await Promise.all(titlePromises);
+           suggestions = titles;
+         } else if (contentType === 'description') {
+           // Generate 3 description suggestions  
+           const descPromises = Array(3).fill(null).map(() =>
+             AnalysisService.generateSpecificContentType('description', pageContentObj, analysisResult, 1000, pageSummary)
+           );
+           const descriptions = await Promise.all(descPromises);
+           suggestions = descriptions;
+         } else if (contentType === 'paragraph') {
+           // Generate 3 paragraph suggestions
+           const paragraphPromises = Array(3).fill(null).map(() =>
+             AnalysisService.generateSpecificContentType('paragraph', pageContentObj, analysisResult, 1000, pageSummary)
+           );
+           const paragraphs = await Promise.all(paragraphPromises);
+           suggestions = paragraphs;
+         } else {
+           // For FAQ and keywords, return single result (they're already comprehensive)
+           suggestions = await AnalysisService.generateSpecificContentType(
+             contentType as 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+             pageContentObj,
+             analysisResult,
+             1000,
+             pageSummary
+           );
+         }
+       } catch (serviceError: any) {
+         console.error(`Failed to generate ${contentType} suggestions:`, serviceError);
+         throw new Error(`Content generation failed: ${serviceError.message}`);
+       }
 
           // Replace existing suggestions for this content type (single record per field)
     await db.delete(contentSuggestions)
