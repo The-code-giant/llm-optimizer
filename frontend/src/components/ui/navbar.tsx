@@ -11,25 +11,67 @@ import {
   SparklesIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
+import { usePathname, useRouter } from 'next/navigation'
+import { useCallback, useEffect } from 'react'
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const { user, isSignedIn } = useUser();
   const { signOut } = useClerk();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
-    { name: "Features", href: "#features" },
-    { name: "How it Works", href: "#how-it-works" },
-    { name: "Pricing", href: "#pricing" },
-    { name: "Resources", href: "#resources" },
-    { name: "Company", href: "#company" },
+    { name: 'Features', anchor: 'features' },
+    { name: 'How it Works', anchor: 'how-it-works' },
+    // { name: 'Pricing', anchor: 'pricing' },
+    { name: 'Resources', anchor: 'resources' },
+    // { name: 'Company', anchor: 'company' },
   ];
+
+  const handleNavClick = useCallback((anchor: string) => {
+    if (pathname === '/') {
+      const el = document.getElementById(anchor)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' })
+      } else {
+        // fallback: update hash, browser will jump
+        window.location.hash = anchor
+      }
+    } else {
+      router.push('/#' + anchor)
+    }
+    setIsMenuOpen(false)
+  }, [pathname, router])
 
   const handleSignOut = async () => {
     await signOut();
     setIsUserMenuOpen(false);
   };
+
+  // Smooth scroll to anchor on homepage mount if hash is present
+  useEffect(() => {
+    if (pathname === '/' && typeof window !== 'undefined') {
+      const hash = window.location.hash
+      if (hash && hash.length > 1) {
+        const anchor = hash.substring(1)
+        const el = document.getElementById(anchor)
+        if (el) {
+          // Wait for page to fully render and animations to complete
+          setTimeout(() => {
+            // Check if element is already in viewport
+            const rect = el.getBoundingClientRect()
+            const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight
+            
+            if (!isInViewport) {
+              el.scrollIntoView({ behavior: 'smooth' })
+            }
+          }, 500) // Increased delay to ensure content is rendered
+        }
+      }
+    }
+  }, [pathname])
 
   return (
     <motion.nav
@@ -53,13 +95,14 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <a
+              <button
                 key={item.name}
-                href={item.href}
-                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium"
+                onClick={() => handleNavClick(item.anchor)}
+                className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium bg-transparent border-none outline-none cursor-pointer"
+                type="button"
               >
                 {item.name}
-              </a>
+              </button>
             ))}
           </div>
 
@@ -144,14 +187,14 @@ export function Navbar() {
           >
             <div className="flex flex-col space-y-4">
               {navItems.map((item) => (
-                <a
+                <button
                   key={item.name}
-                  href={item.href}
-                  className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium py-2"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => handleNavClick(item.anchor)}
+                  className="text-gray-600 hover:text-gray-900 transition-colors duration-200 font-medium py-2 bg-transparent border-none outline-none text-left cursor-pointer"
+                  type="button"
                 >
                   {item.name}
-                </a>
+                </button>
               ))}
               <div className="flex flex-col space-y-3 pt-4 border-t border-gray-200">
                 {isSignedIn ? (
