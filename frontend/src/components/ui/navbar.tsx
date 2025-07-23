@@ -36,8 +36,9 @@ export function Navbar() {
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' })
       } else {
-        // fallback: update hash, browser will jump
-        window.location.hash = anchor
+        // fallback: use Next.js router to update hash
+        console.warn(`Element with ID '${anchor}' not found. Falling back to updating hash.`);
+        router.push('/#' + anchor);
       }
     } else {
       router.push('/#' + anchor)
