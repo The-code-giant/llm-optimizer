@@ -106,12 +106,12 @@ export default function CaseStudies() {
   ];
 
   const industries = [
-    { name: "E-commerce", count: 12, icon: "🛍️" },
-    { name: "SaaS", count: 8, icon: "💻" },
-    { name: "Healthcare", count: 6, icon: "🏥" },
-    { name: "Finance", count: 5, icon: "💰" },
-    { name: "Education", count: 4, icon: "🎓" },
-    { name: "Manufacturing", count: 3, icon: "🏭" }
+    { name: "E-commerce", count: 1, icon: "🛍️" },
+    { name: "SaaS", count: 1, icon: "💻" },
+    { name: "Healthcare", count: 1, icon: "🏥" },
+    { name: "Finance", count: 1, icon: "💰" },
+    { name: "Food & Beverage", count: 1, icon: "🍽️" },
+    { name: "Education", count: 1, icon: "🎓" }
   ];
 
   return (
@@ -161,7 +161,7 @@ export default function CaseStudies() {
               transition={{ duration: 0.6 }}
               className="px-6 py-3 bg-black text-white rounded-full font-medium"
             >
-              All Industries (38)
+              All Industries (6)
             </motion.button>
             {industries.map((industry, index) => (
               <motion.button
@@ -224,9 +224,9 @@ export default function CaseStudies() {
                   
                   <div className="grid grid-cols-2 gap-6">
                     {featuredCase.results.map((result, index) => (
-                      <div key={index} className="bg-white bg-opacity-20 rounded-xl p-6 text-center">
-                        <div className="text-3xl font-bold mb-2">{result.metric}</div>
-                        <div className="text-blue-200 text-sm">{result.label}</div>
+                      <div key={index} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-6 text-center">
+                        <div className="text-3xl font-bold mb-2 text-gray-900">{result.metric}</div>
+                        <div className="text-gray-700 text-sm font-medium">{result.label}</div>
                       </div>
                     ))}
                   </div>
@@ -297,7 +297,7 @@ export default function CaseStudies() {
             ))}
           </div>
 
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -310,7 +310,7 @@ export default function CaseStudies() {
             >
               View All Case Studies
             </Button>
-          </motion.div>
+          </motion.div> */}
         </div>
       </section>
 
@@ -342,7 +342,7 @@ export default function CaseStudies() {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-3"
+                  className="border-white text-black hover:bg-white hover:text-black rounded-full px-8 py-3"
                 >
                   Schedule Demo
                 </Button>
