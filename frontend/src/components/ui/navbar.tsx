@@ -185,6 +185,7 @@ export function NavbarComponent() {
                       Dashboard
                     </NavbarButton>
                   </Link>
+                  <div>
                   <NavbarButton
                     onClick={() => {
                       handleSignOut();
@@ -195,6 +196,7 @@ export function NavbarComponent() {
                   >
                     Sign Out
                   </NavbarButton>
+                  </div>
                 </>
               ) : (
                 <>
