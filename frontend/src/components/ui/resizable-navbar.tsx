@@ -69,7 +69,7 @@ export const Navbar = ({ children, className }: NavbarProps) => {
     <motion.div
       ref={ref}
       // IMPORTANT: Change this to class of `fixed` if you want the navbar to be fixed
-      className={cn("sticky inset-x-0 top-20 z-40 w-full", className)}
+      className={cn("fixed inset-x-0 top-0 z-40 w-full", className)}
     >
       {React.Children.map(children, (child) =>
         React.isValidElement(child)
@@ -103,8 +103,8 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         minWidth: "800px",
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-transparent px-4 py-2 lg:flex dark:bg-transparent",
-        visible && "bg-white/80 dark:bg-neutral-950/80",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-white/95 backdrop-blur-sm px-4 py-2 lg:flex dark:bg-neutral-950/95",
+        visible && "bg-white/95 dark:bg-neutral-950/95",
         className,
       )}
     >
@@ -165,8 +165,8 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-transparent px-0 py-2 lg:hidden",
-        visible && "bg-white/80 dark:bg-neutral-950/80",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-white/95 backdrop-blur-sm px-0 py-2 lg:hidden dark:bg-neutral-950/95",
+        visible && "bg-white/95 dark:bg-neutral-950/95",
         className,
       )}
     >
