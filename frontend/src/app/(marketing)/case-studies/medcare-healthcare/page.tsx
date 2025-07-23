@@ -161,8 +161,8 @@ export default function MedCareCaseStudy() {
             <div className="lg:col-span-2">
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.8 }}
               >
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">About MedCare Plus</h2>
@@ -185,8 +185,8 @@ export default function MedCareCaseStudy() {
             
             <motion.div
               initial={{ opacity: 0, x: 40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, x: 0 }}
+              
               transition={{ duration: 0.8 }}
               className="bg-white rounded-xl p-8 shadow-sm"
             >
@@ -219,8 +219,8 @@ export default function MedCareCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -236,8 +236,8 @@ export default function MedCareCaseStudy() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="bg-gray-50 rounded-xl p-8 text-center"
               >
@@ -258,8 +258,8 @@ export default function MedCareCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -275,8 +275,8 @@ export default function MedCareCaseStudy() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="bg-white rounded-xl p-8 shadow-sm"
               >
@@ -323,8 +323,8 @@ export default function MedCareCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -337,8 +337,8 @@ export default function MedCareCaseStudy() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <motion.div
               initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
+              
               transition={{ duration: 0.6 }}
               className="text-center bg-gradient-to-br from-green-500 to-blue-600 text-white rounded-xl p-8"
             >
@@ -349,8 +349,8 @@ export default function MedCareCaseStudy() {
             
             <motion.div
               initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
+              
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-center bg-white border border-gray-200 rounded-xl p-8"
             >
@@ -361,8 +361,8 @@ export default function MedCareCaseStudy() {
             
             <motion.div
               initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
+              
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-center bg-white border border-gray-200 rounded-xl p-8"
             >
@@ -373,8 +373,8 @@ export default function MedCareCaseStudy() {
             
             <motion.div
               initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
+              
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-center bg-white border border-gray-200 rounded-xl p-8"
             >
@@ -391,8 +391,8 @@ export default function MedCareCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -407,8 +407,8 @@ export default function MedCareCaseStudy() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-8"
               >
@@ -435,8 +435,8 @@ export default function MedCareCaseStudy() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-8">

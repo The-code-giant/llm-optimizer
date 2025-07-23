@@ -128,8 +128,8 @@ export default function HamiltonLLMServices() {
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -146,8 +146,8 @@ export default function HamiltonLLMServices() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
                 <Card className="p-8 hover:shadow-xl transition-all duration-300 h-full">
@@ -178,8 +178,8 @@ export default function HamiltonLLMServices() {
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -193,8 +193,8 @@ export default function HamiltonLLMServices() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
                 <Card className="p-6 text-center hover:shadow-lg transition-all duration-300">
@@ -214,8 +214,8 @@ export default function HamiltonLLMServices() {
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -234,8 +234,8 @@ export default function HamiltonLLMServices() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
                 <Card className="p-8 text-center h-full">
@@ -256,8 +256,8 @@ export default function HamiltonLLMServices() {
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -271,8 +271,8 @@ export default function HamiltonLLMServices() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
               >
                 <Card className="p-8 h-full">
@@ -294,8 +294,8 @@ export default function HamiltonLLMServices() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 leading-tight">

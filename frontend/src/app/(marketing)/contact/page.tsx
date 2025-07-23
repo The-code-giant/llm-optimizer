@@ -69,8 +69,8 @@ export default function Contact() {
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: -60 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, x: 0 }}
+              
               transition={{ duration: 0.8 }}
             >
               <h2 className="text-3xl font-bold text-gray-900 mb-8">Send us a message</h2>
@@ -172,8 +172,8 @@ export default function Contact() {
             {/* Contact Information */}
             <motion.div
               initial={{ opacity: 0, x: 60 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, x: 0 }}
+              
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <h2 className="text-3xl font-bold text-gray-900 mb-8">Get in touch</h2>
@@ -187,8 +187,8 @@ export default function Contact() {
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
+                    animate={{ opacity: 1, y: 0 }}
+                    
                     transition={{ duration: 0.6, delay: index * 0.1 }}
                     className="flex items-start"
                   >
@@ -207,8 +207,8 @@ export default function Contact() {
               {/* Additional Info Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="mt-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-8 text-white"
               >
@@ -243,8 +243,8 @@ export default function Contact() {
         <div className="max-w-4xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -282,8 +282,8 @@ export default function Contact() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="bg-white rounded-xl p-6 shadow-sm"
               >

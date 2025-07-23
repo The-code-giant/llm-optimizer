@@ -204,8 +204,8 @@ export default function Webinars() {
           <div className="max-w-7xl mx-auto px-4">
             <motion.div
               initial={{ opacity: 0, y: 60 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, y: 0 }}
+              
               transition={{ duration: 0.8 }}
               className="text-center mb-16"
             >
@@ -218,8 +218,8 @@ export default function Webinars() {
               return (
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  animate={{ opacity: 1, y: 0 }}
+                  
                   transition={{ duration: 0.8 }}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden max-w-5xl mx-auto"
                 >
@@ -358,8 +358,8 @@ export default function Webinars() {
                 <motion.div
                   key={webinar.id}
                   initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  animate={{ opacity: 1, y: 0 }}
+                  
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   className="bg-gray-50 rounded-xl p-8"
                 >
@@ -410,8 +410,8 @@ export default function Webinars() {
                 <motion.div
                   key={webinar.id}
                   initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  animate={{ opacity: 1, y: 0 }}
+                  
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   className="bg-gray-50 rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-300"
                 >
@@ -454,8 +454,8 @@ export default function Webinars() {
                 <motion.div
                   key={series.id}
                   initial={{ opacity: 0, y: 40 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
+                  animate={{ opacity: 1, y: 0 }}
+                  
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   className="bg-gray-50 rounded-xl p-8"
                 >
@@ -500,8 +500,8 @@ export default function Webinars() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 leading-tight">
