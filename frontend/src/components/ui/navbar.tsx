@@ -87,7 +87,7 @@ export function NavbarComponent() {
   }, [pathname])
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full ">
       <Navbar>
         {/* Desktop Navigation */}
         <NavBody>
@@ -96,14 +96,14 @@ export function NavbarComponent() {
             items={navItems} 
             onItemClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             {isSignedIn ? (
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
                 >
-                  <UserCircleIcon className="w-5 h-5" />
+                  {/* <UserCircleIcon className="w-5 h-5" /> */}
                   <span className="font-medium text-sm">
                     {user?.emailAddresses[0]?.emailAddress}
                   </span>
@@ -167,10 +167,10 @@ export function NavbarComponent() {
                 <span className="block">{item.name}</span>
               </button>
             ))}
-            <div className="flex w-full flex-col gap-4">
+            <div className="flex w-full flex-col gap-4 justify-start items-start">
               {isSignedIn ? (
                 <>
-                  <div className="flex items-center space-x-2 py-2">
+                  <div className="flex items-start space-x-2 py-2">
                     <UserCircleIcon className="w-5 h-5 text-gray-600" />
                     <span className="text-gray-700 font-medium text-sm">
                       {user?.emailAddresses[0]?.emailAddress}

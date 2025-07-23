@@ -41,6 +41,7 @@
     "framer-motion": "^12.19.1",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.523.0",
+    "motion": "^12.23.7",
     "next": "15.4.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
