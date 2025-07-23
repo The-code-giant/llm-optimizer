@@ -59,15 +59,23 @@ export function Navbar() {
         const el = document.getElementById(anchor)
         if (el) {
           // Wait for page to fully render and animations to complete
-          setTimeout(() => {
-            // Check if element is already in viewport
-            const rect = el.getBoundingClientRect()
-            const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight
-            
-            if (!isInViewport) {
-              el.scrollIntoView({ behavior: 'smooth' })
+          const maxTimeout = 5000; // Maximum wait time in milliseconds
+          const interval = 100; // Polling interval in milliseconds
+          let elapsedTime = 0;
+
+          const checkElementVisibility = setInterval(() => {
+            const rect = el.getBoundingClientRect();
+            const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+            if (isInViewport || elapsedTime >= maxTimeout) {
+              clearInterval(checkElementVisibility);
+              if (!isInViewport) {
+                el.scrollIntoView({ behavior: 'smooth' });
+              }
             }
-          }, 500) // Increased delay to ensure content is rendered
+
+            elapsedTime += interval;
+          }, interval);
         }
       }
     }
