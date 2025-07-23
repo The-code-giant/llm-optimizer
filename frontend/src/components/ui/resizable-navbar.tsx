@@ -103,8 +103,8 @@ export const NavBody = ({ children, className, visible }: NavBodyProps) => {
         minWidth: "800px",
       }}
       className={cn(
-        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-white/20 backdrop-blur-sm px-4 py-2 lg:flex dark:bg-neutral-950/20",
-        visible && "bg-white/40 dark:bg-neutral-950/40",
+        "relative z-[60] mx-auto hidden w-full max-w-7xl flex-row items-center justify-between self-start rounded-full bg-white/90 backdrop-blur-sm px-4 py-2 lg:flex dark:bg-neutral-950/90",
+        visible && "bg-white/95 dark:bg-neutral-950/95",
         className,
       )}
     >
@@ -120,7 +120,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
     <motion.div
       onMouseLeave={() => setHovered(null)}
       className={cn(
-        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-white transition duration-200 hover:text-gray-200 lg:flex lg:space-x-2",
+        "absolute inset-0 hidden flex-1 flex-row items-center justify-center space-x-2 text-sm font-medium text-gray-900 dark:text-white transition duration-200 hover:text-gray-700 dark:hover:text-gray-200 lg:flex lg:space-x-2",
         className,
       )}
     >
@@ -128,14 +128,14 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
         <a
           onMouseEnter={() => setHovered(idx)}
           onClick={onItemClick}
-          className="relative px-4 py-2 text-white hover:text-gray-200"
+          className="relative px-4 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-200"
           key={`link-${idx}`}
           href={item.link}
         >
           {hovered === idx && (
             <motion.div
               layoutId="hovered"
-              className="absolute inset-0 h-full w-full rounded-full bg-white/20"
+              className="absolute inset-0 h-full w-full rounded-full bg-gray-200 dark:bg-white/20"
             />
           )}
           <span className="relative z-20">{item.name}</span>
@@ -165,8 +165,8 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-white/20 backdrop-blur-sm px-0 py-2 lg:hidden dark:bg-neutral-950/20",
-        visible && "bg-white/40 dark:bg-neutral-950/40",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-white/90 backdrop-blur-sm px-0 py-2 lg:hidden dark:bg-neutral-950/90",
+        visible && "bg-white/95 dark:bg-neutral-950/95",
         className,
       )}
     >
@@ -224,9 +224,9 @@ export const MobileNavToggle = ({
   onClick: () => void;
 }) => {
   return isOpen ? (
-    <X className="text-white" onClick={onClick} />
+    <X className="text-gray-900 dark:text-white" onClick={onClick} />
   ) : (
-    <Menu className="text-white" onClick={onClick} />
+    <Menu className="text-gray-900 dark:text-white" onClick={onClick} />
   );
 };
 
