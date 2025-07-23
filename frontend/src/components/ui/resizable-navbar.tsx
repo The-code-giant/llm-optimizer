@@ -156,7 +156,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         width: visible ? "90%" : "100%",
         paddingRight: visible ? "12px" : "0px",
         paddingLeft: visible ? "12px" : "0px",
-        borderRadius: visible ? "4px" : "2rem",
+        borderRadius: "2rem",
         y: visible ? 20 : 0,
       }}
       transition={{
@@ -165,7 +165,7 @@ export const MobileNav = ({ children, className, visible }: MobileNavProps) => {
         damping: 50,
       }}
       className={cn(
-        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-white/90 backdrop-blur-sm px-0 py-2 lg:hidden dark:bg-neutral-950/90",
+        "relative z-50 mx-auto flex w-full max-w-[calc(100vw-2rem)] flex-col items-center justify-between bg-white/90 backdrop-blur-sm px-0 py-2 rounded-full lg:hidden dark:bg-neutral-950/90",
         visible && "bg-white/95 dark:bg-neutral-950/95",
         className,
       )}
