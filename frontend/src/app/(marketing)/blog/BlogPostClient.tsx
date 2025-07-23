@@ -66,7 +66,7 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
       {/* Article Content */}
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4">
-          <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="prose prose-lg max-w-none">
+          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="prose prose-lg max-w-none">
             {children}
           </motion.div>
         </div>
@@ -89,7 +89,7 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
       {/* Related Posts */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <motion.div initial={{ opacity: 0, y: 60 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }} className="text-center mb-16">
+          <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-8">Related Articles</h2>
             <p className="text-lg text-gray-600">
               Continue reading about LLM optimization strategies and best practices.
@@ -97,7 +97,7 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
           </motion.div>
           <div className="grid lg:grid-cols-3 gap-8">
             {relatedPosts.map((relatedPost, index) => (
-              <motion.article key={index} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: index * 0.1 }} className="bg-gray-50 rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
+              <motion.article key={index} initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1 }} className="bg-gray-50 rounded-xl p-6 hover:shadow-md transition-shadow duration-300">
                 <Link href={relatedPost.href} className="block">
                   <div className="flex items-center gap-3 mb-4">
                     <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
@@ -117,7 +117,7 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
       {/* Newsletter CTA */}
       <section className="py-20 bg-black text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <motion.div initial={{ opacity: 0, y: 60 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}>
+          <motion.div initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 leading-tight">
               Stay ahead of AI trends
             </h2>

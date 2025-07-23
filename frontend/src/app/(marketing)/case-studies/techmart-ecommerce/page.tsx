@@ -190,8 +190,8 @@ export default function TechMartCaseStudy() {
             <div className="lg:col-span-2">
               <motion.div
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.8 }}
               >
                 <h2 className="text-3xl font-bold text-gray-900 mb-6">
@@ -217,8 +217,8 @@ export default function TechMartCaseStudy() {
 
             <motion.div
               initial={{ opacity: 0, x: 40 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
+              animate={{ opacity: 1, x: 0 }}
+              
               transition={{ duration: 0.8 }}
               className="bg-white rounded-xl p-8 shadow-sm"
             >
@@ -257,8 +257,8 @@ export default function TechMartCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -277,8 +277,8 @@ export default function TechMartCaseStudy() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="text-center"
               >
@@ -300,8 +300,8 @@ export default function TechMartCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -320,8 +320,8 @@ export default function TechMartCaseStudy() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, y: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="bg-white rounded-xl p-8 shadow-sm"
               >
@@ -354,8 +354,8 @@ export default function TechMartCaseStudy() {
         <div className="max-w-6xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -373,8 +373,8 @@ export default function TechMartCaseStudy() {
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -40 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
+                animate={{ opacity: 1, x: 0 }}
+                
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="bg-gray-50 rounded-xl p-8"
               >
@@ -400,8 +400,8 @@ export default function TechMartCaseStudy() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
           >
             <blockquote className="text-2xl lg:text-3xl font-light mb-8 leading-relaxed">
@@ -430,8 +430,8 @@ export default function TechMartCaseStudy() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            animate={{ opacity: 1, y: 0 }}
+            
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold mb-8">
