@@ -8,7 +8,7 @@ import {
   MapPinIcon,
   PhoneIcon
 } from '@heroicons/react/24/outline';
-
+import Image from 'next/image';
 export function Footer() {
   const footerSections = [
     {
@@ -78,10 +78,11 @@ export function Footer() {
                 transition={{ duration: 0.6 }}
               >
                 <Link href="/" className="flex items-center space-x-2 mb-6">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Image src="/clever-search-logo-long.png" alt="Clever Search" width={130} height={43.67} />
+                  {/* <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                     <SparklesIcon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-xl font-bold">Clever Search</span>
+                  <span className="text-xl font-bold">Clever Search</span> */}
                 </Link>
                 <p className="text-gray-300 mb-6 leading-relaxed">
                   Increase your website&apos;s visibility in ChatGPT, Claude, and Gemini responses. 
