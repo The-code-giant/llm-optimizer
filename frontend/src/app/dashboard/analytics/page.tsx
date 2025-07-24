@@ -92,7 +92,7 @@ export default function AnalyticsPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div>Loading...</div>
       </div>
     );
@@ -144,12 +144,12 @@ export default function AnalyticsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Total Sites Analyzed</p>
-                      <p className="text-3xl font-bold text-gray-900">{summary.totalSites}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Total Sites Analyzed</p>
+                      <p className="text-3xl font-bold">{summary.totalSites}</p>
                       <p className="text-sm text-green-600 mt-1">↑ 12% from last month</p>
                     </div>
-                    <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="w-6 h-6 text-blue-600" />
+                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -159,12 +159,12 @@ export default function AnalyticsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Pages Optimized</p>
-                      <p className="text-3xl font-bold text-gray-900">{summary.totalPages}</p>
+                      <p className="text-sm font-medium text-muted-foreground">Pages Optimized</p>
+                      <p className="text-3xl font-bold">{summary.totalPages}</p>
                       <p className="text-sm text-green-600 mt-1">↑ 8% from last month</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-green-600" />
+                    <div className="w-12 h-12 bg-green-50 dark:bg-green-950 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-green-600 dark:text-green-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -174,12 +174,12 @@ export default function AnalyticsPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Avg. LLM Readiness</p>
-                      <p className="text-3xl font-bold text-gray-900">{summary.avgLLMReadiness}%</p>
+                      <p className="text-sm font-medium text-muted-foreground">Avg. LLM Readiness</p>
+                      <p className="text-3xl font-bold">{summary.avgLLMReadiness}%</p>
                       <p className="text-sm text-green-600 mt-1">↑ 15% from last month</p>
                     </div>
-                    <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                      <Zap className="w-6 h-6 text-purple-600" />
+                    <div className="w-12 h-12 bg-purple-50 dark:bg-purple-950 rounded-lg flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                     </div>
                   </div>
                 </CardContent>
@@ -211,31 +211,31 @@ export default function AnalyticsPage() {
                 </div>
               ) : jobs.length === 0 ? (
                 <div className="text-center py-8">
-                  <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No analysis jobs yet</h3>
-                  <p className="text-gray-600">Start analyzing your sites to see detailed analytics here.</p>
+                  <Activity className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No analysis jobs yet</h3>
+                  <p className="text-muted-foreground">Start analyzing your sites to see detailed analytics here.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {jobs.map((job) => (
-                    <div key={job.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div key={job.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
-                          <div className="font-medium text-gray-900">{job.siteName}</div>
+                          <div className="font-medium">{job.siteName}</div>
                           <Badge 
                             variant={job.status === 'completed' ? 'default' : job.status === 'running' ? 'secondary' : 'outline'}
                           >
                             {job.status}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{job.pageUrl}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-sm text-muted-foreground mt-1">{job.pageUrl}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           Started: {new Date(job.startedAt).toLocaleString()}
                           {job.finishedAt && ` • Completed: ${new Date(job.finishedAt).toLocaleString()}`}
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Activity className="w-4 h-4 text-gray-400" />
+                        <Activity className="w-4 h-4 text-muted-foreground" />
                       </div>
                     </div>
                   ))}

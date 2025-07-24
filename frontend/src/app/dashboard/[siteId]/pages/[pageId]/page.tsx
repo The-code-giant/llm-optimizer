@@ -458,10 +458,10 @@ export default function PageAnalysisPage() {
                         </Button>
                       </Link>
                       <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1 className="text-2xl font-bold">
                           Page Content Editor
                         </h1>
-                        <p className="text-gray-600">
+                        <p className="text-muted-foreground">
                           AI-powered content optimization and editing
                         </p>
                       </div>
@@ -491,11 +491,11 @@ export default function PageAnalysisPage() {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">
+                          <label className="text-sm font-medium text-muted-foreground">
                             URL
                           </label>
                           <div className="flex items-center space-x-2 mt-1">
-                            <p className="text-gray-900 break-all">
+                            <p className="break-all">
                               {pageData.url}
                             </p>
                             <a
@@ -510,15 +510,15 @@ export default function PageAnalysisPage() {
                           </div>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">
+                          <label className="text-sm font-medium text-muted-foreground">
                             Original Title
                           </label>
-                          <p className="text-gray-900 mt-1">
+                          <p className="mt-1">
                             {pageData.title || "No title"}
                           </p>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">
+                          <label className="text-sm font-medium text-muted-foreground">
                             LLM Readiness Score
                           </label>
                           <div className="mt-1">
@@ -533,10 +533,10 @@ export default function PageAnalysisPage() {
                           </div>
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">
+                          <label className="text-sm font-medium text-muted-foreground">
                             Last Scanned
                           </label>
-                          <p className="text-gray-900 mt-1">
+                          <p className="mt-1">
                             {pageData.lastScannedAt
                               ? new Date(
                                   pageData.lastScannedAt
@@ -619,15 +619,15 @@ export default function PageAnalysisPage() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="p-4 bg-gray-50 rounded-lg flex flex-col gap-2">
-                            <p className="text-gray-900 font-medium">
+                          <div className="p-4 bg-muted rounded-lg flex flex-col gap-2">
+                            <p className="font-medium">
                               {deployedTitle
                                 ? deployedTitle.optimizedContent
                                 : pageData?.title ||
                                   "No title set - click Edit to generate suggestions"}
                             </p>
                             {!analysis && (
-                              <div className="text-xs text-gray-500 mt-2">
+                              <div className="text-xs text-muted-foreground mt-2">
                                 Run analysis to enable editing.
                               </div>
                             )}
@@ -650,13 +650,13 @@ export default function PageAnalysisPage() {
                                 characters
                               </Badge>
                               {deployedTitle ? (
-                                <Badge className="bg-green-100 text-green-800">
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
                                   Deployed
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="text-gray-500 border-gray-300"
+                                  className="text-muted-foreground border-muted"
                                 >
                                   Not Deployed
                                 </Badge>
@@ -735,8 +735,8 @@ export default function PageAnalysisPage() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="p-4 bg-gray-50 rounded-lg">
-                            <p className="text-gray-900">
+                          <div className="p-4 bg-muted rounded-lg">
+                            <p className="">
                               {deployedDescription
                                 ? deployedDescription.optimizedContent
                                 : originalMetaDescription ||
@@ -760,13 +760,13 @@ export default function PageAnalysisPage() {
                                 characters
                               </Badge>
                               {deployedDescription ? (
-                                <Badge className="bg-green-100 text-green-800">
+                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
                                   Deployed
                                 </Badge>
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="text-gray-500 border-gray-300"
+                                  className="text-muted-foreground border-muted"
                                 >
                                   Not Deployed
                                 </Badge>
@@ -860,8 +860,8 @@ export default function PageAnalysisPage() {
                               })()}
                             </Accordion>
                           ) : (
-                            <div className="text-center py-8 text-gray-500">
-                              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <div className="text-center py-8 text-muted-foreground">
+                              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                               <p>
                                 No FAQs added yet - click "Add FAQ" to generate
                                 suggestions
@@ -910,10 +910,10 @@ export default function PageAnalysisPage() {
                               {contentData.paragraphs.map((para, index) => (
                                 <div
                                   key={index}
-                                  className="p-4 bg-gray-50 rounded-lg flex items-center gap-2"
+                                  className="p-4 bg-muted rounded-lg flex items-center gap-2"
                                 >
                                   <div className="flex-1">
-                                    <p className="text-gray-900 whitespace-pre-line">
+                                    <p className="whitespace-pre-line">
                                       {para}
                                     </p>
                                   </div>
@@ -930,8 +930,8 @@ export default function PageAnalysisPage() {
                               ))}
                             </div>
                           ) : (
-                            <div className="text-center py-8 text-gray-500">
-                              <PenTool className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <div className="text-center py-8 text-muted-foreground">
+                              <PenTool className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                               <p>
                                 No paragraphs added yet - click "Add Paragraph"
                                 to generate suggestions
@@ -978,7 +978,7 @@ export default function PageAnalysisPage() {
                         <CardContent>
                           <div className="space-y-4">
                             <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">
+                              <h4 className="font-semibold mb-2">
                                 Primary Keywords
                               </h4>
                               <div className="flex flex-wrap gap-2">
@@ -988,14 +988,14 @@ export default function PageAnalysisPage() {
                                       <Badge
                                         key={index}
                                         variant="default"
-                                        className="bg-blue-100 text-blue-800"
+                                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
                                       >
                                         {keyword}
                                       </Badge>
                                     )
                                   )
                                 ) : (
-                                  <p className="text-gray-500 text-sm">
+                                  <p className="text-muted-foreground text-sm">
                                     No primary keywords analyzed yet
                                   </p>
                                 )}
@@ -1003,7 +1003,7 @@ export default function PageAnalysisPage() {
                             </div>
 
                             <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">
+                              <h4 className="font-semibold mb-2">
                                 Long-Tail Keywords
                               </h4>
                               <div className="flex flex-wrap gap-2">
@@ -1013,14 +1013,14 @@ export default function PageAnalysisPage() {
                                       <Badge
                                         key={index}
                                         variant="secondary"
-                                        className="bg-green-100 text-green-800"
+                                        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
                                       >
                                         {keyword}
                                       </Badge>
                                     )
                                   )
                                 ) : (
-                                  <p className="text-gray-500 text-sm">
+                                  <p className="text-muted-foreground text-sm">
                                     No long-tail keywords analyzed yet
                                   </p>
                                 )}
@@ -1028,7 +1028,7 @@ export default function PageAnalysisPage() {
                             </div>
 
                             <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">
+                              <h4 className="font-semibold mb-2">
                                 Semantic Keywords
                               </h4>
                               <div className="flex flex-wrap gap-2">
@@ -1038,14 +1038,14 @@ export default function PageAnalysisPage() {
                                       <Badge
                                         key={index}
                                         variant="outline"
-                                        className="border-purple-300 text-purple-700"
+                                        className="border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-300"
                                       >
                                         {keyword}
                                       </Badge>
                                     )
                                   )
                                 ) : (
-                                  <p className="text-gray-500 text-sm">
+                                  <p className="text-muted-foreground text-sm">
                                     No semantic keywords analyzed yet
                                   </p>
                                 )}
@@ -1053,7 +1053,7 @@ export default function PageAnalysisPage() {
                             </div>
 
                             <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">
+                              <h4 className="font-semibold mb-2">
                                 Missing Opportunities
                               </h4>
                               <div className="flex flex-wrap gap-2">
@@ -1063,14 +1063,14 @@ export default function PageAnalysisPage() {
                                       <Badge
                                         key={index}
                                         variant="destructive"
-                                        className="bg-red-100 text-red-800"
+                                        className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
                                       >
                                         {keyword}
                                       </Badge>
                                     )
                                   )
                                 ) : (
-                                  <p className="text-gray-500 text-sm">
+                                  <p className="text-muted-foreground text-sm">
                                     No missing keywords identified yet
                                   </p>
                                 )}
@@ -1101,8 +1101,8 @@ export default function PageAnalysisPage() {
                                   <FileText className="h-5 w-5 mr-2" />
                                   Summary
                                 </h3>
-                                <div className="bg-gray-50 rounded-lg p-4">
-                                  <p className="text-gray-700">
+                                <div className="bg-muted rounded-lg p-4">
+                                  <p className="text-foreground">
                                     {analysisJson?.summary}
                                   </p>
                                 </div>
@@ -1113,7 +1113,7 @@ export default function PageAnalysisPage() {
                               {/* Issues */}
                               <div>
                                 <h3 className="text-lg font-semibold mb-3 flex items-center">
-                                  <AlertCircle className="h-5 w-5 mr-2 text-red-500" />
+                                  <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
                                   Issues Found
                                 </h3>
                                 {analysis.issues.length > 0 ? (
@@ -1123,8 +1123,8 @@ export default function PageAnalysisPage() {
                                         key={i}
                                         className="flex items-start space-x-3"
                                       >
-                                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-gray-700">
+                                        <div className="w-2 h-2 bg-destructive rounded-full mt-2 flex-shrink-0"></div>
+                                        <span className="text-foreground">
                                           {issue}
                                         </span>
                                       </li>
@@ -1143,7 +1143,7 @@ export default function PageAnalysisPage() {
                               {/* Recommendations */}
                               <div>
                                 <h3 className="text-lg font-semibold mb-3 flex items-center">
-                                  <Target className="h-5 w-5 mr-2 text-blue-500" />
+                                  <Target className="h-5 w-5 mr-2 text-primary" />
                                   Recommendations
                                 </h3>
                                 {analysis.recommendations.length > 0 ? (
@@ -1153,23 +1153,23 @@ export default function PageAnalysisPage() {
                                         key={i}
                                         className="flex items-start space-x-3"
                                       >
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-gray-700">
+                                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                                        <span className="text-foreground">
                                           {rec}
                                         </span>
                                       </li>
                                     ))}
                                   </ul>
                                 ) : (
-                                  <p className="text-gray-500">
+                                  <p className="text-muted-foreground">
                                     No specific recommendations at this time.
                                   </p>
                                 )}
                               </div>
 
                               {/* Analysis Metadata */}
-                              <div className="pt-4 border-t border-gray-200">
-                                <p className="text-xs text-gray-400 flex items-center">
+                              <div className="pt-4 border-t border-border">
+                                <p className="text-xs text-muted-foreground flex items-center">
                                   <Clock className="h-4 w-4 mr-1" />
                                   Analysis generated:{" "}
                                   {new Date(
@@ -1180,11 +1180,11 @@ export default function PageAnalysisPage() {
                             </div>
                           ) : (
                             <div className="text-center py-8">
-                              <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                              <h3 className="text-lg font-semibold mb-2">
                                 No Analysis Yet
                               </h3>
-                              <p className="text-gray-600 mb-4">
+                              <p className="text-muted-foreground mb-4">
                                 Run an analysis to get AI-powered insights and
                                 optimization recommendations for this page.
                               </p>

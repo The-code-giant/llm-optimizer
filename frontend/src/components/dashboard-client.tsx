@@ -171,7 +171,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse">Loading...</div>
       </div>
     );
@@ -184,8 +184,8 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-2">
             Welcome back, {user?.emailAddresses[0]?.emailAddress?.split('@')[0]}! 
             Here&apos;s an overview of your SEO optimization progress.
           </p>
@@ -244,19 +244,19 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
               <div className="text-center py-8">
                 <div className="flex items-center justify-center space-x-2">
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span className="text-sm text-gray-600">Adding your website...</span>
+                  <span className="text-sm text-muted-foreground">Adding your website...</span>
                 </div>
               </div>
             ) : loading ? (
               <div className="text-center py-8">
-                <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="mt-2 text-gray-600">Loading sites...</p>
+                <div className="inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-2 text-muted-foreground">Loading sites...</p>
               </div>
             ) : error ? (
               <div className="text-center py-8">
-                <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load sites</h3>
-                <p className="text-red-600 mb-4">{error}</p>
+                <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">Failed to load sites</h3>
+                <p className="text-destructive mb-4">{error}</p>
                 <Button variant="outline" onClick={handleTryAgain}>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Try Again
@@ -264,9 +264,9 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
               </div>
             ) : sites.length === 0 ? (
               <div className="text-center py-12">
-                <Globe className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No sites yet</h3>
-                <p className="text-gray-600 mb-4">Get started by adding your first website to optimize for LLMs.</p>
+                <Globe className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No sites yet</h3>
+                <p className="text-muted-foreground mb-4">Get started by adding your first website to optimize for LLMs.</p>
                 <AddSiteModal 
                   onSiteAdded={handleSiteAdded}
                   onError={handleError}
@@ -277,16 +277,16 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {sites.map(site => (
                   <Link href={`/dashboard/${site.id}`} key={site.id}>
-                  <Card key={site.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-blue-500">
+                  <Card key={site.id} className="hover:shadow-lg transition-shadow cursor-pointer border-l-4 border-l-primary">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                            <Globe className="w-5 h-5 text-white" />
+                          <div className="w-10 h-10 bg-gradient-to-r from-primary to-primary/80 rounded-lg flex items-center justify-center">
+                            <Globe className="w-5 h-5 text-primary-foreground" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900 mb-1">{site.name}</h3>
-                            <p className="text-sm text-gray-600">{site.url}</p>
+                            <h3 className="font-semibold mb-1">{site.name}</h3>
+                            <p className="text-sm text-muted-foreground">{site.url}</p>
                           </div>
                         </div>
                         <Badge variant={getStatusColor(site.status)} className="flex items-center gap-1">
@@ -298,10 +298,10 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                       {/* LLM Readiness Score */}
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">LLM Readiness</span>
-                          <span className="text-sm font-bold text-gray-900">{site.llmReadiness}%</span>
+                          <span className="text-sm font-medium text-muted-foreground">LLM Readiness</span>
+                          <span className="text-sm font-bold">{site.llmReadiness}%</span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-muted rounded-full h-2">
                           <div 
                             className={`h-2 rounded-full transition-all duration-300 ${getReadinessColor(site.llmReadiness || 0)}`}
                             style={{ width: `${site.llmReadiness || 0}%` }}
@@ -312,18 +312,18 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                       {/* Metrics */}
                       <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                         <div>
-                          <p className="text-gray-600">Pages Scanned</p>
+                          <p className="text-muted-foreground">Pages Scanned</p>
                           <p className="font-semibold">{site.pagesScanned}/{site.totalPages}</p>
                         </div>
                         <div>
-                          <p className="text-gray-600">Improvements</p>
+                          <p className="text-muted-foreground">Improvements</p>
                           <p className="font-semibold text-green-600">+{site.improvements}</p>
                         </div>
                       </div>
 
                       {/* Footer */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div className="flex items-center text-xs text-gray-500">
+                      <div className="flex items-center justify-between pt-4 border-t border-border">
+                        <div className="flex items-center text-xs text-muted-foreground">
                           <Clock className="w-3 h-3 mr-1" />
                           Last scan: {site.lastScan}
                         </div>

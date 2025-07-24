@@ -126,7 +126,7 @@ export default function BillingPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div>Loading...</div>
       </div>
     );
@@ -199,7 +199,7 @@ export default function BillingPage() {
                         <span>Sites Analyzed</span>
                         <span>{billing.usage.sitesAnalyzed}/{billing.usage.sitesLimit}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
                           style={{ width: `${(billing.usage.sitesAnalyzed / billing.usage.sitesLimit) * 100}%` }}
@@ -212,7 +212,7 @@ export default function BillingPage() {
                         <span>Pages Analyzed</span>
                         <span>{billing.usage.pagesAnalyzed}/{billing.usage.pagesLimit}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-muted rounded-full h-2">
                         <div 
                           className="bg-green-600 h-2 rounded-full" 
                           style={{ width: `${(billing.usage.pagesAnalyzed / billing.usage.pagesLimit) * 100}%` }}
@@ -238,23 +238,23 @@ export default function BillingPage() {
                 {plans.map((plan) => {
                   const Icon = plan.icon;
                   return (
-                    <Card key={plan.name} className={`relative ${plan.popular ? 'border-blue-500 border-2' : ''} ${plan.current ? 'bg-blue-50' : ''}`}>
+                    <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary border-2' : ''} ${plan.current ? 'bg-muted/50' : ''}`}>
                       {plan.popular && (
                         <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                          <Badge className="bg-blue-600 text-white">Most Popular</Badge>
+                          <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
                         </div>
                       )}
                       <CardContent className="p-6">
                         <div className="text-center">
-                          <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <Icon className="w-6 h-6 text-gray-600" />
+                          <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <Icon className="w-6 h-6 text-muted-foreground" />
                           </div>
                           <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
                           <div className="text-3xl font-bold mb-1">
                             {plan.price}
-                            <span className="text-sm text-gray-500 font-normal">/{plan.period}</span>
+                            <span className="text-sm text-muted-foreground font-normal">/{plan.period}</span>
                           </div>
-                          <p className="text-sm text-gray-600 mb-4">{plan.description}</p>
+                          <p className="text-sm text-muted-foreground mb-4">{plan.description}</p>
                           
                           <ul className="text-sm space-y-2 mb-6">
                             {plan.features.map((feature, index) => (

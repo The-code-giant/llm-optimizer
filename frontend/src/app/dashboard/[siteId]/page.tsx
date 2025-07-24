@@ -409,8 +409,8 @@ export default function SiteDetailsPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
-            <p className="mt-2 text-gray-600">Loading...</p>
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+            <p className="mt-2 text-muted-foreground">Loading...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -453,20 +453,20 @@ export default function SiteDetailsPage() {
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
                       <div>
-                        <h1 className="text-3xl font-bold text-gray-900">
+                        <h1 className="text-3xl font-bold">
                           {loading
                             ? "Loading..."
                             : site?.name || "Site Details"}
                         </h1>
                         {site && (
-                          <p className="text-gray-600 mt-1 flex items-center">
+                          <p className="text-muted-foreground mt-1 flex items-center">
                             <Globe className="h-4 w-4 mr-1" />
                             {site.url}
                             <a
                               href={site.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="ml-2 text-blue-600 hover:text-blue-800"
+                              className="ml-2 text-primary hover:text-primary/80"
                             >
                               <ExternalLink className="h-4 w-4" />
                             </a>
@@ -679,11 +679,11 @@ export default function SiteDetailsPage() {
                   )}
 
                   {error && (
-                    <Card className="border-red-200 bg-red-50">
+                    <Card className="border-destructive bg-destructive/10">
                       <CardContent className="pt-6">
                         <div className="flex items-center">
-                          <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-                          <p className="text-red-600">{error}</p>
+                          <AlertCircle className="h-5 w-5 text-destructive mr-2" />
+                          <p className="text-destructive">{error}</p>
                         </div>
                       </CardContent>
                     </Card>
@@ -746,15 +746,15 @@ export default function SiteDetailsPage() {
                               <CardContent className="space-y-4">
                                 <div className="grid gap-4 md:grid-cols-2">
                                   <div>
-                                    <label className="text-sm font-medium text-gray-600">
+                                    <label className="text-sm font-medium text-muted-foreground">
                                       Tracker ID
                                     </label>
-                                    <p className="font-mono text-sm bg-gray-50 p-2 rounded border">
+                                    <p className="font-mono text-sm bg-muted p-2 rounded border">
                                       {site.trackerId}
                                     </p>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium text-gray-600">
+                                    <label className="text-sm font-medium text-muted-foreground">
                                       Status
                                     </label>
                                     <div className="mt-1">
@@ -772,20 +772,20 @@ export default function SiteDetailsPage() {
                                 </div>
                                 <div className="grid gap-4 md:grid-cols-2">
                                   <div>
-                                    <label className="text-sm font-medium text-gray-600">
+                                    <label className="text-sm font-medium text-muted-foreground">
                                       Created
                                     </label>
-                                    <p className="text-sm text-gray-900">
+                                    <p className="text-sm">
                                       {new Date(
                                         site.createdAt
                                       ).toLocaleDateString()}
                                     </p>
                                   </div>
                                   <div>
-                                    <label className="text-sm font-medium text-gray-600">
+                                    <label className="text-sm font-medium text-muted-foreground">
                                       Last Updated
                                     </label>
-                                    <p className="text-sm text-gray-900">
+                                    <p className="text-sm">
                                       {new Date(
                                         site.updatedAt
                                       ).toLocaleDateString()}
@@ -811,7 +811,7 @@ export default function SiteDetailsPage() {
                                   {/* Bulk Actions */}
                                   {selectedPages.size > 0 && (
                                     <div className="flex items-center space-x-2">
-                                      <span className="text-sm text-gray-600">
+                                      <span className="text-sm text-muted-foreground">
                                         {selectedPages.size} selected
                                       </span>
                                       <Button
@@ -837,7 +837,7 @@ export default function SiteDetailsPage() {
                                 {/* Filters and Search */}
                                 <div className="flex flex-wrap items-center gap-4 pt-4">
                                   <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                       placeholder="Search pages..."
                                       value={searchTerm}
@@ -853,7 +853,7 @@ export default function SiteDetailsPage() {
                                     onChange={(e) =>
                                       setScoreFilter(e.target.value as any)
                                     }
-                                    className="px-3 py-2 border rounded-md text-sm"
+                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background"
                                   >
                                     <option value="all">All Scores</option>
                                     <option value="high">High (80%+)</option>
@@ -868,7 +868,7 @@ export default function SiteDetailsPage() {
                                     onChange={(e) =>
                                       setSortBy(e.target.value as any)
                                     }
-                                    className="px-3 py-2 border rounded-md text-sm"
+                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background"
                                   >
                                     <option value="title">Sort by Title</option>
                                     <option value="url">Sort by URL</option>
@@ -899,8 +899,8 @@ export default function SiteDetailsPage() {
                               <CardContent>
                                 {filteredAndSortedPages.length === 0 ? (
                                   <div className="text-center py-8">
-                                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                    <p className="text-gray-600">
+                                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                                    <p className="text-muted-foreground">
                                       {searchTerm || scoreFilter !== "all"
                                         ? "No pages match your filters."
                                         : "No pages found. Import your sitemap to get started."}
@@ -909,7 +909,7 @@ export default function SiteDetailsPage() {
                                 ) : (
                                   <div className="space-y-4">
                                     {/* Select All */}
-                                    <div className="flex items-center space-x-2 pb-2 border-b">
+                                    <div className="flex items-center space-x-2 pb-2 border-b border-border">
                                       <Button
                                         variant="ghost"
                                         size="sm"
@@ -923,7 +923,7 @@ export default function SiteDetailsPage() {
                                           <Square className="h-4 w-4" />
                                         )}
                                       </Button>
-                                      <span className="text-sm text-gray-600">
+                                      <span className="text-sm text-muted-foreground">
                                         Select All
                                       </span>
                                     </div>
@@ -931,7 +931,7 @@ export default function SiteDetailsPage() {
                                     {filteredAndSortedPages.map((page) => (
                                       <div
                                         key={page.id}
-                                        className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                                        className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
                                       >
                                         <div className="flex items-start justify-between">
                                           <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -952,7 +952,7 @@ export default function SiteDetailsPage() {
 
                                             <div className="flex-1 min-w-0">
                                               <div className="flex items-center space-x-3 mb-2">
-                                                <h3 className="font-medium text-gray-900 truncate">
+                                                <h3 className="font-medium truncate">
                                                   {page.title ||
                                                     "Untitled Page"}
                                                 </h3>
@@ -970,10 +970,10 @@ export default function SiteDetailsPage() {
                                                   Ready
                                                 </Badge>
                                               </div>
-                                              <p className="text-sm text-gray-600 truncate mb-2">
+                                              <p className="text-sm text-muted-foreground truncate mb-2">
                                                 {page.url}
                                               </p>
-                                              <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                              <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                                                 <span>
                                                   Last scanned:{" "}
                                                   {new Date(

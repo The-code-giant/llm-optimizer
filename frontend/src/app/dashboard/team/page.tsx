@@ -73,7 +73,7 @@ export default function TeamPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div>Loading...</div>
       </div>
     );
@@ -92,7 +92,7 @@ export default function TeamPage() {
       <SidebarInset>
         <SiteHeader />
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        <div className="bg-white p-8 rounded shadow-md w-full max-w-2xl">
+        <div className="bg-card p-8 rounded shadow-md w-full max-w-2xl">
           <h1 className="text-2xl font-bold mb-4">Team Management</h1>
           <form onSubmit={handleInvite} className="mb-6 flex gap-2 flex-col sm:flex-row">
             <input
@@ -101,12 +101,12 @@ export default function TeamPage() {
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="rounded border px-3 py-2 flex-1"
+              className="rounded border border-input bg-background px-3 py-2 flex-1"
               disabled={inviting}
             />
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 disabled:opacity-50"
               disabled={inviting}
             >
               {inviting ? "Inviting..." : "Invite"}
@@ -115,19 +115,19 @@ export default function TeamPage() {
           {loading ? (
             <div>Loading team members...</div>
           ) : error ? (
-            <div className="text-red-600 mb-4">{error}</div>
+            <div className="text-destructive mb-4">{error}</div>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-border">
               {members.map(member => (
                 <li key={member.id} className="py-3">
                   <div className="font-semibold">{member.name || member.email}</div>
-                  <div className="text-sm text-gray-600">{member.email}</div>
-                  <div className="text-xs text-gray-400">Role: {member.role}</div>
-                  <div className="text-xs text-gray-400">Status: {member.status}</div>
-                  <div className="text-xs text-gray-400">Invited: {new Date(member.invitedAt).toLocaleString()}</div>
+                  <div className="text-sm text-muted-foreground">{member.email}</div>
+                  <div className="text-xs text-muted-foreground">Role: {member.role}</div>
+                  <div className="text-xs text-muted-foreground">Status: {member.status}</div>
+                  <div className="text-xs text-muted-foreground">Invited: {new Date(member.invitedAt).toLocaleString()}</div>
                 </li>
               ))}
-              {members.length === 0 && <li className="py-3 text-gray-500">No team members yet.</li>}
+              {members.length === 0 && <li className="py-3 text-muted-foreground">No team members yet.</li>}
             </ul>
           )}
         </div>

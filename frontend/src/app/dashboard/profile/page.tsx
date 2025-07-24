@@ -242,7 +242,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Custom Tab Navigation */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-border">
             <nav className="-mb-px flex space-x-8">
               {tabs.map((tab) => (
                 <button
@@ -250,8 +250,8 @@ export default function ProfilePage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                   }`}
                 >
                   {tab.label}
@@ -279,7 +279,7 @@ export default function ProfilePage() {
                     {/* Main Profile Form */}
                     <div className="lg:col-span-2">
                       <Card className="p-6">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                        <h2 className="text-xl font-semibold mb-6">
                           Profile Information
                         </h2>
 
@@ -287,7 +287,7 @@ export default function ProfilePage() {
                           <div>
                             <label
                               htmlFor="name"
-                              className="block text-sm font-medium text-gray-700 mb-2"
+                              className="block text-sm font-medium text-foreground mb-2"
                             >
                               Profile Picture
                             </label>
@@ -338,7 +338,7 @@ export default function ProfilePage() {
                           <div>
                             <label
                               htmlFor="name"
-                              className="block text-sm font-medium text-gray-700 mb-2"
+                              className="block text-sm font-medium text-foreground mb-2"
                             >
                               Display Name
                             </label>
@@ -347,7 +347,7 @@ export default function ProfilePage() {
                               type="text"
                               value={name}
                               onChange={(e) => setName(e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              className="w-full px-3 py-2 border border-input rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
                               placeholder="Enter your display name"
                               disabled={saving}
                             />
@@ -356,7 +356,7 @@ export default function ProfilePage() {
                           <div>
                             <label
                               htmlFor="email"
-                              className="block text-sm font-medium text-gray-700 mb-2"
+                              className="block text-sm font-medium text-foreground mb-2"
                             >
                               Email Address
                             </label>
@@ -364,17 +364,17 @@ export default function ProfilePage() {
                               id="email"
                               type="email"
                               value={profile?.email || ""}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500"
+                              className="w-full px-3 py-2 border border-input rounded-md shadow-sm bg-muted text-muted-foreground"
                               disabled
                             />
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-xs text-muted-foreground mt-1">
                               Email is managed by your authentication provider
                             </p>
                           </div>
 
                           <button
                             type="submit"
-                            className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full sm:w-auto px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={saving}
                           >
                             {saving ? "Saving..." : "Save Profile"}
@@ -388,27 +388,27 @@ export default function ProfilePage() {
                       {/* Account Statistics */}
                       {profile?.statistics && (
                         <Card className="p-6">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                          <h3 className="text-lg font-semibold mb-4">
                             Account Statistics
                           </h3>
                           <div className="space-y-4">
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Sites</span>
-                              <span className="text-lg font-semibold text-gray-900">
+                              <span className="text-sm text-muted-foreground">Sites</span>
+                              <span className="text-lg font-semibold">
                                 {profile.statistics.sitesCount}
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Pages</span>
-                              <span className="text-lg font-semibold text-gray-900">
+                              <span className="text-sm text-muted-foreground">Pages</span>
+                              <span className="text-lg font-semibold">
                                 {profile.statistics.pagesCount}
                               </span>
                             </div>
                             <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">
+                              <span className="text-sm text-muted-foreground">
                                 Content Deployments
                               </span>
-                              <span className="text-lg font-semibold text-gray-900">
+                              <span className="text-lg font-semibold">
                                 {profile.statistics.deploymentsCount}
                               </span>
                             </div>
@@ -426,25 +426,25 @@ export default function ProfilePage() {
 
                       {/* Account Info */}
                       <Card className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        <h3 className="text-lg font-semibold mb-4">
                           Account Information
                         </h3>
                         <div className="space-y-3">
                           <div>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-muted-foreground">
                               Member since
                             </span>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium">
                               {profile?.createdAt
                                 ? formatDate(profile.createdAt)
                                 : "Unknown"}
                             </p>
                           </div>
                           <div>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-muted-foreground">
                               Last updated
                             </span>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium">
                               {profile?.updatedAt
                                 ? formatDate(profile.updatedAt)
                                 : "Never"}
@@ -659,7 +659,8 @@ export default function ProfilePage() {
                             }))
                           }
                           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
+                        >
+                        </input>
                         <label
                           htmlFor="autoAnalysis"
                           className="ml-2 block text-sm text-gray-700"
