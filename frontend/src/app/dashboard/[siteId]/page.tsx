@@ -65,6 +65,7 @@ import {
   Page,
   SiteDetails,
 } from "@/lib/api";
+import { StatCard } from '@/components/ui/stat-card'
 
 interface ImportProgress {
   status: "idle" | "importing" | "processing" | "completed" | "error";
@@ -707,73 +708,30 @@ export default function SiteDetailsPage() {
                           <>
                             {/* Metrics Cards */}
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                              <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                  <CardTitle className="text-sm font-medium">
-                                    Total Pages
-                                  </CardTitle>
-                                  <FileText className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="text-2xl font-bold">
-                                    {totalPages}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Pages tracked for optimization
-                                  </p>
-                                </CardContent>
-                              </Card>
-
-                              <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                  <CardTitle className="text-sm font-medium">
-                                    Avg LLM Score
-                                  </CardTitle>
-                                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="text-2xl font-bold">
-                                    {averageLLMScore}%
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Average readiness score
-                                  </p>
-                                </CardContent>
-                              </Card>
-
-                              <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                  <CardTitle className="text-sm font-medium">
-                                    High Quality
-                                  </CardTitle>
-                                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="text-2xl font-bold">
-                                    {pagesAbove80}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Pages with 80%+ score
-                                  </p>
-                                </CardContent>
-                              </Card>
-
-                              <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                  <CardTitle className="text-sm font-medium">
-                                    Recent Scans
-                                  </CardTitle>
-                                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="text-2xl font-bold">
-                                    {recentlyScanned}
-                                  </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Scanned this week
-                                  </p>
-                                </CardContent>
-                              </Card>
+                              <StatCard
+                                icon={FileText}
+                                title="Total Pages"
+                                value={totalPages}
+                                description="Pages tracked for optimization"
+                              />
+                              <StatCard
+                                icon={BarChart3}
+                                title="Avg LLM Score"
+                                value={`${averageLLMScore}%`}
+                                description="Average readiness score"
+                              />
+                              <StatCard
+                                icon={TrendingUp}
+                                title="High Quality"
+                                value={pagesAbove80}
+                                description="Pages with 80%+ score"
+                              />
+                              <StatCard
+                                icon={Calendar}
+                                title="Recent Scans"
+                                value={recentlyScanned}
+                                description="Scanned this week"
+                              />
                             </div>
 
                             {/* Site Information */}

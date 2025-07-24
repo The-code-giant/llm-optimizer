@@ -5,12 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { getSitesWithMetrics, SiteWithMetrics, addSite } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw, TrendingUp } from "lucide-react";
 import Toast from "@/components/Toast";
+import { StatCard } from '@/components/ui/stat-card'
 
 interface DashboardClientProps {
   initialSites?: SiteWithMetrics[];
@@ -192,56 +193,33 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Sites</p>
-                  <p className="text-3xl font-bold text-gray-900">{totalSites}</p>
-                  <p className="text-sm text-green-600 mt-1">
-                    {totalSites > 0 ? `+${totalSites} this month` : "Get started by adding your first site"}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <Globe className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Avg. LLM Readiness</p>
-                  <p className="text-3xl font-bold text-gray-900">{avgLLMReadiness}%</p>
-                  <p className="text-sm text-green-600 mt-1">
-                    {avgLLMReadiness >= 75 ? "Great performance!" : "Room for improvement"}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Scans</p>
-                  <p className="text-3xl font-bold text-gray-900">{totalActiveScans}</p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    {totalActiveScans > 0 ? "Scans in progress..." : "All scans complete"}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-purple-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            icon={Globe}
+            title="Total Sites"
+            value={totalSites}
+            badge={totalSites > 0 ? `+${totalSites} this month` : undefined}
+            trend={totalSites > 0 ? "Trending up" : undefined}
+            trendIcon={TrendingUp}
+            description="Number of sites tracked"
+          />
+          <StatCard
+            icon={BarChart3}
+            title="Avg. LLM Readiness"
+            value={`${avgLLMReadiness}%`}
+            badge={avgLLMReadiness >= 75 ? "Great performance!" : "Room for improvement"}
+            trend={avgLLMReadiness >= 75 ? "Improving" : "Needs work"}
+            trendIcon={TrendingUp}
+            description="Average readiness score across all sites"
+          />
+          <StatCard
+            icon={Zap}
+            title="Active Scans"
+            value={totalActiveScans}
+            badge={totalActiveScans > 0 ? "Scans in progress" : "All scans complete"}
+            trend={totalActiveScans > 0 ? "Active" : "Idle"}
+            trendIcon={TrendingUp}
+            description="Sites currently being scanned"
+          />
         </div>
 
         {/* Sites Section */}
