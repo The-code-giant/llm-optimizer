@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import {
   getSitesWithMetrics,
+  updateProfileName,
   UserProfile as UserProfileType,
 } from "../../../lib/api";
 import Toast from "../../../components/Toast";
@@ -10,7 +11,7 @@ import { Badge } from "../../../components/ui/badge";
 import { DashboardLayout } from "../../../components/ui/dashboard-layout";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from "lucide-react";
+import { RotateCcw, User } from "lucide-react";
 
 type UserProfilePage = Omit<UserProfileType, "id"> & {
   lastSignInAt: string;
@@ -32,7 +33,6 @@ export default function ProfilePage() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -127,9 +127,9 @@ export default function ProfilePage() {
         return;
       }
 
-      await user?.update({ firstName: name });
-
-      // await updateProfileName(token || "", name);
+      const token = await getToken();
+      await updateProfileName(token || "", name);
+      await user?.reload();
 
       setToast({ message: "Profile updated successfully!", type: "success" });
     } catch (err: unknown) {
@@ -195,7 +195,6 @@ export default function ProfilePage() {
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedImage(file);
       uploadProfilePicture(file);
     }
   }
@@ -251,7 +250,9 @@ export default function ProfilePage() {
             <div className="space-y-6">
               {loading ? (
                 <Card className="p-8">
-                  <div className="text-center">Loading profile...</div>
+                  <div className="text-center flex justify-center items-center">
+                    <RotateCcw className="w-10 h-10 animate-spin" />
+                  </div>
                 </Card>
               ) : error ? (
                 <Card className="p-8">
