@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import {
+  getSitesWithMetrics,
   updateProfileName,
   UserProfile as UserProfileType,
 } from "../../../lib/api";
@@ -37,6 +38,15 @@ export default function ProfilePage() {
     async function fetchProfile() {
       setLoading(true);
       setError(null);
+
+      const token = await getToken();
+      const siteWithMetrics = await getSitesWithMetrics(token || "");
+
+      const sitesPages = siteWithMetrics.reduce(
+        (acc, site) => acc + (site.totalPages || 0),
+        0
+      );
+
       try {
         const mockProfile: UserProfilePage = {
           email: user?.emailAddresses[0].emailAddress || "",
@@ -52,25 +62,25 @@ export default function ProfilePage() {
             autoAnalysis: false,
           },
           statistics: {
-            sitesCount: 3,
-            pagesCount: 15,
+            sitesCount: siteWithMetrics.length,
+            pagesCount: sitesPages,
             deploymentsCount: 8,
             analysisCount: 42,
             recentActivity: [
-              {
-                id: "1",
-                type: "content_injection",
-                pageUrl: "https://example.com/blog/post-1",
-                siteName: "Example Site",
-                timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-              },
-              {
-                id: "2",
-                type: "page_view",
-                pageUrl: "https://example.com/about",
-                siteName: "Example Site",
-                timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-              },
+              // {
+              //   id: "1",
+              //   type: "content_injection",
+              //   pageUrl: "https://example.com/blog/post-1",
+              //   siteName: "Example Site",
+              //   timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+              // },
+              // {
+              //   id: "2",
+              //   type: "page_view",
+              //   pageUrl: "https://example.com/about",
+              //   siteName: "Example Site",
+              //   timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+              // },
             ],
           },
         };
@@ -293,14 +303,14 @@ export default function ProfilePage() {
                               {profile.statistics.deploymentsCount}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center">
+                          {/* <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">
                               Analyses Completed
                             </span>
                             <span className="text-lg font-semibold text-gray-900">
                               {profile.statistics.analysisCount}
                             </span>
-                          </div>
+                          </div> */}
                         </div>
                       </Card>
                     )}
@@ -487,7 +497,7 @@ export default function ProfilePage() {
                   Dashboard Preferences
                 </h2>
                 <div className="space-y-6">
-                  <div>
+                  {/* <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Dashboard View
                     </label>
@@ -504,7 +514,7 @@ export default function ProfilePage() {
                       <option value="grid">Grid View</option>
                       <option value="list">List View</option>
                     </select>
-                  </div>
+                  </div> */}
 
                   <div className="space-y-4">
                     <div className="flex items-center">
