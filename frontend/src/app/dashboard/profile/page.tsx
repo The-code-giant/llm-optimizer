@@ -112,9 +112,17 @@ export default function ProfilePage() {
     setSaving(true);
     setError(null);
     try {
-      const token = await getToken();
+      if (!name) {
+        setToast({
+          message: "Display name is required",
+          type: "error",
+        });
+        return;
+      }
 
-      await updateProfileName(token || "", name);
+      await user?.update({ firstName: name });
+
+      // await updateProfileName(token || "", name);
 
       setToast({ message: "Profile updated successfully!", type: "success" });
     } catch (err: unknown) {
