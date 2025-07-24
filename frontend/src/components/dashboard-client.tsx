@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { getSitesWithMetrics, SiteWithMetrics } from "@/lib/api";
+import { getSitesWithMetrics, SiteWithMetrics, addSite } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Globe, BarChart3, Clock, Zap, TrendingUp, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import Toast from "@/components/Toast";
 
 interface DashboardClientProps {
@@ -18,12 +18,14 @@ interface DashboardClientProps {
 
 export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [sites, setSites] = useState<SiteWithMetrics[]>(initialSites);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [isCreatingSite, setIsCreatingSite] = useState(false);
 
   const fetchSites = async () => {
     if (!isSignedIn) return;
@@ -48,6 +50,49 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
     }
   };
 
+  // Handle website URL from signup flow
+  const handleWebsiteUrl = async () => {
+    const websiteUrl = searchParams.get('website');
+    if (!websiteUrl || !isSignedIn) return;
+
+    setIsCreatingSite(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Failed to get authentication token");
+      }
+
+      // Extract domain name for site name
+      const domain = new URL(websiteUrl).hostname;
+      const siteName = domain.replace(/^www\./, '');
+
+      // Create the site
+      await addSite(token, siteName, websiteUrl);
+      
+      // Show success message
+      setToast({ 
+        message: `Successfully added ${siteName} to your dashboard!`, 
+        type: "success" 
+      });
+
+      // Refresh sites list
+      await fetchSites();
+
+      // Remove the website parameter from URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('website');
+      router.replace(newUrl.pathname + newUrl.search);
+    } catch (err) {
+      console.error('Failed to create site:', err);
+      setToast({ 
+        message: 'Failed to add website. Please try adding it manually.', 
+        type: "error" 
+      });
+    } finally {
+      setIsCreatingSite(false);
+    }
+  };
+
   useEffect(() => {
     if (!isLoaded) return;
     
@@ -59,7 +104,12 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
     if (initialSites.length === 0) {
       fetchSites();
     }
-  }, [isLoaded, isSignedIn, router, initialSites.length]);
+
+    // Handle website URL if present
+    if (searchParams.get('website')) {
+      handleWebsiteUrl();
+    }
+  }, [isLoaded, isSignedIn, router, initialSites.length, searchParams]);
 
   const handleSiteAdded = () => {
     fetchSites(); // Refresh the sites list
@@ -136,7 +186,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-2">
             Welcome back, {user?.emailAddresses[0]?.emailAddress?.split('@')[0]}! 
-            Here's an overview of your SEO optimization progress.
+            Here&apos;s an overview of your SEO optimization progress.
           </p>
         </div>
 
@@ -201,7 +251,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
               <div>
                 <CardTitle>Your Websites</CardTitle>
                 <CardDescription>
-                  Monitor and manage your websites' LLM optimization progress
+                  Monitor and manage your websites&apos; LLM optimization progress
                 </CardDescription>
               </div>
               <AddSiteModal 
@@ -212,7 +262,14 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             </div>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {isCreatingSite ? (
+              <div className="text-center py-8">
+                <div className="flex items-center justify-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span className="text-sm text-gray-600">Adding your website...</span>
+                </div>
+              </div>
+            ) : loading ? (
               <div className="text-center py-8">
                 <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-2 text-gray-600">Loading sites...</p>

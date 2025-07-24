@@ -811,4 +811,82 @@ router.get('/:siteId/analytics', authenticateJWT, async (req: AuthenticatedReque
 // Note: Site-wide deployment routes have been deprecated in favor of page-specific deployment.
 // Use the page-specific routes in /pages/{pageId}/content/{contentType}/deploy instead.
 
+// Pre-submit website URL (before user signup)
+const preSubmitSchema = z.object({
+  url: z.string()
+    .min(1, "Website URL is required")
+    .transform((url) => {
+      // Normalize URL by adding https:// if no protocol
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        return `https://${url}`;
+      }
+      return url;
+    })
+    .pipe(
+      z.string().url("Please enter a valid website URL")
+    )
+    .refine((url) => {
+      const urlObj = new URL(url);
+      
+      // Only allow HTTP/HTTPS protocols
+      if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+        return false;
+      }
+      
+      // Must have a valid hostname with at least one dot
+      const hostname = urlObj.hostname;
+      return hostname && hostname.includes('.') && hostname.length >= 3;
+    }, "Please enter a valid website domain (e.g., example.com)")
+    .refine((url) => {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname;
+      
+      // Check for valid domain characters (letters, numbers, hyphens, dots)
+      const validDomainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+      return validDomainRegex.test(hostname);
+    }, "Please enter a valid website domain format")
+});
+
+router.post('/pre-submit', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parse = preSubmitSchema.safeParse(req.body);
+    if (!parse.success) {
+      res.status(400).json({ 
+        success: false,
+        message: 'Invalid URL format. Please enter a valid website URL.',
+        errors: parse.error.errors 
+      });
+      return;
+    }
+    
+    const { url } = parse.data;
+    
+    // Basic URL validation and normalization
+    let normalizedUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      normalizedUrl = `https://${url}`;
+    }
+    
+    // Store the URL in session or temporary storage for later use
+    // For now, we'll just validate and return success
+    // In a real implementation, you might want to:
+    // 1. Store in Redis with expiration
+    // 2. Pre-analyze the URL
+    // 3. Generate a temporary site ID
+    
+    res.json({
+      success: true,
+      message: 'Website URL submitted successfully. Please sign up to continue.',
+      redirectUrl: `/register?website=${encodeURIComponent(normalizedUrl)}`
+    });
+  } catch (error) {
+    console.error('Pre-submit error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error. Please try again.',
+      error: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+    });
+  }
+});
+
 export default router;
