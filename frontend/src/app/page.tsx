@@ -219,66 +219,7 @@ export default function Home() {
       <Navbar />
       {/* Hero Section - Dark */}
       <HeroSection />
-      <section className="bg-black text-white min-h-screen flex items-center">
-        <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-                         <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-                            Boost Your Site&apos;s AI & SEO Visibility in Minutes
-             </h1>
-            <Link href="/register">
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
-              >
-                See it in action
-              </Button>
-            </Link>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative"
-          >
-            {/* Person Image Placeholder */}
-            <div className="relative">
-              <div className="w-80 h-80 bg-gradient-to-br from-teal-600 to-teal-800 rounded-2xl flex items-center justify-center mx-auto">
-                <div className="w-64 h-64 bg-teal-700 rounded-full flex items-center justify-center">
-                  <span className="text-6xl">👨‍💼</span>
-                </div>
-              </div>
-              
-              {/* Floating Metric Cards */}
-              <div className="absolute -right-8 top-8 space-y-4">
-                {metrics.map((metric, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.4 + index * 0.1 }}
-                    className="bg-white text-black p-4 rounded-lg shadow-lg min-w-[200px]"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">{metric.platform}</span>
-                                             <div className="flex items-center text-green-600 text-sm">
-                         <ArrowUpIcon className="w-4 h-4 mr-1" />
-                         {metric.percentage}
-                       </div>
-                    </div>
-                    <div className="text-2xl font-bold">{metric.number}</div>
-                    <div className="text-sm text-gray-600">{metric.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
+     
       <section id="pricing" className="py-20 bg-blue-50">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
