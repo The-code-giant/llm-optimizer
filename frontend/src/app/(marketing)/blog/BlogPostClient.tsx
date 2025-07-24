@@ -7,9 +7,10 @@ import { motion } from 'framer-motion';
 import Link from "next/link";
 import { CalendarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { ReactNode } from 'react';
-
+import { BlogMeta } from "./BlogListClient";
+import Image from "next/image";
 interface BlogPostClientProps {
-  meta: any;
+  meta: BlogMeta;
   relatedPosts: any[];
   children: ReactNode;
 }
@@ -45,8 +46,9 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
             </p>
             <div className="flex items-center justify-between pb-8 border-b border-gray-200">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-lg md:text-xl">{meta.authorAvatar || '👤'}</span>
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                  <Image src={meta.avatar} alt={meta.author} width={48} height={48} />
+                  
                 </div>
                 <div>
                   <div className="font-semibold text-gray-900">{meta.author}</div>
