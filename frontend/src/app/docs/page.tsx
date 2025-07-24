@@ -1,32 +1,49 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 import Link from "next/link";
-import { 
+import {
   BookOpenIcon,
   CodeBracketIcon,
   CogIcon,
   RocketLaunchIcon,
   DocumentTextIcon,
-  ArrowRightIcon
-} from '@heroicons/react/24/outline';
+  ArrowRightIcon,
+} from "@heroicons/react/24/outline";
 
 export default function Documentation() {
   const sections = [
     {
       title: "Getting Started",
       icon: RocketLaunchIcon,
-      description: "Quick setup guide to get you optimizing for LLMs in minutes",
+      description:
+        "Quick setup guide to get you optimizing for LLMs in minutes",
       articles: [
-        { title: "Installation & Setup", href: "/docs/setup", time: "5 min read" },
-        { title: "Your First Analysis", href: "/docs/first-analysis", time: "10 min read" },
-        { title: "Understanding LLM Scores", href: "/docs/llm-scores", time: "8 min read" },
-        { title: "Basic Configuration", href: "/docs/configuration", time: "12 min read" }
-      ]
+        {
+          title: "Installation & Setup",
+          href: "/docs/setup",
+          time: "5 min read",
+        },
+        {
+          title: "Your First Analysis",
+          href: "/docs/first-analysis",
+          time: "10 min read",
+        },
+        {
+          title: "Understanding LLM Scores",
+          href: "/docs/llm-scores",
+          time: "8 min read",
+        },
+        {
+          title: "Basic Configuration",
+          href: "/docs/configuration",
+          time: "12 min read",
+        },
+      ],
     },
     {
       title: "API Reference",
@@ -34,33 +51,74 @@ export default function Documentation() {
       description: "Complete API documentation for developers and integrations",
       articles: [
         { title: "Authentication", href: "/docs/api/auth", time: "3 min read" },
-        { title: "Analysis Endpoints", href: "/docs/api/analysis", time: "15 min read" },
-        { title: "Content Injection API", href: "/docs/api/injection", time: "12 min read" },
-        { title: "Webhooks", href: "/docs/api/webhooks", time: "8 min read" }
-      ]
+        {
+          title: "Analysis Endpoints",
+          href: "/docs/api/analysis",
+          time: "15 min read",
+        },
+        {
+          title: "Content Injection API",
+          href: "/docs/api/injection",
+          time: "12 min read",
+        },
+        { title: "Webhooks", href: "/docs/api/webhooks", time: "8 min read" },
+      ],
     },
     {
       title: "Optimization Guides",
       icon: CogIcon,
-      description: "In-depth guides for maximizing your LLM optimization results",
+      description:
+        "In-depth guides for maximizing your LLM optimization results",
       articles: [
-        { title: "AI SEO Best Practices", href: "/docs/guides/ai-seo", time: "20 min read" },
-        { title: "AEO Implementation", href: "/docs/guides/aeo", time: "18 min read" },
-        { title: "GEO Strategies", href: "/docs/guides/geo", time: "15 min read" },
-        { title: "LLMO Advanced Techniques", href: "/docs/guides/llmo", time: "25 min read" }
-      ]
+        {
+          title: "AI SEO Best Practices",
+          href: "/docs/guides/ai-seo",
+          time: "20 min read",
+        },
+        {
+          title: "AEO Implementation",
+          href: "/docs/guides/aeo",
+          time: "18 min read",
+        },
+        {
+          title: "GEO Strategies",
+          href: "/docs/guides/geo",
+          time: "15 min read",
+        },
+        {
+          title: "LLMO Advanced Techniques",
+          href: "/docs/guides/llmo",
+          time: "25 min read",
+        },
+      ],
     },
     {
       title: "Tutorials",
       icon: BookOpenIcon,
       description: "Step-by-step tutorials for common optimization scenarios",
       articles: [
-        { title: "E-commerce Optimization", href: "/docs/tutorials/ecommerce", time: "30 min read" },
-        { title: "Blog Content Optimization", href: "/docs/tutorials/blog", time: "25 min read" },
-        { title: "SaaS Landing Pages", href: "/docs/tutorials/saas", time: "20 min read" },
-        { title: "Local Business SEO", href: "/docs/tutorials/local", time: "22 min read" }
-      ]
-    }
+        {
+          title: "E-commerce Optimization",
+          href: "/docs/tutorials/ecommerce",
+          time: "30 min read",
+        },
+        {
+          title: "Blog Content Optimization",
+          href: "/docs/tutorials/blog",
+          time: "25 min read",
+        },
+        {
+          title: "SaaS Landing Pages",
+          href: "/docs/tutorials/saas",
+          time: "20 min read",
+        },
+        {
+          title: "Local Business SEO",
+          href: "/docs/tutorials/local",
+          time: "22 min read",
+        },
+      ],
+    },
   ];
 
   const quickLinks = [
@@ -69,13 +127,13 @@ export default function Documentation() {
     { title: "Content Injection Setup", href: "/docs/injection", icon: "💉" },
     { title: "API Keys & Authentication", href: "/docs/api-keys", icon: "🔑" },
     { title: "Troubleshooting", href: "/docs/troubleshooting", icon: "🔍" },
-    { title: "FAQ", href: "/docs/faq", icon: "❓" }
+    { title: "FAQ", href: "/docs/faq", icon: "❓" },
   ];
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="bg-black text-white pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4 text-center">
@@ -88,20 +146,21 @@ export default function Documentation() {
               Documentation & Guides
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Everything you need to master LLM optimization and get the most out of our platform.
+              Everything you need to master LLM optimization and get the most
+              out of our platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/docs/setup">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
                 >
                   Get Started
                 </Button>
               </Link>
               <Link href="/docs/api">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="outline"
                   className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-3"
                 >
@@ -123,7 +182,9 @@ export default function Documentation() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">Quick Links</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-8">
+              Quick Links
+            </h2>
             <p className="text-lg text-gray-600">
               Jump to the most commonly accessed documentation.
             </p>
@@ -143,7 +204,9 @@ export default function Documentation() {
                     <div className="flex items-center">
                       <span className="text-2xl mr-4">{link.icon}</span>
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{link.title}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {link.title}
+                        </h3>
                       </div>
                       <ArrowRightIcon className="w-5 h-5 text-gray-400" />
                     </div>
@@ -169,7 +232,8 @@ export default function Documentation() {
               Complete Documentation
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Comprehensive guides, tutorials, and references to help you succeed with LLM optimization.
+              Comprehensive guides, tutorials, and references to help you
+              succeed with LLM optimization.
             </p>
           </motion.div>
 
@@ -188,7 +252,9 @@ export default function Documentation() {
                     <section.icon className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-gray-900">{section.title}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {section.title}
+                    </h3>
                     <p className="text-gray-600">{section.description}</p>
                   </div>
                 </div>
@@ -203,7 +269,9 @@ export default function Documentation() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <DocumentTextIcon className="w-5 h-5 text-gray-400 mr-3" />
-                          <span className="font-medium text-gray-900">{article.title}</span>
+                          <span className="font-medium text-gray-900">
+                            {article.title}
+                          </span>
                         </div>
                         <div className="flex items-center text-sm text-gray-500">
                           <span className="mr-2">{article.time}</span>
@@ -232,20 +300,21 @@ export default function Documentation() {
               Need additional help?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Our support team is here to help you succeed with LLM optimization.
+              Our support team is here to help you succeed with LLM
+              optimization.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/contact">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
                 >
                   Contact Support
                 </Button>
               </Link>
               <Link href="/help">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="outline"
                   className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-3"
                 >
@@ -260,4 +329,4 @@ export default function Documentation() {
       <Footer />
     </div>
   );
-} 
+}
