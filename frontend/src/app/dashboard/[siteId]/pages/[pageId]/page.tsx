@@ -423,6 +423,9 @@ export default function PageAnalysisPage() {
   // In the render logic for FAQ section:
   const deployedFAQ = (contentVersions.faq || []).find((c) => c.isActive === 1);
 
+  // Find deployed paragraph
+  const deployedParagraph = (contentVersions.paragraph || []).find((c) => c.isActive === 1);
+
   return (
  <SidebarProvider
       style={
@@ -469,14 +472,14 @@ export default function PageAnalysisPage() {
                     <Button
                       onClick={handleTriggerAnalysis}
                       disabled={triggering}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
                     >
                       {triggering ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      {triggering ? "Analyzing..." : "Run Analysis"}
+                      Run First Analysis
                     </Button>
                   </div>
 
@@ -886,7 +889,7 @@ export default function PageAnalysisPage() {
                                 onClick={() =>
                                   openEditor(
                                     "paragraph",
-                                    "",
+                                    deployedParagraph ? deployedParagraph.optimizedContent : "",
                                     "Add Content Paragraph",
                                     "Generate optimized content paragraphs to improve page depth and keyword coverage"
                                   )
@@ -905,37 +908,33 @@ export default function PageAnalysisPage() {
                           </CardTitle>
                         </CardHeader>
                         <CardContent>
-                          {contentData.paragraphs.length > 0 ? (
-                            <div className="space-y-4">
-                              {contentData.paragraphs.map((para, index) => (
-                                <div
-                                  key={index}
-                                  className="p-4 bg-muted rounded-lg flex items-center gap-2"
-                                >
-                                  <div className="flex-1">
-                                    <p className="whitespace-pre-line">
-                                      {para}
-                                    </p>
-                                  </div>
-                                  <Badge variant="default">Deployed</Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeParagraph(index)}
-                                    className="text-red-600 hover:text-red-800"
-                                  >
-                                    Remove
-                                  </Button>
+                          {deployedParagraph ? (
+                            (() => {
+                              let paragraphs = [];
+                              try {
+                                paragraphs = JSON.parse(deployedParagraph.optimizedContent);
+                              } catch {
+                                paragraphs = [deployedParagraph.optimizedContent];
+                              }
+                              return (
+                                <div className="space-y-4">
+                                  {paragraphs.map((para, idx) =>
+                                    typeof para === "object" && para !== null ? (
+                                      <div key={idx} className="p-4 bg-muted rounded-lg">
+                                        {para.heading && <div className="font-semibold mb-1">{para.heading}</div>}
+                                        <div className="whitespace-pre-line">{para.content}</div>
+                                      </div>
+                                    ) : (
+                                      <div key={idx} className="p-4 bg-muted rounded-lg whitespace-pre-line">{para}</div>
+                                    )
+                                  )}
                                 </div>
-                              ))}
-                            </div>
+                              );
+                            })()
                           ) : (
                             <div className="text-center py-8 text-muted-foreground">
                               <PenTool className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                              <p>
-                                No paragraphs added yet - click "Add Paragraph"
-                                to generate suggestions
-                              </p>
+                              <p>No paragraphs deployed yet - click "Add Paragraph" to generate suggestions</p>
                             </div>
                           )}
                         </CardContent>

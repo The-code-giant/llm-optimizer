@@ -12,6 +12,7 @@ export function StatCard({
   trendIcon: TrendIcon,
   badgeValue,
   action,
+  trendColor,
 }: {
   icon: React.ElementType
   title: string
@@ -22,6 +23,7 @@ export function StatCard({
   description?: string
   trendIcon?: React.ElementType
   action?: React.ReactNode
+  trendColor?: string
 }) {
   return (
     <Card className="@container/card">
@@ -33,8 +35,8 @@ export function StatCard({
         <div className="flex items-center gap-2 mt-2">
           {action}
           {badge && (
-            <Badge variant="outline">
-              {TrendIcon && <TrendIcon className="mr-1 h-4 w-4" />}
+            <Badge variant="outline" className={trendColor || "text-muted-foreground"}>
+              {TrendIcon && <TrendIcon className={"mr-1 h-4 w-4 " + (trendColor || "text-muted-foreground")} />}
               {badge}
               {badgeValue && <span className="ml-1">{badgeValue}</span>}
             </Badge>
@@ -43,8 +45,8 @@ export function StatCard({
       </CardHeader>
       <CardFooter className="flex-col items-start gap-1.5 text-sm">
         {trend && (
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            {trend} {TrendIcon && <TrendIcon className="size-4" />}
+          <div className={"line-clamp-1 flex gap-2 font-medium " + (trendColor || "text-muted-foreground") }>
+            {trend} {TrendIcon && <TrendIcon className={"size-4 " + (trendColor || "text-muted-foreground")} />}
           </div>
         )}
         {description && (

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw, TrendingUp } from "lucide-react";
+import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import Toast from "@/components/Toast";
 import { StatCard } from '@/components/ui/stat-card'
 
@@ -200,6 +200,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             badge={totalSites > 0 ? `+${totalSites} this month` : undefined}
             trend={totalSites > 0 ? "Trending up" : undefined}
             trendIcon={TrendingUp}
+            trendColor={totalSites > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}
             description="Number of sites tracked"
           />
           <StatCard
@@ -208,7 +209,8 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             value={`${avgLLMReadiness}%`}
             badge={avgLLMReadiness >= 75 ? "Great performance!" : "Room for improvement"}
             trend={avgLLMReadiness >= 75 ? "Improving" : "Needs work"}
-            trendIcon={TrendingUp}
+            trendIcon={avgLLMReadiness >= 75 ? TrendingUp : TrendingDown}
+            trendColor={avgLLMReadiness >= 75 ? 'text-green-600 dark:text-green-400' : 'text-destructive'}
             description="Average readiness score across all sites"
           />
           <StatCard
@@ -217,7 +219,8 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             value={totalActiveScans}
             badge={totalActiveScans > 0 ? "Scans in progress" : "All scans complete"}
             trend={totalActiveScans > 0 ? "Active" : "Idle"}
-            trendIcon={TrendingUp}
+            trendIcon={totalActiveScans > 0 ? TrendingUp : undefined}
+            trendColor={totalActiveScans > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}
             description="Sites currently being scanned"
           />
         </div>

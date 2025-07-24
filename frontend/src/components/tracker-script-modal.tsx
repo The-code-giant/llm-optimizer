@@ -1,7 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
+import {
+  AlertTriangle,
+  BarChart3,
+  Check,
+  CheckCircle,
+  Code,
+  Copy,
+  Globe,
+  Settings,
+  Zap
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import Toast from "./Toast";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import {
   Dialog,
   DialogContent,
@@ -9,23 +24,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
-import { Separator } from "./ui/separator";
-import { 
-  Copy, 
-  Check, 
-  Code, 
-  ExternalLink,
-  AlertTriangle,
-  CheckCircle,
-  Globe,
-  Zap,
-  Settings,
-  BarChart3
-} from "lucide-react";
-import Toast from "./Toast";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
