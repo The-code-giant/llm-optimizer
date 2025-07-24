@@ -52,7 +52,7 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
   preferences?: {
-    dashboardView?: 'grid' | 'list';
+    dashboardView?: "grid" | "list";
     emailNotifications?: boolean;
     autoAnalysis?: boolean;
   };
@@ -88,7 +88,8 @@ export interface BillingInfo {
   amount: number;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
 async function handleResponse(res: Response) {
   if (!res.ok) {
@@ -108,46 +109,63 @@ async function handleResponse(res: Response) {
 
 export async function getSites(token: string): Promise<Site[]> {
   const res = await fetch(`${API_BASE}/sites`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
-export async function getSitesWithMetrics(token: string): Promise<SiteWithMetrics[]> {
+export async function getSitesWithMetrics(
+  token: string
+): Promise<SiteWithMetrics[]> {
   const sites = await getSites(token);
-  
+
   // Enrich each site with metrics
   const sitesWithMetrics = await Promise.all(
     sites.map(async (site) => {
       try {
         // Get site details to get trackerId
         const siteDetails = await getSiteDetails(token, site.id);
-        
+
         // Get pages for this site
         const pages = await getPages(token, site.id);
-        
+
         // Calculate metrics
         const totalPages = pages.length;
-        const pagesWithScores = pages.filter(p => p.llmReadinessScore != null);
-        const avgLLMReadiness = pagesWithScores.length > 0 
-          ? Math.round(pagesWithScores.reduce((sum, p) => sum + (p.llmReadinessScore || 0), 0) / pagesWithScores.length)
-          : 0;
-        
+        const pagesWithScores = pages.filter(
+          (p) => p.llmReadinessScore != null
+        );
+        const avgLLMReadiness =
+          pagesWithScores.length > 0
+            ? Math.round(
+                pagesWithScores.reduce(
+                  (sum, p) => sum + (p.llmReadinessScore || 0),
+                  0
+                ) / pagesWithScores.length
+              )
+            : 0;
+
         // Find most recent scan
-        const pagesWithScans = pages.filter(p => p.lastScannedAt);
-        const lastScan = pagesWithScans.length > 0 
-          ? pagesWithScans.sort((a, b) => new Date(b.lastScannedAt).getTime() - new Date(a.lastScannedAt).getTime())[0].lastScannedAt
-          : null;
-        
+        const pagesWithScans = pages.filter((p) => p.lastScannedAt);
+        const lastScan =
+          pagesWithScans.length > 0
+            ? pagesWithScans.sort(
+                (a, b) =>
+                  new Date(b.lastScannedAt).getTime() -
+                  new Date(a.lastScannedAt).getTime()
+              )[0].lastScannedAt
+            : null;
+
         // Format last scan time
-        const formattedLastScan = lastScan 
+        const formattedLastScan = lastScan
           ? formatRelativeTime(new Date(lastScan))
           : "Never scanned";
-        
+
         // Count improvements (pages with score > 60 as improvement indicator)
-        const improvements = pagesWithScores.filter(p => (p.llmReadinessScore || 0) > 60).length;
-        
+        const improvements = pagesWithScores.filter(
+          (p) => (p.llmReadinessScore || 0) > 60
+        ).length;
+
         return {
           ...site,
           trackerId: siteDetails.trackerId,
@@ -165,7 +183,7 @@ export async function getSitesWithMetrics(token: string): Promise<SiteWithMetric
         // Return site with default metrics if API calls fail
         return {
           ...site,
-          trackerId: '',
+          trackerId: "",
           lastScan: "Error loading",
           llmReadiness: 0,
           pagesScanned: 0,
@@ -175,42 +193,51 @@ export async function getSitesWithMetrics(token: string): Promise<SiteWithMetric
       }
     })
   );
-  
+
   return sitesWithMetrics;
 }
 
 // Helper function to format relative time
 function formatRelativeTime(date: Date): string {
   const now = new Date();
-  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-  
+  const diffInMinutes = Math.floor(
+    (now.getTime() - date.getTime()) / (1000 * 60)
+  );
+
   if (diffInMinutes < 1) return "Just now";
   if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-  
+
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) return `${diffInHours} hours ago`;
-  
+
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) return `${diffInDays} days ago`;
-  
+
   return date.toLocaleDateString();
 }
 
-export async function addSite(token: string, name: string, url: string): Promise<Site> {
+export async function addSite(
+  token: string,
+  name: string,
+  url: string
+): Promise<Site> {
   const res = await fetch(`${API_BASE}/sites`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ name, url }),
   });
   return handleResponse(res);
 }
 
-export async function getSiteDetails(token: string, siteId: string): Promise<SiteDetails> {
+export async function getSiteDetails(
+  token: string,
+  siteId: string
+): Promise<SiteDetails> {
   const res = await fetch(`${API_BASE}/sites/${siteId}`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
@@ -218,65 +245,83 @@ export async function getSiteDetails(token: string, siteId: string): Promise<Sit
 
 export async function getPages(token: string, siteId: string): Promise<Page[]> {
   const res = await fetch(`${API_BASE}/sites/${siteId}/pages`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
-export async function getPageDetails(token: string, pageId: string): Promise<Page> {
+export async function getPageDetails(
+  token: string,
+  pageId: string
+): Promise<Page> {
   const res = await fetch(`${API_BASE}/pages/${pageId}`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
-export async function getPageAnalysis(token: string, pageId: string): Promise<AnalysisResult> {
+export async function getPageAnalysis(
+  token: string,
+  pageId: string
+): Promise<AnalysisResult> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/analysis`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
-export async function triggerAnalysis(token: string, pageId: string): Promise<{ jobId: string }> {
+export async function triggerAnalysis(
+  token: string,
+  pageId: string
+): Promise<{ jobId: string }> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/analysis`, {
     method: "POST",
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
 }
 
-export async function importSitemap(token: string, siteId: string, sitemapUrl: string): Promise<void> {
+export async function importSitemap(
+  token: string,
+  siteId: string,
+  sitemapUrl: string
+): Promise<void> {
   const response = await fetch(`${API_BASE}/sites/${siteId}/import-sitemap`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ sitemapUrl }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to import sitemap');
+    throw new Error(error.message || "Failed to import sitemap");
   }
 }
 
-export async function addPage(token: string, siteId: string, url: string, title?: string): Promise<Page> {
+export async function addPage(
+  token: string,
+  siteId: string,
+  url: string,
+  title?: string
+): Promise<Page> {
   const response = await fetch(`${API_BASE}/sites/${siteId}/pages`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ url, title }),
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to add page');
+    throw new Error(error.message || "Failed to add page");
   }
 
   return response.json();
@@ -294,55 +339,67 @@ export interface DeletePageResult {
   };
 }
 
-export async function deletePage(token: string, pageId: string): Promise<DeletePageResult> {
+export async function deletePage(
+  token: string,
+  pageId: string
+): Promise<DeletePageResult> {
   const response = await fetch(`${API_BASE}/pages/${pageId}`, {
-    method: 'DELETE',
+    method: "DELETE",
     headers: {
-      'Authorization': `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to delete page');
+    throw new Error(error.message || "Failed to delete page");
   }
 
   return response.json();
 }
 
-export async function deletePages(token: string, pageIds: string[]): Promise<DeletePageResult[]> {
+export async function deletePages(
+  token: string,
+  pageIds: string[]
+): Promise<DeletePageResult[]> {
   const results = await Promise.all(
-    pageIds.map(pageId => deletePage(token, pageId))
+    pageIds.map((pageId) => deletePage(token, pageId))
   );
   return results;
 }
 
 export async function getUserProfile(token: string): Promise<UserProfile> {
   const res = await fetch(`${API_BASE}/users/profile`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
-export async function updateUserProfile(token: string, data: Partial<UserProfile>): Promise<UserProfile> {
+export async function updateUserProfile(
+  token: string,
+  data: Partial<UserProfile>
+): Promise<UserProfile> {
   const res = await fetch(`${API_BASE}/users/profile`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
   return handleResponse(res);
 }
 
-export async function addTeamMember(token: string, email: string): Promise<TeamMember> {
+export async function addTeamMember(
+  token: string,
+  email: string
+): Promise<TeamMember> {
   const res = await fetch(`${API_BASE}/teams/invite`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ email }),
   });
@@ -351,7 +408,7 @@ export async function addTeamMember(token: string, email: string): Promise<TeamM
 
 export async function getTeamMembers(token: string): Promise<TeamMember[]> {
   const res = await fetch(`${API_BASE}/teams/members`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
@@ -359,18 +416,21 @@ export async function getTeamMembers(token: string): Promise<TeamMember[]> {
 
 export async function getBillingInfo(token: string): Promise<BillingInfo> {
   const res = await fetch(`${API_BASE}/billing`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
-export async function updateBillingInfo(token: string, data: Partial<BillingInfo>): Promise<BillingInfo> {
+export async function updateBillingInfo(
+  token: string,
+  data: Partial<BillingInfo>
+): Promise<BillingInfo> {
   const res = await fetch(`${API_BASE}/billing`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
@@ -385,9 +445,9 @@ export interface ContentSuggestion {
 }
 
 export async function generateContentSuggestions(
-  token: string, 
-  pageId: string, 
-  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+  token: string,
+  pageId: string,
+  contentType: "title" | "description" | "faq" | "paragraph" | "keywords",
   currentContent?: string,
   additionalContext?: string
 ): Promise<ContentSuggestion> {
@@ -395,12 +455,12 @@ export async function generateContentSuggestions(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       contentType,
       currentContent,
-      additionalContext
+      additionalContext,
     }),
   });
   return handleResponse(res);
@@ -424,7 +484,13 @@ export interface PageContentData {
 export async function savePageContent(
   token: string,
   pageId: string,
-  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema',
+  contentType:
+    | "title"
+    | "description"
+    | "faq"
+    | "paragraph"
+    | "keywords"
+    | "schema",
   optimizedContent: string,
   originalContent?: string,
   generationContext?: string,
@@ -435,7 +501,7 @@ export async function savePageContent(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       contentType,
@@ -443,7 +509,7 @@ export async function savePageContent(
       originalContent,
       generationContext,
       metadata,
-      deployImmediately
+      deployImmediately,
     }),
   });
   return handleResponse(res);
@@ -453,14 +519,28 @@ export async function savePageContent(
 export async function deployPageContent(
   token: string,
   pageId: string,
-  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema'
-): Promise<{ message: string; pageId: string; contentType: string; deployedAt: string }> {
-  const res = await fetch(`${API_BASE}/pages/${pageId}/content/${contentType}/deploy`, {
-    method: "PUT",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
-  });
+  contentType:
+    | "title"
+    | "description"
+    | "faq"
+    | "paragraph"
+    | "keywords"
+    | "schema"
+): Promise<{
+  message: string;
+  pageId: string;
+  contentType: string;
+  deployedAt: string;
+}> {
+  const res = await fetch(
+    `${API_BASE}/pages/${pageId}/content/${contentType}/deploy`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   return handleResponse(res);
 }
 
@@ -468,14 +548,23 @@ export async function deployPageContent(
 export async function undeployPageContent(
   token: string,
   pageId: string,
-  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema'
+  contentType:
+    | "title"
+    | "description"
+    | "faq"
+    | "paragraph"
+    | "keywords"
+    | "schema"
 ): Promise<{ message: string; pageId: string; contentType: string }> {
-  const res = await fetch(`${API_BASE}/pages/${pageId}/content/${contentType}/undeploy`, {
-    method: "DELETE",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
-  });
+  const res = await fetch(
+    `${API_BASE}/pages/${pageId}/content/${contentType}/undeploy`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   return handleResponse(res);
 }
 
@@ -493,10 +582,14 @@ export interface DeployedContent {
 export async function getDeployedPageContent(
   token: string,
   pageId: string
-): Promise<{ pageId: string; pageUrl: string; deployedContent: DeployedContent[] }> {
+): Promise<{
+  pageId: string;
+  pageUrl: string;
+  deployedContent: DeployedContent[];
+}> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/deployed-content`, {
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
   });
@@ -506,16 +599,16 @@ export async function getDeployedPageContent(
 export async function getPageContent(
   token: string,
   pageId: string,
-  contentType?: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords'
+  contentType?: "title" | "description" | "faq" | "paragraph" | "keywords"
 ): Promise<{ pageId: string; content: PageContentData[] }> {
   const url = new URL(`${API_BASE}/pages/${pageId}/content`);
   if (contentType) {
-    url.searchParams.append('contentType', contentType);
+    url.searchParams.append("contentType", contentType);
   }
-  
+
   const res = await fetch(url.toString(), {
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
   });
@@ -525,16 +618,16 @@ export async function getPageContent(
 export async function getCachedContentSuggestions(
   token: string,
   pageId: string,
-  contentType?: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords'
+  contentType?: "title" | "description" | "faq" | "paragraph" | "keywords"
 ): Promise<{ pageId: string; suggestions: any[] }> {
   const url = new URL(`${API_BASE}/pages/${pageId}/content-suggestions`);
   if (contentType) {
-    url.searchParams.append('contentType', contentType);
+    url.searchParams.append("contentType", contentType);
   }
-  
+
   const res = await fetch(url.toString(), {
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     cache: "no-store",
   });
@@ -564,16 +657,22 @@ export interface OriginalPageContent {
   needsAnalysis: boolean;
 }
 
-export async function getOriginalPageContent(token: string, pageId: string): Promise<OriginalPageContent> {
+export async function getOriginalPageContent(
+  token: string,
+  pageId: string
+): Promise<OriginalPageContent> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/original-content`, {
-    headers: { "Authorization": `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   return handleResponse(res);
 }
 
 // Refresh page content from live URL
-export async function refreshPageContent(token: string, pageId: string): Promise<{
+export async function refreshPageContent(
+  token: string,
+  pageId: string
+): Promise<{
   message: string;
   content: any;
   contentSnapshot: string;
@@ -582,19 +681,19 @@ export async function refreshPageContent(token: string, pageId: string): Promise
   const res = await fetch(`${API_BASE}/pages/${pageId}/refresh-content`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
   });
   return handleResponse(res);
 }
 
-// Add more API functions as needed (sites, pages, etc.) 
+// Add more API functions as needed (sites, pages, etc.)
 
 // Submit website URL for analysis (pre-signup)
-export async function submitWebsiteUrl(url: string): Promise<{ 
-  success: boolean; 
-  message: string; 
+export async function submitWebsiteUrl(url: string): Promise<{
+  success: boolean;
+  message: string;
   siteId?: string;
   redirectUrl?: string;
 }> {
@@ -604,6 +703,26 @@ export async function submitWebsiteUrl(url: string): Promise<{
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ url }),
+  });
+  return handleResponse(res);
+}
+
+export async function updateProfileName(
+  token: string,
+  name: string
+): Promise<{
+  success: boolean;
+  message: string;
+  siteId?: string;
+  redirectUrl?: string;
+}> {
+  const res = await fetch(`${API_BASE}/users/profile-clerk`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name }),
   });
   return handleResponse(res);
 }
