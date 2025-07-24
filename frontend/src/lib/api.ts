@@ -590,3 +590,20 @@ export async function refreshPageContent(token: string, pageId: string): Promise
 }
 
 // Add more API functions as needed (sites, pages, etc.) 
+
+// Submit website URL for analysis (pre-signup)
+export async function submitWebsiteUrl(url: string): Promise<{ 
+  success: boolean; 
+  message: string; 
+  siteId?: string;
+  redirectUrl?: string;
+}> {
+  const res = await fetch(`${API_BASE}/sites/pre-submit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ url }),
+  });
+  return handleResponse(res);
+}

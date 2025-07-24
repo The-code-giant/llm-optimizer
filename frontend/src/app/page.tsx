@@ -8,6 +8,7 @@ import { Footer } from "@/components/ui/footer";
 import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useState, useEffect } from 'react';
+import HeroSection from '@/components/hero-section';
 import { 
   SparklesIcon,
   ArrowUpIcon,
@@ -217,6 +218,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Navbar />
       {/* Hero Section - Dark */}
+      <HeroSection />
       <section className="bg-black text-white min-h-screen flex items-center">
         <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
           <motion.div

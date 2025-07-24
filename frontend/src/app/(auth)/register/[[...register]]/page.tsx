@@ -1,18 +1,23 @@
 "use client";
 import { SignUp, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 export default function RegisterPage() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const websiteUrl = searchParams.get('website');
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      // User is already signed in, redirect to dashboard
-      router.replace("/dashboard");
+      // User is already signed in, redirect to dashboard with website URL if available
+      const redirectUrl = websiteUrl 
+        ? `/dashboard?website=${encodeURIComponent(websiteUrl)}`
+        : "/dashboard";
+      router.replace(redirectUrl);
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, router, websiteUrl]);
 
   if (!isLoaded) {
     return (
@@ -29,7 +34,7 @@ export default function RegisterPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-gray-600">You're already signed in. Redirecting to dashboard...</p>
+          <p className="text-gray-600">You&apos;re already signed in. Redirecting to dashboard...</p>
         </div>
       </div>
     );
