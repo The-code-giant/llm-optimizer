@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { ThemeSwitcher } from "@/components/ui/theme-switcher"
 import { NAV_DATA } from "@/components/app-sidebar"
 import { usePathname } from "next/navigation"
 export function SiteHeader() {
@@ -19,6 +20,7 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">{currentPageTitle}</h1>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeSwitcher />
           <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
             <a
               href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
