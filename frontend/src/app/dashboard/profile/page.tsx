@@ -168,13 +168,13 @@ export default function ProfilePage() {
   function getEventTypeColor(eventType: string) {
     switch (eventType) {
       case "content_request":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "page_view":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300";
       case "content_injection":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
     }
   }
 
@@ -303,14 +303,13 @@ export default function ProfilePage() {
                                   </AvatarFallback>
                                 </Avatar>
                               ) : (
-                                <User className="w-20 h-20 text-gray-600" />
+                                <User className="w-20 h-20 text-muted-foreground" />
                               )}
                               <label
                                 htmlFor="profilePicture"
-                                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full bg-black/50"
                                 style={{
                                   zIndex: 10,
-                                  backgroundColor: "rgba(0, 0, 0, 0.5)",
                                 }}
                               >
                                 <span className="text-white font-semibold text-xs">
@@ -327,7 +326,7 @@ export default function ProfilePage() {
                               />
                             </div>
                             {uploadError && (
-                              <p className="text-xs text-red-600 mt-1">
+                              <p className="text-xs text-destructive mt-1">
                                 {uploadError}
                               </p>
                             )}
@@ -457,7 +456,7 @@ export default function ProfilePage() {
                       {profile?.statistics?.recentActivity &&
                         profile.statistics.recentActivity.length > 0 && (
                           <Card className="p-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                            <h3 className="text-lg font-semibold mb-4">
                               Recent Activity
                             </h3>
                             <div className="space-y-3">
@@ -476,13 +475,13 @@ export default function ProfilePage() {
                                       {activity.type.replace("_", " ")}
                                     </Badge>
                                     <div className="flex-1 min-w-0">
-                                      <p className="text-sm text-gray-900 truncate">
+                                      <p className="text-sm truncate">
                                         {activity.siteName}
                                       </p>
-                                      <p className="text-xs text-gray-500 truncate">
+                                      <p className="text-xs text-muted-foreground truncate">
                                         {activity.pageUrl}
                                       </p>
-                                      <p className="text-xs text-gray-400">
+                                      <p className="text-xs text-muted-foreground">
                                         {formatTimestamp(activity.timestamp)}
                                       </p>
                                     </div>
@@ -500,45 +499,45 @@ export default function ProfilePage() {
             {activeTab === "account" && (
               <div className="space-y-6">
                 <Card className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                  <h2 className="text-xl font-semibold mb-6">
                     Account & Security
                   </h2>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-muted-foreground mb-6">
                     Manage your account settings, password, and security
                     preferences.
                   </p>
 
                   <div className="space-y-6">
-                    <div className="border rounded-lg p-6">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="border border-border rounded-lg p-6">
+                      <h3 className="text-lg font-medium mb-4">
                         Account Information
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-foreground mb-1">
                             Email Address
                           </label>
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm">
                             {profile?.email}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Your email address is managed by your authentication
                             provider
                           </p>
                         </div>
 
                         {/* <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-foreground mb-1">
                             Account ID
                           </label>
-                          <p className="text-sm text-gray-900 font-mono">{mockUser.id}</p>
+                          <p className="text-sm font-mono">{mockUser.id}</p>
                         </div> */}
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                          <label className="block text-sm font-medium text-foreground mb-1">
                             Last Sign-in
                           </label>
-                          <p className="text-sm text-gray-900">
+                          <p className="text-sm">
                             {profile?.lastSignInAt &&
                               new Date(profile?.lastSignInAt).toLocaleString()}
                           </p>
@@ -546,49 +545,49 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    <div className="border rounded-lg p-6">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="border border-border rounded-lg p-6">
+                      <h3 className="text-lg font-medium mb-4">
                         Security Settings
                       </h3>
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium">
                               Two-Factor Authentication
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               Manage your authentication methods
                             </p>
                           </div>
-                          <div className="text-sm text-blue-600">
+                          <div className="text-sm text-primary">
                             Configured via Auth Provider
                           </div>
                         </div>
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium">
                               Password Management
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               Change your password and security settings
                             </p>
                           </div>
-                          <div className="text-sm text-blue-600">
+                          <div className="text-sm text-primary">
                             Configured via Auth Provider
                           </div>
                         </div>
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium">
                               Session Management
                             </p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               View and manage your active sessions
                             </p>
                           </div>
-                          <div className="text-sm text-blue-600">
+                          <div className="text-sm text-primary">
                             Configured via Auth Provider
                           </div>
                         </div>
@@ -602,12 +601,12 @@ export default function ProfilePage() {
             {activeTab === "preferences" && (
               <div className="space-y-6">
                 <Card className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                  <h2 className="text-xl font-semibold mb-6">
                     Dashboard Preferences
                   </h2>
                   <div className="space-y-6">
                     {/* <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-medium text-foreground mb-2">
                         Dashboard View
                       </label>
                       <select
@@ -618,7 +617,7 @@ export default function ProfilePage() {
                             dashboardView: e.target.value as any,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-input rounded-md shadow-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                       >
                         <option value="grid">Grid View</option>
                         <option value="list">List View</option>
@@ -637,11 +636,11 @@ export default function ProfilePage() {
                               emailNotifications: e.target.checked,
                             }))
                           }
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary focus:ring-ring border-input rounded"
                         />
                         <label
                           htmlFor="emailNotifications"
-                          className="ml-2 block text-sm text-gray-700"
+                          className="ml-2 block text-sm text-foreground"
                         >
                           Email notifications for analysis completion
                         </label>
@@ -658,22 +657,21 @@ export default function ProfilePage() {
                               autoAnalysis: e.target.checked,
                             }))
                           }
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        >
-                        </input>
+                          className="h-4 w-4 text-primary focus:ring-ring border-input rounded"
+                        />
                         <label
                           htmlFor="autoAnalysis"
-                          className="ml-2 block text-sm text-gray-700"
+                          className="ml-2 block text-sm text-foreground"
                         >
                           Automatically analyze new pages
                         </label>
                       </div>
                     </div>
 
-                    <div className="pt-4 border-t">
+                    <div className="pt-4 border-t border-border">
                       <button
                         onClick={handleSave}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={saving}
                       >
                         {saving ? "Saving..." : "Save Preferences"}
