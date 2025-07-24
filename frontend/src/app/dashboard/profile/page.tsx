@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import {
   getSitesWithMetrics,
-  updateProfileName,
   UserProfile as UserProfileType,
 } from "../../../lib/api";
 import Toast from "../../../components/Toast";
@@ -10,6 +9,8 @@ import { Card } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { DashboardLayout } from "../../../components/ui/dashboard-layout";
 import { useAuth, useUser } from "@clerk/nextjs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User } from "lucide-react";
 
 type UserProfilePage = Omit<UserProfileType, "id"> & {
   lastSignInAt: string;
@@ -31,8 +32,14 @@ export default function ProfilePage() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { user, isSignedIn } = useUser();
   const { getToken } = useAuth();
+
+  const imageUrl = user?.hasImage ? user?.imageUrl : null;
 
   useEffect(() => {
     async function fetchProfile() {
@@ -168,6 +175,31 @@ export default function ProfilePage() {
     }
   }
 
+  // Function to upload profile picture
+  async function uploadProfilePicture(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      setPreviewUrl(URL.createObjectURL(file));
+
+      await user?.setProfileImage({ file: file });
+    } catch (err: unknown) {
+      setUploadError(
+        err instanceof Error ? err.message : "Failed to upload image"
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      uploadProfilePicture(file);
+    }
+  }
+
   const tabs = [
     { id: "profile", label: "Profile" },
     { id: "account", label: "Account & Security" },
@@ -233,6 +265,58 @@ export default function ProfilePage() {
                       <h2 className="text-xl font-semibold text-gray-900 mb-6">
                         Profile Information
                       </h2>
+
+                      <form className="mb-2">
+                        <div>
+                          <label
+                            htmlFor="name"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Profile Picture
+                          </label>
+                          <div className="relative w-20 h-20 group">
+                            {previewUrl || imageUrl ? (
+                              <Avatar className="w-20 h-20">
+                                <AvatarImage
+                                  className="w-20 h-20"
+                                  src={previewUrl || imageUrl || ""}
+                                />
+                                <AvatarFallback>
+                                  {user?.firstName?.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                            ) : (
+                              <User className="w-20 h-20 text-gray-600" />
+                            )}
+                            <label
+                              htmlFor="profilePicture"
+                              className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-full"
+                              style={{
+                                zIndex: 10,
+                                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                              }}
+                            >
+                              <span className="text-white font-semibold text-xs">
+                                {uploading ? "Uploading..." : "Upload Image"}
+                              </span>
+                            </label>
+                            <input
+                              type="file"
+                              id="profilePicture"
+                              className="hidden"
+                              accept="image/*"
+                              onChange={handleImageChange}
+                              disabled={uploading}
+                            />
+                          </div>
+                          {uploadError && (
+                            <p className="text-xs text-red-600 mt-1">
+                              {uploadError}
+                            </p>
+                          )}
+                        </div>
+                      </form>
+
                       <form onSubmit={handleSave} className="space-y-6">
                         <div>
                           <label
