@@ -1,14 +1,13 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { generateContentSuggestions, getCachedContentSuggestions, getOriginalPageContent, OriginalPageContent } from "../lib/api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Label } from "./ui/label";
-import { Badge } from "./ui/badge";
-import { Card, CardContent } from "./ui/card";
-import { Loader2, Sparkles, Copy, Check, Hash } from "lucide-react";
+import { Copy, Hash, Loader2, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { generateContentSuggestions, getCachedContentSuggestions } from "../lib/api";
 import Toast from "./Toast";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Label } from "./ui/label";
 
 interface KeywordsEditorModalProps {
   isOpen: boolean;
@@ -177,7 +176,7 @@ export default function KeywordsEditorModal({
           </div>
           <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2 mt-4">
             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleSaveAndDeploy} disabled={!editedContent.trim() || deploying} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+            <Button onClick={handleSaveAndDeploy} disabled={!editedContent.trim() || deploying} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
               {deploying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Save & Deploy
             </Button>

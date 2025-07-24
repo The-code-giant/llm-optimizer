@@ -4,11 +4,10 @@ import {
   getSitesWithMetrics,
   updateProfileName,
   UserProfile as UserProfileType,
-} from "../../../lib/api";
-import Toast from "../../../components/Toast";
-import { Card } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
-import { DashboardLayout } from "../../../components/ui/dashboard-layout";
+} from "@/lib/api";
+import Toast from "@/components/Toast";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RotateCcw, User } from "lucide-react";

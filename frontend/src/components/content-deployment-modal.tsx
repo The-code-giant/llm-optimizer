@@ -249,14 +249,14 @@ export default function PageContentDeploymentModal({
             <DialogDescription>
               Manage deployed content for <strong>{pageTitle}</strong>
               <br />
-              <span className="text-xs text-gray-500">{pageUrl}</span>
+              <span className="text-xs text-muted-foreground">{pageUrl}</span>
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 <span className="ml-2">Loading content status...</span>
               </div>
             ) : (
@@ -275,9 +275,9 @@ export default function PageContentDeploymentModal({
                             </div>
                             <div>
                               <h3 className="font-medium text-sm">{contentType.label}</h3>
-                              <p className="text-xs text-gray-600">{contentType.description}</p>
+                              <p className="text-xs text-muted-foreground">{contentType.description}</p>
                               {status.deployedContent && (
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-muted-foreground mt-1">
                                   Deployed: {formatDate(status.deployedContent.deployedAt)}
                                 </p>
                               )}
@@ -297,7 +297,7 @@ export default function PageContentDeploymentModal({
                                     disabled={deployingType === contentType.type}
                                   >
                                     {deployingType === contentType.type ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-muted-foreground"></div>
                                     ) : (
                                       <Square className="h-4 w-4" />
                                     )}
@@ -310,7 +310,7 @@ export default function PageContentDeploymentModal({
                                     disabled={deployingType === contentType.type}
                                   >
                                     {deployingType === contentType.type ? (
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
                                     ) : (
                                       <Play className="h-4 w-4" />
                                     )}

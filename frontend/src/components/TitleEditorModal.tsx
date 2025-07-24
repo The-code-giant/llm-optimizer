@@ -157,7 +157,7 @@ export default function TitleEditorModal({
                 {suggestions.map((suggestion, index) => (
                   <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
-                      <span className="text-sm text-gray-700 break-words flex-1">{suggestion}</span>
+                      <span className="text-sm text-muted-foreground break-words flex-1">{suggestion}</span>
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Button variant="ghost" size="sm" onClick={() => copyToClipboard(suggestion, index)} className="w-full sm:w-auto">
                           {copiedIndex === index ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -177,7 +177,7 @@ export default function TitleEditorModal({
           </div>
           <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2 mt-4">
             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleSaveAndDeploy} disabled={!editedContent.trim() || deploying} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+            <Button onClick={handleSaveAndDeploy} disabled={!editedContent.trim() || deploying} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
               {deploying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Save & Deploy
             </Button>

@@ -141,10 +141,10 @@ export default function FAQEditorModal({
               <Label>FAQ List</Label>
               <Button variant="outline" size="sm" onClick={addFaq}>+ Add Q&A</Button>
             </div>
-            {faqList.length === 0 && <div className="text-gray-500 text-sm">No FAQs yet. Add one above.</div>}
+            {faqList.length === 0 && <div className="text-muted-foreground text-sm">No FAQs yet. Add one above.</div>}
             <Accordion type="multiple" className="w-full">
               {faqList.map((faq, idx) => (
-                <AccordionItem key={idx} value={`faq-${idx}`} className="border rounded mb-2 bg-gray-50">
+                <AccordionItem key={idx} value={`faq-${idx}`} className="border border-border rounded mb-2 bg-muted">
                   <AccordionTrigger className="px-4 py-2 text-left">
                     {faq.question ? faq.question : `Q&A #${idx + 1}`}
                   </AccordionTrigger>
@@ -162,7 +162,7 @@ export default function FAQEditorModal({
                       className="text-sm"
                     />
                     <div className="flex justify-end">
-                      <Button variant="ghost" size="sm" onClick={() => removeFaq(idx)} className="text-red-600">Remove</Button>
+                      <Button variant="ghost" size="sm" onClick={() => removeFaq(idx)} className="text-destructive">Remove</Button>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -176,37 +176,33 @@ export default function FAQEditorModal({
               Generate AI Suggestions
             </Button>
             {suggestions.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-xs text-gray-500 mb-1">Click "Add to List" to add any suggestion below to your FAQ list.</div>
-                {suggestions.map((faq, index) => (
-                  <Card key={index} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-semibold text-gray-900">Q: {faq.question}</span>
-                        <Button variant="ghost" size="sm" onClick={() => copyToClipboard(`${faq.question}\n\n${faq.answer}`, index)}>
+              <div className="space-y-4">
+                {suggestions.map((suggestion, index) => (
+                  <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">{suggestion.question}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{suggestion.answer}</p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => copyToClipboard(`Q: ${suggestion.question}\nA: ${suggestion.answer}`, index)} className="w-full sm:w-auto">
                           {copiedIndex === index ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => applySuggestion(faq)}>
+                        <Button variant="outline" size="sm" onClick={() => applySuggestion(suggestion)} className="w-full sm:w-auto">
                           Add to List
                         </Button>
                       </div>
-                      <div className="text-gray-700 text-sm whitespace-pre-line">A: {faq.answer}</div>
                     </CardContent>
                   </Card>
                 ))}
-                {suggestions.length > 1 && (
-                  <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => suggestions.forEach(applySuggestion)}>
-                    Add All to List
-                  </Button>
-                )}
               </div>
             )}
           </div>
           <DialogFooter className="flex flex-col sm:flex-row justify-between gap-2 mt-4">
             <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">Cancel</Button>
-            <Button onClick={handleSaveAndDeploy} disabled={!faqList.length || faqList.some(faq => !faq.question.trim() || !faq.answer.trim()) || deploying} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto">
+            <Button onClick={handleSaveAndDeploy} disabled={!faqList.length || faqList.some(faq => !faq.question.trim() || !faq.answer.trim()) || deploying} className="bg-primary hover:bg-primary/90 w-full sm:w-auto">
               {deploying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              Save & Deploy
+              Save & Deploy FAQs
             </Button>
           </DialogFooter>
         </DialogContent>

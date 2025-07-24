@@ -143,7 +143,7 @@ export default function TrackerScriptModal({
             </DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
         </DialogContent>
       </Dialog>
@@ -181,7 +181,7 @@ export default function TrackerScriptModal({
                         {feature.icon}
                         <div>
                           <h4 className="font-medium text-sm">{feature.title}</h4>
-                          <p className="text-xs text-gray-600 mt-1">{feature.description}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
                         </div>
                       </div>
                     ))}
