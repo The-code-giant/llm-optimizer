@@ -47,8 +47,13 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
             <div className="flex items-center justify-between pb-8 border-b border-gray-200">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
-                  <Image src={meta.avatar} alt={meta.author} width={48} height={48} />
-                  
+                  {meta.avatar ? (
+                    <Image src={meta.avatar} alt={meta.author} width={48} height={48} />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm">
+                      N/A
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="font-semibold text-gray-900">{meta.author}</div>
