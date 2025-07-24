@@ -49,14 +49,9 @@ export default function RootLayout({
           afterSignUpUrl="/dashboard"
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
         >
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
+         
             {children}
-          </ThemeProvider>
+          
         </ClerkProvider>
       </body>
     </html>
