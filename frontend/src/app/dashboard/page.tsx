@@ -1,32 +1,31 @@
-import { Suspense } from "react";
-import { DashboardLayout } from "../../components/ui/dashboard-layout";
-import { DashboardClient } from "../../components/dashboard-client";
+import { AppSidebar } from "@/components/app-sidebar";
+import { DashboardClient } from "@/components/dashboard-client";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
-// This is now an async server component
-export default async function DashboardPage() {
-  // In a real implementation, you could fetch initial data here on the server
-  // For now, we'll let the client component handle the data fetching
-  
+export default function Page() {
   return (
-    <DashboardLayout>
-      <Suspense fallback={
-        <div className="space-y-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white p-6 rounded-lg border animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+              <div className="px-4 lg:px-6">
+                <DashboardClient />
               </div>
-            ))}
+            </div>
           </div>
         </div>
-      }>
-        <DashboardClient />
-      </Suspense>
-    </DashboardLayout>
+      </SidebarInset>
+    </SidebarProvider>
   );
-} 
+}

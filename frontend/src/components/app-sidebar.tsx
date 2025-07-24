@@ -1,0 +1,107 @@
+"use client"
+import Link from "next/link"
+import Image from "next/image"
+import * as React from "react"
+import {
+  IconChartBar,
+  IconDashboard,
+  IconDatabase,
+  IconRobot,
+  IconGlobe,
+  IconReport,
+  IconSettings,
+} from "@tabler/icons-react"
+import { useUser } from "@clerk/nextjs"
+import { NavDocuments } from "@/components/nav-documents"
+import { NavMain } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+import { NavUser } from "@/components/nav-user"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+export const NAV_DATA =  {
+  navMain: [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: IconDashboard,
+    },
+    {
+      title: "sites",
+      url: "/dashboard",
+      icon: IconGlobe,
+    },
+    {
+      title: "Analytics",
+      url: "/dashboard/analytics",
+      icon: IconChartBar,
+    },
+    {
+      title: "Auto Agent",
+      url: "/dashboard/auto-agent",
+      icon: IconRobot,
+    }
+  ],
+  navSecondary: [
+    {
+      title: "Settings",
+      url: "/dashboard/profile",
+      icon: IconSettings,
+    },
+  ],
+  documents: [
+    {
+      name: "documentation",
+      url: "/docs",
+      icon: IconDatabase,
+    },
+    {
+      name: "blogs",
+      url: "blog",
+      icon: IconReport,
+    }
+  ],
+}
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { user } = useUser()
+  const data = {
+    user: {
+      name: user?.fullName || "User",
+      email: user?.emailAddresses[0].emailAddress || "user@example.com",
+      avatar: user?.imageUrl || "/avatars/shadcn.jpg",
+    },
+    ...NAV_DATA
+  }  
+  return (
+    <Sidebar collapsible="offcanvas" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
+              <Link href="/dashboard">
+                <Image src="/clever-search-logo-long.png" alt="CleverSearch" width={100} height={100} />
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={data.navMain} />
+        <NavDocuments items={data.documents} />
+        <NavSecondary items={data.navSecondary} className="mt-auto" />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser user={data.user} />
+      </SidebarFooter>
+    </Sidebar>
+  )
+}
