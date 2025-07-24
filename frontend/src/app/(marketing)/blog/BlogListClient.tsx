@@ -11,6 +11,7 @@ export interface BlogMeta {
   title: string;
   excerpt: string;
   author: string;
+  avatar: string;
   date: string;
   readTime: string;
   category: string;
