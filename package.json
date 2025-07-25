@@ -10,6 +10,7 @@
     "setup": "sh ./scripts/first-time-setup.sh",
     "db:studio": "cd backend && npx drizzle-kit studio",
     "db:migrate": "cd backend && npx drizzle-kit push",
+    "db:generate": "cd backend && npx drizzle-kit generate",
     "install:backend&frontend": "npm run install:backend && npm run install:frontend",
     "install:backend": "cd backend && npm install",
     "install:frontend": "cd frontend && npm install --force",
