@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { DashboardLayout } from "../../../components/ui/dashboard-layout";
 import {
   Card,
   CardContent,
@@ -17,7 +16,7 @@ import Toast from "../../../components/Toast";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { SiteHeader } from "@/components/site-header";
-import { getActiveSubscription } from "@/lib/api";
+import { changePlan, getActiveSubscription } from "@/lib/api";
 import { format } from "date-fns";
 
 interface BillingInfo {
@@ -33,6 +32,7 @@ interface BillingInfo {
 
 const plans = [
   {
+    id: "free",
     name: "Free",
     price: "$0",
     period: "forever",
@@ -47,6 +47,7 @@ const plans = [
     current: true,
   },
   {
+    id: "pro",
     name: "Pro",
     price: "$29",
     period: "per month",
@@ -63,6 +64,7 @@ const plans = [
     popular: true,
   },
   {
+    id: "enterprise",
     name: "Enterprise",
     price: "$99",
     period: "per month",
@@ -91,8 +93,6 @@ export default function BillingPage() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
-
-  const currentPlan = user?.publicMetadata?.plan || "free";
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -151,6 +151,28 @@ export default function BillingPage() {
       </div>
     );
   }
+
+  const handlePlanChange = async (planId: string) => {
+    const token = await getToken();
+    if (!token) {
+      setError("Failed to get authentication token");
+      return;
+    }
+    const subscription = await changePlan(token, planId);
+
+    if (subscription.redirectUrl) {
+      window.location.href = subscription.redirectUrl;
+      return;
+    }
+
+    if (subscription.isUpgrade) {
+      setToast({
+        message: "Upgrade successful",
+        type: "success",
+      });
+      return;
+    }
+  };
 
   return (
     <SidebarProvider
@@ -338,6 +360,9 @@ export default function BillingPage() {
                                       plan.current ? "outline" : "default"
                                     }
                                     disabled={plan.current}
+                                    onClick={() => {
+                                      handlePlanChange(plan.id);
+                                    }}
                                   >
                                     {plan.current
                                       ? "Current Plan"

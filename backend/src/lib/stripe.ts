@@ -33,4 +33,55 @@ export class StripeClient {
     );
     return subscription;
   }
+
+  async createCheckoutSession(input: {
+    customer: string;
+    line_items: { price: string; quantity: number }[];
+    mode: "subscription" | "payment";
+    success_url: string;
+    cancel_url: string;
+  }) {
+    const checkoutSession = await this.stripe.checkout.sessions.create({
+      customer: input.customer,
+      line_items: input.line_items,
+      mode: input.mode || "subscription",
+      success_url: input.success_url,
+      cancel_url: input.cancel_url,
+    });
+
+    return checkoutSession;
+  }
+
+  async updateSubscription(
+    subscriptionId: string,
+    input: {
+      items: { price: string; quantity: number }[];
+    }
+  ) {
+    const subscription = await this.stripe.subscriptions.update(
+      subscriptionId,
+      {
+        items: input.items,
+        proration_behavior: "always_invoice",
+      }
+    );
+
+    return subscription;
+  }
+
+  async getProductPrice(type: string): Promise<string> {
+    const products = await this.stripe.products.list({ active: true });
+    const product = products.data.find((item) => item.metadata.type === type);
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    const price = await this.stripe.prices.list({
+      product: product.id,
+      active: true,
+    });
+
+    return price.data[0].id;
+  }
 }

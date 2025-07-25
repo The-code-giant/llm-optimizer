@@ -737,3 +737,15 @@ export async function getActiveSubscription(token: string): Promise<{
   });
   return handleResponse(res);
 }
+
+export async function changePlan(token: string, type: string) {
+  const res = await fetch(`${API_BASE}/billing`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ type }),
+  });
+  return handleResponse(res);
+}
