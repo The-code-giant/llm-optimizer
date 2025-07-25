@@ -8,6 +8,7 @@ import authRouter from "./routes/auth";
 import sitesRouter from "./routes/sites";
 import pagesRouter from "./routes/pages";
 import billingRouter from "./routes/billing";
+import webhooksRouter from "./routes/webhooks";
 import analysisRouter from "./routes/analysis";
 import injectedContentRouter from "./routes/injectedContent";
 import trackerRouter from "./routes/tracker";
@@ -195,6 +196,7 @@ app.use("/api/v1/analysis", dashboardRateLimit, analysisRouter);
 app.use("/api/v1/injected-content", dashboardRateLimit, injectedContentRouter);
 app.use("/api/v1/users", dashboardRateLimit, usersRouter);
 app.use("/api/v1/billing", dashboardRateLimit, billingRouter);
+app.use("/api/v1/webhooks", dashboardRateLimit, webhooksRouter);
 app.use("/api/v1", trackerRouter);
 app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
 

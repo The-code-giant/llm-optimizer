@@ -39,12 +39,22 @@ router.get(
       let subscription = userActiveSubscription?.[0];
 
       if (!subscription) {
-        //? is this is an edge case?
-        //! fallback for user who created account before we had a paid plan.
-        subscription = {
-          subscriptionType: "free",
-          createdAt: new Date(),
-        } as any;
+        // fallback: for users which subscription not created while they signed up.
+
+        const stripeCustomerId = await new StripeClient().createCustomer({
+          email: authenticatedReq.user?.email as string,
+          userId: userId,
+        });
+
+        const newSubscription = await db
+          .insert(userSubscriptions)
+          .values({
+            userId: userId,
+            stripeCustomerId: stripeCustomerId as string,
+          })
+          .returning();
+
+        subscription = newSubscription[0];
       }
 
       if (subscription.subscriptionType === "free") {
@@ -74,6 +84,7 @@ router.get(
           (subscriptionInStripe.next_pending_invoice_item_invoice as number) *
             1000
         ).toISOString(),
+        stripeStatus: subscriptionInStripe.status,
       });
       return;
     } catch (err) {
@@ -117,12 +128,22 @@ router.post(
       let currentActiveSubscription = userActiveSubscription?.[0];
 
       if (!currentActiveSubscription) {
-        //? is this is an edge case?
-        //! fallback for user who created account before we had a paid plan.
-        currentActiveSubscription = {
-          subscriptionType: "free",
-          createdAt: new Date(),
-        } as any;
+        // fallback: for users which subscription not created while they signed up.
+
+        const stripeCustomerId = await new StripeClient().createCustomer({
+          email: authenticatedReq.user?.email as string,
+          userId: userId,
+        });
+
+        const newSubscription = await db
+          .insert(userSubscriptions)
+          .values({
+            userId: userId,
+            stripeCustomerId: stripeCustomerId as string,
+          })
+          .returning();
+
+        currentActiveSubscription = newSubscription[0];
       }
 
       const stripe = new StripeClient();
@@ -158,6 +179,7 @@ router.post(
         mode: "subscription",
         success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=false`,
+        userId: userId,
       });
 
       res.status(200).json({ redirectUrl: checkoutSession.url });

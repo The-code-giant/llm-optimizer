@@ -40,6 +40,7 @@ export class StripeClient {
     mode: "subscription" | "payment";
     success_url: string;
     cancel_url: string;
+    userId: string;
   }) {
     const checkoutSession = await this.stripe.checkout.sessions.create({
       customer: input.customer,
@@ -47,6 +48,9 @@ export class StripeClient {
       mode: input.mode || "subscription",
       success_url: input.success_url,
       cancel_url: input.cancel_url,
+      metadata: {
+        userId: input.userId,
+      },
     });
 
     return checkoutSession;
@@ -83,5 +87,31 @@ export class StripeClient {
     });
 
     return price.data[0].id;
+  }
+
+  constructWebhookEvent(body: any, signature: string | string[] | undefined) {
+    if (!signature) {
+      throw new Error("Missing stripe signature");
+    }
+    return this.stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    );
+  }
+
+  async getCustomer(customerId: string): Promise<Stripe.Customer> {
+    const customer = await this.stripe.customers.retrieve(customerId);
+    return customer as Stripe.Customer;
+  }
+
+  async getProduct(productId: string): Promise<Stripe.Product> {
+    const product = await this.stripe.products.retrieve(productId);
+    return product as Stripe.Product;
+  }
+
+  async getInvoice(invoiceId: string): Promise<Stripe.Invoice> {
+    const invoice = await this.stripe.invoices.retrieve(invoiceId);
+    return invoice as Stripe.Invoice;
   }
 }
