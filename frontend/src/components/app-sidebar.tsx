@@ -10,6 +10,7 @@ import {
   IconGlobe,
   IconReport,
   IconSettings,
+  IconCreditCard,
 } from "@tabler/icons-react"
 import { useUser } from "@clerk/nextjs"
 import { NavDocuments } from "@/components/nav-documents"
@@ -41,6 +42,11 @@ export const NAV_DATA =  {
       title: "Analytics",
       url: "/dashboard/analytics",
       icon: IconChartBar,
+    },
+    {
+      title: "Billing",
+      url: "/dashboard/billing",
+      icon: IconCreditCard,
     },
     {
       title: "Auto Agent",
