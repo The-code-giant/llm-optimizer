@@ -26,4 +26,11 @@ export class StripeClient {
       return null;
     }
   }
+
+  async getSubscription(subscriptionId: string) {
+    const subscription = await this.stripe.subscriptions.retrieve(
+      subscriptionId
+    );
+    return subscription;
+  }
 }
