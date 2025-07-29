@@ -10,7 +10,9 @@ import {
   primaryKey,
   integer,
   pgEnum,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: varchar("id", { length: 255 }).primaryKey(), // Clerk user ID
@@ -28,13 +30,17 @@ export const sites = pgTable("sites", {
     .notNull()
     .references(() => users.id),
   name: varchar("name", { length: 255 }).notNull(),
-  url: varchar("url", { length: 512 }).notNull().unique(),
+  url: varchar("url", { length: 512 }).notNull(),
   trackerId: uuid("tracker_id").notNull().unique(),
   status: varchar("status", { length: 32 }).notNull(),
   settings: jsonb("settings").default({}),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Partial unique index that only applies to non-deleted sites
+  urlUnique: uniqueIndex("sites_url_unique").on(table.url).where(sql`${table.deletedAt} IS NULL`),
+}));
 
 export const pages = pgTable("pages", {
   id: uuid("id").primaryKey().defaultRandom(),

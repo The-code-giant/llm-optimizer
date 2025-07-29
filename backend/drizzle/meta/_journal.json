@@ -64,6 +64,20 @@
       "when": 1753449740891,
       "tag": "0008_soft_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1753830363128,
+      "tag": "0009_real_leech",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1753831069772,
+      "tag": "0010_reflective_wild_pack",
+      "breakpoints": true
     }
   ]
 }
