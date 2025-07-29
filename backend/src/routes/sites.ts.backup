@@ -281,7 +281,7 @@ router.get(
             eq(sites.userId, userId),
             sql`${sites.deletedAt} IS NULL`
           )
-        );
+        ));
 
       // Cache the result for 5 minutes
       await cache.setUserSites(userId, userSites);

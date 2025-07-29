@@ -243,6 +243,35 @@ export async function getSiteDetails(
   return handleResponse(res);
 }
 
+export async function deleteSite(
+  token: string,
+  siteId: string
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/sites/${siteId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  
+  if (!res.ok) {
+    let message = "Unknown error";
+    try {
+      const data = await res.json();
+      message = data.message || JSON.stringify(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        message = err.message;
+      }
+    }
+    throw new Error(message);
+  }
+  
+  // For DELETE requests, we don't expect a response body
+  // Just check if the status is successful (204 No Content or 200 OK)
+  if (res.status !== 204 && res.status !== 200) {
+    throw new Error(`Unexpected status code: ${res.status}`);
+  }
+}
+
 export async function getPages(token: string, siteId: string): Promise<Page[]> {
   const res = await fetch(`${API_BASE}/sites/${siteId}/pages`, {
     headers: { Authorization: `Bearer ${token}` },
