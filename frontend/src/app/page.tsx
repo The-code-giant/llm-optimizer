@@ -27,12 +27,12 @@ function AIOptimizationTabs() {
       title: 'AI SEO',
       icon: MagnifyingGlassIcon,
       subtitle: 'Search Engine Optimization for AI',
-      description: 'Optimize your content structure and metadata to help AI systems understand and index your content effectively.',
+      description: 'Optimize your content structure and metadata to reach new customers who are using AI for search. "AI-first SEO built for actionable insights."',
       features: [
-        'Structured data implementation for better AI comprehension',
-        'Content hierarchy optimization for AI crawlers',
-        'Semantic keyword integration for context understanding',
-        'Technical SEO improvements for AI accessibility'
+        'Auto-apply structured data so AI understands your content',
+        'Optimize hierarchy to maximize page-level scoring',
+        'Inject semantic keywords grounded in real AI prompts',
+        'Close technical SEO gaps based on crawler analytics'
       ],
       color: 'blue'
     },
@@ -202,12 +202,6 @@ function AIOptimizationTabs() {
 }
 
 export default function Home() {
-  const metrics = [
-     { platform: "ChatGPT", percentage: "4.6%", number: "2,301", label: "citations", color: "bg-blue-500" },
-     { platform: "Claude", percentage: "3.1%", number: "550", label: "citations", color: "bg-green-500" },
-     { platform: "Gemini", percentage: "2.2%", number: "237", label: "citations", color: "bg-orange-500" }
-   ];
-
      const stats = [
      { number: 75, suffix: "%", label: "of users now ask LLMs for recommendations before making purchase decisions.", source: "According to Recent Studies" },
              { number: 3, suffix: "x", label: "more likely to be cited when content follows LLM-optimized structure and formatting.", source: "Clever Search Research" },
