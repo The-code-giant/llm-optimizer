@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash", { length: 255 }),
   name: varchar("name", { length: 255 }),
   preferences: jsonb("preferences").default({}),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

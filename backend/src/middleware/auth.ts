@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "@clerk/backend";
 import { clerkClient } from "../lib/clerk-client";
+import { userService } from "../services/user.service";
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -36,6 +37,8 @@ export async function authenticateJWT(
     // Get user details from Clerk
     const user = await clerkClient.users.getUser(payload.sub);
 
+    console.log("user", {user});
+
     if (!user) {
       res.status(401).json({ message: "User not found" });
       return;
@@ -46,6 +49,8 @@ export async function authenticateJWT(
       userId: user.id,
       email: user.emailAddresses[0]?.emailAddress || "",
     };
+
+   await userService.ensureUserExists(user.id, user.emailAddresses[0]?.emailAddress || "");
 
     next();
   } catch (err) {

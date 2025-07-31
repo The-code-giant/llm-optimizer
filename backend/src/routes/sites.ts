@@ -13,8 +13,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 import { authenticateJWT } from "../middleware/auth";
-import { StripeClient } from "../lib/stripe";
-import { clerkClient } from "../lib/clerk-client";
+import { userService } from "../services/user.service";
 
 const router = Router();
 
@@ -27,50 +26,6 @@ const sitemapImportSchema = z.object({
   sitemapUrl: z.string().url(),
 });
 
-// Helper function to ensure user exists in database
-async function ensureUserExists(userId: string, email: string) {
-  try {
-    // Try to find the user first
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
-    if (existingUser.length === 0) {
-      // Create the user if they don't exist
-      await db.insert(users).values({
-        id: userId,
-        email: email,
-      });
-
-      // create a customer in stripe
-      const stripeCustomerId = await new StripeClient().createCustomer({
-        email: email,
-        userId: userId,
-      });
-
-      if (stripeCustomerId) {
-        // create a free subscription for the user right after they sign up
-        await db.insert(userSubscriptions).values({
-          userId: userId,
-          stripeCustomerId,
-        });
-
-        // update profile metadata with plan type
-        await clerkClient.users.updateUserMetadata(userId, {
-          publicMetadata: { planType: "free" },
-        });
-      }
-    }
-  } catch (error) {
-    // User might already exist due to concurrent requests, ignore duplicate key errors
-    if (!(error as any)?.constraint) {
-      console.error("Error ensuring user exists:", error);
-      throw error;
-    }
-  }
-}
 
 /**
  * @openapi
@@ -212,7 +167,7 @@ router.post(
       const { name, url } = parse.data;
 
       // Ensure user exists in our database
-      await ensureUserExists(req.user!.userId, req.user!.email);
+      await userService.ensureUserExists(req.user!.userId, req.user!.email);
 
       // Generate trackerId and set status
       const trackerId = randomUUID();
@@ -263,15 +218,19 @@ router.get(
     try {
       const userId = req.user!.userId;
 
+      console.log("userId", {userId});
+
       // Try cache first
       const cachedSites = await cache.getUserSites(userId);
+      console.log("cachedSites😂😂😂😂", cachedSites);
       if (cachedSites) {
+        userService.ensureUserExists(userId, req.user!.email);
         res.json(cachedSites);
         return;
       }
 
       // Ensure user exists in our database
-      await ensureUserExists(userId, req.user!.email);
+      await userService.ensureUserExists(userId, req.user!.email);
 
       const userSites = await db
         .select()
