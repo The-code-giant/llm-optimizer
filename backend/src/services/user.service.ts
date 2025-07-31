@@ -1,4 +1,4 @@
-import { eq, and, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { users } from "../db/schema";
 import { db } from "../db/client";
 import { StripeClient } from "../lib/stripe";

@@ -37,8 +37,6 @@ export async function authenticateJWT(
     // Get user details from Clerk
     const user = await clerkClient.users.getUser(payload.sub);
 
-    console.log("user", {user});
-
     if (!user) {
       res.status(401).json({ message: "User not found" });
       return;

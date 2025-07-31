@@ -218,13 +218,9 @@ router.get(
     try {
       const userId = req.user!.userId;
 
-      console.log("userId", {userId});
-
       // Try cache first
       const cachedSites = await cache.getUserSites(userId);
-      console.log("cachedSites😂😂😂😂", cachedSites);
       if (cachedSites) {
-        userService.ensureUserExists(userId, req.user!.email);
         res.json(cachedSites);
         return;
       }
