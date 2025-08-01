@@ -1,7 +1,7 @@
-"use client"
-import Link from "next/link"
-import Image from "next/image"
-import * as React from "react"
+"use client";
+import Link from "next/link";
+import Image from "next/image";
+import * as React from "react";
 import {
   IconChartBar,
   IconDashboard,
@@ -11,12 +11,12 @@ import {
   IconReport,
   IconSettings,
   IconCreditCard,
-} from "@tabler/icons-react"
-import { useUser } from "@clerk/nextjs"
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+} from "@tabler/icons-react";
+import { useUser } from "@clerk/nextjs";
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -25,8 +25,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-export const NAV_DATA =  {
+} from "@/components/ui/sidebar";
+export const NAV_DATA = {
   navMain: [
     {
       title: "Dashboard",
@@ -52,7 +52,7 @@ export const NAV_DATA =  {
       title: "Auto Agent",
       url: "/dashboard/auto-agent",
       icon: IconRobot,
-    }
+    },
   ],
   navSecondary: [
     {
@@ -71,32 +71,54 @@ export const NAV_DATA =  {
       name: "blogs",
       url: "blog",
       icon: IconReport,
-    }
+    },
   ],
-}
+};
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser()
+  const { user } = useUser();
   const data = {
     user: {
       name: user?.fullName || "User",
       email: user?.emailAddresses[0].emailAddress || "user@example.com",
       avatar: user?.imageUrl || "/avatars/shadcn.jpg",
     },
-    ...NAV_DATA
-  }  
+    ...NAV_DATA,
+  };
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <Link href="/dashboard">
-                <Image src="/clever-search-logo-long.png" alt="CleverSearch" width={100} height={100} />
-              </Link>
-            </SidebarMenuButton>
+            <Link href="/dashboard" className="w-full flex justify-start items-start">
+              <SidebarMenuButton
+                asChild
+                className="data-[slot=sidebar-menu-button]:!p-1.5 h-[45px]"
+              ><>
+                <Image
+                 className="block dark:hidden"
+                  src="/logo/clever-search-logo-black.png"
+                  alt="CleverSearch"
+                  width={100}
+                  height={50}
+                  style={{
+                    height: "50px",
+                    width: "auto",
+                  }}
+                />
+                 <Image
+                 className="hidden dark:block"
+                  src="/logo/clever-search-logo-white.png"
+                  alt="CleverSearch"
+                  width={100}
+                  height={50}
+                  style={{
+                    height: "50px",
+                    width: "auto",
+                  }}
+                />
+                </>
+              </SidebarMenuButton>
+            </Link>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -109,5 +131,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
