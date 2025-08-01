@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import Link from "next/link";
 import { useState, useEffect } from 'react';
 import HeroSection from '@/components/hero-section';
+import FAQs from '@/components/faqs';
 import { 
   SparklesIcon,
   ArrowUpIcon,
@@ -778,7 +779,7 @@ export default function Home() {
           </div>
                  </div>
        </section>
-
+       <FAQs />
        <Footer />
      </div>
    );
