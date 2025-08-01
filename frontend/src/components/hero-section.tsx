@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitWebsiteUrl } from "@/lib/api";
-
+import { TypewriterEffect } from "@/components/ui/typewriter-effect";
 
 
 // URL validation schema
@@ -54,7 +54,12 @@ export default function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
+  const words = [{text: "AI & SEO"}, {text: "Visibility"},
+     {text: "in", className: "text-blue-500 dark:text-blue-600",
+     }, 
+     {text: "Minutes", className: "text-blue-500 dark:text-blue-600"
+  }]
+  // ["Boost Your Site&apos;s AI & SEO Visibility in Minutes", "Get Cited by ChatGPT, Claude, and Gemini", "Get More Traffic from AI-Powered Search"]
   const {
     register,
     handleSubmit,
@@ -114,7 +119,8 @@ export default function HeroSection() {
                 </Link>
 
                 <h1 className="mt-10 text-balance text-4xl font-bold md:text-5xl xl:text-5xl">
-                  Boost Your Site&apos;s AI & SEO Visibility in Minutes
+                  Boost Your Site&apos;s
+                  <TypewriterEffect words={words} />
                 </h1>
                 <p className="mt-8">
                   Our AI-powered platform helps you optimize your website for
