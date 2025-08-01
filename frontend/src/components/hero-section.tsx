@@ -100,7 +100,7 @@ export default function HeroSection() {
 
   return (
     <>
-      <main>
+      <main className="pt-28">
         <section className="overflow-hidden">
           <div className="relative mx-auto max-w-7xl px-6 py-28 lg:py-20">
             <div className="lg:flex lg:items-center lg:gap-12">
