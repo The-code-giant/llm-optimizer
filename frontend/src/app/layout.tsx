@@ -2,8 +2,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { ThemeProvider } from "@/components/ui/theme-provider";
-
+import { GoogleTagManager, GoogleAnalytics  } from '@next/third-parties/google'
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -49,9 +48,8 @@ export default function RootLayout({
           afterSignUpUrl="/dashboard"
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
         >
-         
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTIC_MANAGER_ID as string} />
             {children}
-          
         </ClerkProvider>
       </body>
     </html>
