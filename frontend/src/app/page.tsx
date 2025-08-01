@@ -528,7 +528,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">Success Stories</h3>
-                      <p className="text-gray-600">LLM Optimization Results</p>
+                      <p className="text-gray-600">Clever Search Results</p>
                     </div>
                   </div>
                   
