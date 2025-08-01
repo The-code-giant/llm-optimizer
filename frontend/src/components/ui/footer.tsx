@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import Link from "next/link";
 import { 
-  SparklesIcon,
   EnvelopeIcon,
   MapPinIcon,
   PhoneIcon
@@ -57,10 +56,10 @@ export function Footer() {
   ];
 
   const socialLinks = [
-    { name: "Twitter", href: "https://twitter.com", icon: "𝕏" },
-    { name: "LinkedIn", href: "https://linkedin.com", icon: "💼" },
-    { name: "GitHub", href: "https://github.com", icon: "🐙" },
-    { name: "YouTube", href: "https://youtube.com", icon: "📺" }
+    // { name: "Twitter", href: "https://twitter.com", icon: "𝕏" },
+    { name: "LinkedIn", href: "https://www.linkedin.com/company/clever-search-ai/", icon: "💼" },
+    // { name: "GitHub", href: "https://github.com", icon: "🐙" },
+    // { name: "YouTube", href: "https://youtube.com", icon: "📺" }
   ];
 
   return (
@@ -78,7 +77,7 @@ export function Footer() {
                 transition={{ duration: 0.6 }}
               >
                 <Link href="/" className="flex items-center space-x-2 mb-6">
-                  <Image src="/clever-search-logo-long.png" alt="Clever Search" width={130} height={43.67} />
+                  <Image src="/logo/clever-search-logo-white.png" alt="Clever Search" width={130} height={43.67} />
                   {/* <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                     <SparklesIcon className="w-5 h-5 text-white" />
                   </div>

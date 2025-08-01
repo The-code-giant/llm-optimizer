@@ -95,26 +95,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 className="data-[slot=sidebar-menu-button]:!p-1.5 h-[45px]"
               ><>
                 <Image
-                 className="block dark:hidden"
+                 className="block dark:hidden w-auto h-auto"
                   src="/logo/clever-search-logo-black.png"
                   alt="CleverSearch"
                   width={100}
                   height={50}
-                  style={{
-                    height: "50px",
-                    width: "auto",
-                  }}
+                
                 />
                  <Image
-                 className="hidden dark:block"
+                 className="hidden dark:block w-auto h-auto"
                   src="/logo/clever-search-logo-white.png"
                   alt="CleverSearch"
                   width={100}
                   height={50}
-                  style={{
-                    height: "50px",
-                    width: "auto",
-                  }}
                 />
                 </>
               </SidebarMenuButton>
