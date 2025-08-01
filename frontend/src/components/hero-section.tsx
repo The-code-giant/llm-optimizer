@@ -97,7 +97,7 @@ export default function HeroSection() {
     <>
       <main>
         <section className="overflow-hidden">
-          <div className="relative mx-auto max-w-5xl px-6 py-28 lg:py-20">
+          <div className="relative mx-auto max-w-7xl px-6 py-28 lg:py-20">
             <div className="lg:flex lg:items-center lg:gap-12">
               <div className="relative z-10 mx-auto max-w-xl text-center lg:ml-0 lg:w-1/2 lg:text-left">
                 <Link
@@ -189,7 +189,7 @@ export default function HeroSection() {
                 />
                 <Image
                   className="dark:hidden"
-                  src="/music-light.png"
+                  src="/dashboard/clever-search-site-page-dark.png"
                   alt="app illustration"
                   width={2796}
                   height={2008}
