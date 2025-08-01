@@ -9,7 +9,7 @@ import { Navbar } from "@/components/ui/navbar";
 import { ArrowUpIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import AnimatedDiv from "@/components/ui/animated-div";
-
+import FAQsThree from "@/components/faqs-3";
 export default function Home() {
   const stats = [
     {
@@ -692,7 +692,7 @@ export default function Home() {
         </div>
       </section>
       {/* <FAQs /> */}
-      {/* <FAQsThree /> */}
+      <FAQsThree />
       <Footer />
     </div>
   );
