@@ -147,6 +147,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
+  // Blog sitemap reference
+  const blogSitemap = [
+    {
+      url: `${baseUrl}/sitemap-blog.xml`,
+      lastModified: currentDate,
+      changeFrequency: 'daily' as const,
+      priority: 0.7,
+    },
+  ];
+
   // Combine all pages
   return [
     ...marketingPages,
@@ -154,5 +164,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...servicePages,
     ...legalPages,
     ...docPages,
+    ...blogSitemap,
   ];
 } 
