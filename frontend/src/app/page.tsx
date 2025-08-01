@@ -10,6 +10,7 @@ import Link from "next/link";
 import { useState, useEffect } from 'react';
 import HeroSection from '@/components/hero-section';
 import FAQs from '@/components/faqs';
+import LogoCloud from '@/components/logo-cloud';
 import { 
   SparklesIcon,
   ArrowUpIcon,
@@ -214,7 +215,7 @@ export default function Home() {
       <Navbar />
       {/* Hero Section - Dark */}
       <HeroSection />
-     
+      <LogoCloud />
       <section id="pricing" className="py-20 bg-blue-50">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
