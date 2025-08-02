@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { URL } from 'url';
+import { callLLM } from './llmProviders';
 
 export interface CrawledPage {
   url: string;
@@ -197,14 +198,61 @@ export class SiteCrawlerService {
   /**
    * Classify document type based on URL and content
    */
-  private classifyDocumentType(url: string, title: string, content: string): CrawledPage['documentType'] {
+  private async classifyDocumentType(url: string, title: string, content: string): Promise<CrawledPage['documentType']> {
+    try {
+      // Prepare the content for AI analysis (limit to first 2000 characters to avoid token limits)
+      const contentPreview = content.substring(0, 2000);
+      
+      const prompt = `Analyze this webpage and classify it into one of these categories:
+- blog: Blog posts, articles, news, tutorials, guides
+- service: Service pages, product pages, what we offer
+- about: About us, company information, team pages
+- contact: Contact information, contact forms, get in touch
+- testimonial: Customer reviews, testimonials, case studies
+- faq: Frequently asked questions, help pages, support
+- page: General pages, landing pages, other content
+
+URL: ${url}
+Title: ${title}
+Content Preview: ${contentPreview}
+
+Respond with only the category name (blog, service, about, contact, testimonial, faq, or page):`;
+
+      const response = await callLLM({
+        prompt,
+        maxTokens: 50,
+        temperature: 0.1, // Low temperature for consistent classification
+        provider: 'openai'
+      });
+
+      const classification = response.text.trim().toLowerCase();
+      
+      // Validate the response is one of our expected types
+      const validTypes: CrawledPage['documentType'][] = ['blog', 'service', 'about', 'contact', 'testimonial', 'faq', 'page'];
+      
+      if (validTypes.includes(classification as CrawledPage['documentType'])) {
+        console.log(`AI classified ${url} as: ${classification}`);
+        return classification as CrawledPage['documentType'];
+      } else {
+        console.log(`AI returned invalid classification "${classification}" for ${url}, defaulting to 'page'`);
+        return 'page';
+      }
+    } catch (error) {
+      console.error(`Error classifying document type for ${url}:`, error);
+      // Fallback to simple URL-based classification if AI fails
+      return this.fallbackClassifyDocumentType(url, title, content);
+    }
+  }
+
+  private fallbackClassifyDocumentType(url: string, title: string, content: string): CrawledPage['documentType'] {
     const urlLower = url.toLowerCase();
     const titleLower = title.toLowerCase();
     const contentLower = content.toLowerCase();
 
     // Blog posts
-    if (urlLower.includes('/blog/') || urlLower.includes('/post/') || 
-        urlLower.includes('/article/') || titleLower.includes('blog')) {
+    if (urlLower.includes('/blog/') || urlLower.includes('/blogs/') || urlLower.includes('/post/') || 
+        urlLower.includes('/posts/') || urlLower.includes('/article/') || urlLower.includes('/articles/') ||
+        titleLower.includes('blog') || contentLower.includes('blog post')) {
       return 'blog';
     }
 
@@ -228,7 +276,9 @@ export class SiteCrawlerService {
 
     // Testimonials
     if (urlLower.includes('/testimonials/') || urlLower.includes('/reviews/') ||
-        contentLower.includes('testimonial') || contentLower.includes('review')) {
+        urlLower.includes('/testimonial/') || urlLower.includes('/review/') ||
+        (contentLower.includes('testimonial') && !contentLower.includes('blog')) ||
+        (contentLower.includes('review') && !contentLower.includes('blog'))) {
       return 'testimonial';
     }
 
