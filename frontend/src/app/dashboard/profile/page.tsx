@@ -43,6 +43,33 @@ export default function ProfilePage() {
 
   const imageUrl = user?.hasImage ? user?.imageUrl : null;
 
+  // Handle URL hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.slice(1); // Remove the # symbol
+      if (hash && ["profile", "account", "preferences"].includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+
+    // Check initial hash on mount
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
+  // Function to handle tab changes
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    // Update URL hash
+    window.location.hash = tabId;
+  };
+
   useEffect(() => {
     async function fetchProfile() {
       setLoading(true);
@@ -246,7 +273,7 @@ export default function ProfilePage() {
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? "border-primary text-primary"

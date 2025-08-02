@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
 export class StripeClient {
-  private stripe: Stripe;
+  stripe: Stripe;
 
   constructor() {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -29,7 +29,10 @@ export class StripeClient {
 
   async getSubscription(subscriptionId: string) {
     const subscription = await this.stripe.subscriptions.retrieve(
-      subscriptionId
+      subscriptionId,
+      {
+        expand: ["items.data.price.product"],
+      }
     );
     return subscription;
   }
@@ -62,6 +65,7 @@ export class StripeClient {
       items: { price: string; quantity: number }[];
     }
   ) {
+      try{
     const subscription = await this.stripe.subscriptions.update(
       subscriptionId,
       {
@@ -71,7 +75,14 @@ export class StripeClient {
     );
 
     return subscription;
+  }catch(error: any){
+    console.error(
+      `Error updating stripe subscription.`,
+      error?.message
+    );
+    return null;
   }
+}
 
   async getProductPrice(type: string): Promise<string> {
     const products = await this.stripe.products.list({ active: true });
@@ -113,5 +124,9 @@ export class StripeClient {
   async getInvoice(invoiceId: string): Promise<Stripe.Invoice> {
     const invoice = await this.stripe.invoices.retrieve(invoiceId);
     return invoice as Stripe.Invoice;
+  }
+
+  async getAllProducts() {
+    return this.stripe.products.list({active : true })
   }
 }
