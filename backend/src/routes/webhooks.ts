@@ -14,19 +14,28 @@ const handleSubscriptionCreated = async (event: Stripe.Event) => {
   const subscriptionID = subscription.id;
   const productID = subscription.items.data[0].price.product as string;
 
+
   const stripe = new StripeClient();
-
-  const product = await stripe.getProduct(productID);
-
-  const productName = product.name.toLowerCase().includes("pro")
-    ? "pro"
-    : "enterprise";
 
   const findCustomer = await stripe.getCustomer(
     subscription.customer as string
   );
 
   const userId = findCustomer.metadata?.userId;
+
+
+  if(subscription.status === "trialing"){
+
+    await db.insert(userSubscriptions).values({
+      userId: userId,
+      stripeSubscriptionId: subscriptionID,
+      stripeCustomerId: subscription.customer as string,
+      subscriptionType: "free",
+      isActive: 1,
+    })
+
+    return;
+  }
 
   // update previous subscription to inactive.
   await db
@@ -37,6 +46,12 @@ const handleSubscriptionCreated = async (event: Stripe.Event) => {
     .where(eq(userSubscriptions.userId, userId));
 
   // create a new active subscription in our database.
+
+  const product = await stripe.getProduct(productID);
+  const productName = product.name.toLowerCase().includes("pro")
+    ? "pro"
+    : "enterprise";
+
   await db.insert(userSubscriptions).values({
     userId: userId,
     stripeCustomerId: subscription.customer as string,
@@ -47,6 +62,27 @@ const handleSubscriptionCreated = async (event: Stripe.Event) => {
 
 };
 
+const handleSubscriptionUpdated = async (event: Stripe.Event) => {
+  const subscription = event.data.object as Stripe.Subscription;
+
+  const subscriptionID = subscription.id;
+  // last product subscription
+  const productID = subscription.items.data[subscription.items.data.length - 1].price.product as string;
+
+  const stripe = new StripeClient();
+  const product = await stripe.getProduct(productID);
+
+  const productName = product.name.toLowerCase().includes("pro")
+  ? "pro"
+  : "enterprise";
+
+  await db.update(userSubscriptions).set({
+    subscriptionType: productName as "pro" | "enterprise",
+  }).where(eq(userSubscriptions.stripeSubscriptionId, subscriptionID));
+
+  console.log( "subscription updated", subscriptionID)
+}
+
 router.post(
   "/stripe",
   async (req: Request, res: Response, next: NextFunction) => {
@@ -55,10 +91,13 @@ router.post(
     const stripe = new StripeClient();
 
     const event = stripe.constructWebhookEvent((req as any).rawBody, sig);
-
+    
     switch (event.type) {
       case "customer.subscription.created":
         await handleSubscriptionCreated(event);
+        break;
+      case "customer.subscription.updated":
+        await handleSubscriptionUpdated(event);
         break;
     }
 

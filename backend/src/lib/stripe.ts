@@ -65,6 +65,7 @@ export class StripeClient {
       items: { price: string; quantity: number }[];
     }
   ) {
+      try{
     const subscription = await this.stripe.subscriptions.update(
       subscriptionId,
       {
@@ -74,7 +75,14 @@ export class StripeClient {
     );
 
     return subscription;
+  }catch(error: any){
+    console.error(
+      `Error updating stripe subscription.`,
+      error?.message
+    );
+    return null;
   }
+}
 
   async getProductPrice(type: string): Promise<string> {
     const products = await this.stripe.products.list({ active: true });

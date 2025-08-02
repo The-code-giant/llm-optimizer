@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/client";
-import { sites, users, pages, userSubscriptions, pageAnalytics, pageContent, trackerData } from "../db/schema";
+import { sites, users, pages, pageAnalytics, pageContent, trackerData } from "../db/schema";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
 import { sitemapImportQueue } from "../utils/queue";

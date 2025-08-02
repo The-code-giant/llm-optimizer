@@ -1,10 +1,19 @@
 import { eq } from "drizzle-orm";
-import { users, userSubscriptions } from "../db/schema";
+import { users } from "../db/schema";
 import { db } from "../db/client";
 import { StripeClient } from "../lib/stripe";
 
 export class UserService {
+  currentCheckingUsers: string[] = [];
+
   async ensureUserExists(userId: string, email: string) : Promise<void> {
+
+    if(this.currentCheckingUsers.includes(userId)){
+      return;
+    }
+
+    this.currentCheckingUsers.push(userId);
+
     try {
       // Try to find the user first
       const existingUser = await db
@@ -54,6 +63,8 @@ export class UserService {
         console.error("Error ensuring user exists:", error);
         throw error;
       }
+    }finally{
+      this.currentCheckingUsers = this.currentCheckingUsers.filter(id => id !== userId);
     }
   }
 
@@ -61,7 +72,7 @@ export class UserService {
     const stripeClient = new StripeClient();
     const productPrice = await stripeClient.getProductPrice("pro");
 
-    const newTrialSubscription = await stripeClient.stripe.subscriptions.create({
+    await stripeClient.stripe.subscriptions.create({
       customer: stripeCustomerId,
       items: [{ price: productPrice, quantity: 1 }],
       trial_period_days: 7,
@@ -71,15 +82,6 @@ export class UserService {
         }
       }
     });
-
-    await db.insert(userSubscriptions).values({
-      userId: userId,
-      stripeSubscriptionId: newTrialSubscription.id,
-      stripeCustomerId: stripeCustomerId,
-      subscriptionType: "free",
-      isActive: 1,
-    })
-
   }
 }
 

@@ -59,11 +59,11 @@ router.get(
 
           return;
         }
-        
+
         res.status(200).json({
           type: subscription.subscriptionType,
           nextBilling: subscriptionInStripe.status === "active" ? new Date(
-            (subscriptionInStripe.items.data[0].current_period_end as number) *
+            (subscriptionInStripe.items.data[subscriptionInStripe.items.data.length - 1].current_period_end as number) *
             1000
           ).toISOString() : null,
           isActive: subscriptionInStripe.status === "active",
@@ -115,7 +115,6 @@ router.post(
 
       const stripe = new StripeClient();
       const productPrice = await stripe.getProductPrice(type);
-
 
       if(currentActiveSubscription.subscriptionType === "free"){
         // update the free trial subscription to the new plan.
@@ -170,6 +169,10 @@ router.post(
       res.status(200).json({ redirectUrl: checkoutSession.url });
       return;
     } catch (err) {
+      console.error(
+        `Error updating stripe subscription.`,
+        err
+      );
       next(err);
     }
   }

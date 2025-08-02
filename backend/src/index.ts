@@ -155,6 +155,17 @@ const swaggerSpec = swaggerJSDoc({
   apis: apiFiles,
 });
 
+
+app.use("/api/v1/webhooks", dashboardRateLimit, express.json({
+  verify: (req, res, buf) => {
+    // @ts-ignore
+    req.rawBody = buf.toString();
+  },
+}), webhooksRouter);
+
+app.use(express.json());
+//!Notes new route must add after webhooks router.
+
 // Serve the Swagger JSON specification
 app.get("/api-docs/swagger.json", (req, res) => {
   res.setHeader("Content-Type", "application/json");
@@ -195,17 +206,8 @@ app.use("/api/v1/analysis", dashboardRateLimit, analysisRouter);
 app.use("/api/v1/injected-content", dashboardRateLimit, injectedContentRouter);
 app.use("/api/v1/users", dashboardRateLimit, usersRouter);
 app.use("/api/v1/billing", dashboardRateLimit, billingRouter);
-app.use("/api/v1/webhooks", dashboardRateLimit, express.json({
-  verify: (req, res, buf) => {
-    // @ts-ignore
-    req.rawBody = buf.toString();
-  },
-}), webhooksRouter);
 app.use("/api/v1", trackerRouter);
 app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
-
-app.use(express.json());
-
 // Error logging middleware - only for actual errors
 app.use(
   expressWinston.errorLogger({
