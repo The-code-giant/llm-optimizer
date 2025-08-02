@@ -1,3 +1,4 @@
+
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -33,12 +34,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/case-studies`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
       url: `${baseUrl}/demo`,
       lastModified: currentDate,
       changeFrequency: 'monthly' as const,
@@ -57,12 +52,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     },
     {
-      url: `${baseUrl}/blog`,
-      lastModified: currentDate,
-      changeFrequency: 'daily' as const,
-      priority: 0.8,
-    },
-    {
       url: `${baseUrl}/help`,
       lastModified: currentDate,
       changeFrequency: 'weekly' as const,
@@ -70,49 +59,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Solutions pages
-  const solutionPages = [
+  // Main category pages (these have their own sitemaps)
+  const categoryPages = [
     {
-      url: `${baseUrl}/solutions/agencies`,
+      url: `${baseUrl}/case-studies`,
       lastModified: currentDate,
-      changeFrequency: 'monthly' as const,
+      changeFrequency: 'weekly' as const,
       priority: 0.8,
     },
-    {
-      url: `${baseUrl}/solutions/enterprise`,
-      lastModified: currentDate,
-      changeFrequency: 'monthly' as const,
-      priority: 0.8,
-    },
-  ];
-
-  // Services pages (location-based)
-  const serviceLocations = [
-    'toronto-ontario',
-    'vancouver-bc',
-    'calgary-alberta',
-    'edmonton-alberta',
-    'ottawa-ontario',
-    'hamilton-ontario',
-    'london-ontario',
-    'surrey-bc',
-    'burnaby-bc',
-    'victoria-bc',
-  ];
-
-  const servicePages = [
     {
       url: `${baseUrl}/services`,
       lastModified: currentDate,
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     },
-    ...serviceLocations.map((location) => ({
-      url: `${baseUrl}/services/${location}`,
+    {
+      url: `${baseUrl}/solutions`,
       lastModified: currentDate,
       changeFrequency: 'monthly' as const,
-      priority: 0.7,
-    })),
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: currentDate,
+      changeFrequency: 'daily' as const,
+      priority: 0.8,
+    },
   ];
 
   // Legal pages
@@ -147,23 +119,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Blog sitemap reference
-  const blogSitemap = [
-    {
-      url: `${baseUrl}/sitemap-blog.xml`,
-      lastModified: currentDate,
-      changeFrequency: 'daily' as const,
-      priority: 0.7,
-    },
-  ];
-
   // Combine all pages
   return [
     ...marketingPages,
-    ...solutionPages,
-    ...servicePages,
+    ...categoryPages,
     ...legalPages,
     ...docPages,
-    ...blogSitemap,
   ];
 } 
