@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { users } from "../db/schema";
+import { users, userSubscriptions } from "../db/schema";
 import { db } from "../db/client";
 import { StripeClient } from "../lib/stripe";
 
@@ -26,6 +26,9 @@ export class UserService {
           email: email,
           stripeCustomerId: stripeCustomerId ?? "",
         });
+
+        await this.subscribeToProPlanTrial(userId, stripeCustomerId as string);
+
       } else {
         const user = existingUser[0];
 
@@ -42,10 +45,7 @@ export class UserService {
             })
             .where(eq(users.id, userId));
 
-          console.log(
-            "stripeCustomerId new customer created",
-            stripeCustomerId
-          );
+          await this.subscribeToProPlanTrial(userId, stripeCustomerId as string);
         }
       }
     } catch (error) {
@@ -55,6 +55,45 @@ export class UserService {
         throw error;
       }
     }
+  }
+
+  async subscribeToProPlanTrial(userId: string, stripeCustomerId: string) {
+    const stripeClient = new StripeClient();
+    const allProduct = await stripeClient.getAllProducts();
+
+    const find = allProduct.data.find((item) => item.metadata.type === "pro");
+
+    console.log( "find product id", find?.id , find?.metadata)
+
+    if(!find){
+      console.error(`can not find pro product in side metadata`);
+      return
+    }
+    const productPrice = await stripeClient.getProductPrice(find.id);
+
+    const newTrialSubscription = await stripeClient.stripe.subscriptions.create({
+      customer: stripeCustomerId,
+      items: [{ price: productPrice, quantity: 1 }],
+      trial_period_days: 7,
+      trial_settings: {
+        end_behavior : {
+          missing_payment_method: "cancel"
+        }
+      }
+    });
+
+    console.log( "newTrialSubscription", newTrialSubscription.id)
+
+    console.log( "newTrialSubscription", newTrialSubscription.billing_mode)
+
+    await db.insert(userSubscriptions).values({
+      userId: userId,
+      stripeSubscriptionId: newTrialSubscription.id,
+      stripeCustomerId: stripeCustomerId,
+      subscriptionType: "free",
+      isActive: 1,
+    })
+
   }
 }
 

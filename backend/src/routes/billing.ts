@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction, Request } from "express";
 import { authenticateJWT } from "../middleware/auth";
 import { db } from "../db/client";
-import { userSubscriptions } from "../db/schema";
+import {  userSubscriptions } from "../db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { StripeClient } from "../lib/stripe";
 import z from "zod";

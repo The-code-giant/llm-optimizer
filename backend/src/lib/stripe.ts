@@ -1,7 +1,7 @@
 import Stripe from "stripe";
 
 export class StripeClient {
-  private stripe: Stripe;
+  stripe: Stripe;
 
   constructor() {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -113,5 +113,9 @@ export class StripeClient {
   async getInvoice(invoiceId: string): Promise<Stripe.Invoice> {
     const invoice = await this.stripe.invoices.retrieve(invoiceId);
     return invoice as Stripe.Invoice;
+  }
+
+  async getAllProducts() {
+    return this.stripe.products.list({active : true })
   }
 }
