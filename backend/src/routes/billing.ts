@@ -59,15 +59,13 @@ router.get(
 
           return;
         }
-
-
-
+        
         res.status(200).json({
           type: subscription.subscriptionType,
-          nextBilling: new Date(
-            (subscriptionInStripe.next_pending_invoice_item_invoice as number) *
+          nextBilling: subscriptionInStripe.status === "active" ? new Date(
+            (subscriptionInStripe.items.data[0].current_period_end as number) *
             1000
-          ).toISOString(),
+          ).toISOString() : null,
           isActive: subscriptionInStripe.status === "active",
           stripeStatus: subscriptionInStripe.status,
         });

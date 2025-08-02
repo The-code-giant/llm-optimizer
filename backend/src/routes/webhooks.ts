@@ -1,6 +1,5 @@
 import { NextFunction, Router } from "express";
 import { Request, Response } from "express";
-import z from "zod";
 import { StripeClient } from "../lib/stripe";
 import Stripe from "stripe";
 import { userSubscriptions } from "../db/schema";
@@ -9,17 +8,13 @@ import { eq } from "drizzle-orm";
 
 const router = Router();
 
-const stripeBodySchema = z.any();
-
 const handleSubscriptionCreated = async (event: Stripe.Event) => {
   const subscription = event.data.object as Stripe.Subscription;
+
   const subscriptionID = subscription.id;
+  const productID = subscription.items.data[0].price.product as string;
 
   const stripe = new StripeClient();
-
-  const subscriptionInStripe = await stripe.getSubscription(subscriptionID);
-
-  const productID = subscriptionInStripe.items.data[0].price.product as string;
 
   const product = await stripe.getProduct(productID);
 
@@ -50,18 +45,16 @@ const handleSubscriptionCreated = async (event: Stripe.Event) => {
     subscriptionType: productName as "pro" | "enterprise",
   });
 
-  console.log(`subscription created for user ${userId}`);
 };
 
 router.post(
   "/stripe",
   async (req: Request, res: Response, next: NextFunction) => {
     const sig = req.headers["stripe-signature"];
-    const body = stripeBodySchema.safeParse(req.body);
 
     const stripe = new StripeClient();
 
-    const event = stripe.constructWebhookEvent(body, sig);
+    const event = stripe.constructWebhookEvent((req as any).rawBody, sig);
 
     switch (event.type) {
       case "customer.subscription.created":

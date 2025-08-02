@@ -22,6 +22,7 @@ import { format } from "date-fns";
 interface BillingInfo {
   plan: string;
   nextBillingDate: string;
+  isActive: boolean
   usage: {
     sitesAnalyzed: number;
     sitesLimit: number;
@@ -117,10 +118,11 @@ export default function BillingPage() {
         // Mock data for now
         setBilling({
           plan: subscription.type,
-          nextBillingDate: format(
+          nextBillingDate: subscription.nextBilling ? format(
             new Date(subscription.nextBilling),
             "MMMM d, yyyy"
-          ),
+          ) : "N/A",
+          isActive: subscription.isActive,
           usage: {
             sitesAnalyzed: 2,
             sitesLimit: 2,
@@ -233,7 +235,7 @@ export default function BillingPage() {
                               <span className="text-2xl font-bold capitalize">
                                 {billing.plan} Plan
                               </span>
-                              <Badge variant="outline">Active</Badge>
+                              <Badge variant="outline">{billing.isActive ? "Active" : "Not Active"}</Badge>
                             </div>
                             <div className="text-sm text-gray-600 space-y-1">
                               {/* <p>Payment Method: {billing.paymentMethod}</p> */}

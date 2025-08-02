@@ -29,7 +29,10 @@ export class StripeClient {
 
   async getSubscription(subscriptionId: string) {
     const subscription = await this.stripe.subscriptions.retrieve(
-      subscriptionId
+      subscriptionId,
+      {
+        expand: ["items.data.price.product"],
+      }
     );
     return subscription;
   }

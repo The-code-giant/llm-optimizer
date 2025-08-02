@@ -759,6 +759,7 @@ export async function updateProfileName(
 export async function getActiveSubscription(token: string): Promise<{
   type: string;
   nextBilling: string;
+  isActive: boolean
 }> {
   const res = await fetch(`${API_BASE}/billing`, {
     headers: { Authorization: `Bearer ${token}` },
