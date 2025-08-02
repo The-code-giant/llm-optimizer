@@ -14,11 +14,13 @@ CREATE TABLE IF NOT EXISTS "page_analytics" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-ALTER TABLE "page_content" ADD COLUMN "page_url" varchar(1024);--> statement-breakpoint
-ALTER TABLE "tracker_data" ADD COLUMN "event_data" jsonb;--> statement-breakpoint
-ALTER TABLE "tracker_data" ADD COLUMN "user_agent" varchar(500);--> statement-breakpoint
-ALTER TABLE "tracker_data" ADD COLUMN "ip_address" varchar(45);--> statement-breakpoint
-ALTER TABLE "tracker_data" ADD COLUMN "referrer" varchar(1024);--> statement-breakpoint
+
+-- Skip adding event_data column as it already exists
+-- ALTER TABLE "tracker_data" ADD COLUMN "event_data" jsonb;--> statement-breakpoint
+-- Skip adding columns as they already exist
+-- ALTER TABLE "tracker_data" ADD COLUMN "user_agent" varchar(500);--> statement-breakpoint
+-- ALTER TABLE "tracker_data" ADD COLUMN "ip_address" varchar(45);--> statement-breakpoint
+-- ALTER TABLE "tracker_data" ADD COLUMN "referrer" varchar(1024);--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "page_analytics" ADD CONSTRAINT "page_analytics_site_id_sites_id_fk" FOREIGN KEY ("site_id") REFERENCES "public"."sites"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION

@@ -39,6 +39,7 @@ import PageContentDeploymentModal from "@/components/content-deployment-modal";
 import Toast from "@/components/Toast";
 import TrackerAnalytics from "@/components/tracker-analytics";
 import TrackerScriptModal from "@/components/tracker-script-modal";
+import { RAGDashboard } from "@/components/rag/rag-dashboard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -115,7 +116,7 @@ export default function SiteDetailsPage() {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [selectedPageForDeployment, setSelectedPageForDeployment] =
     useState<Page | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "analytics">(
+  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "rag">(
     "overview"
   );
 
@@ -544,6 +545,15 @@ export default function SiteDetailsPage() {
                           onClick={() => setActiveTab("analytics")}
                         >
                           Analytics
+                        </Button>
+                        <Button
+                          variant={
+                            activeTab === "rag" ? "default" : "ghost"
+                          }
+                          size="sm"
+                          onClick={() => setActiveTab("rag")}
+                        >
+                          RAG
                         </Button>
                       </div>
 
@@ -1066,6 +1076,14 @@ export default function SiteDetailsPage() {
                           <TrackerAnalytics
                             siteId={siteId}
                             siteName={site.name}
+                          />
+                        )}
+
+                        {/* RAG Tab Content */}
+                        {activeTab === "rag" && site && (
+                          <RAGDashboard
+                            siteId={siteId}
+                            pageId={undefined}
                           />
                         )}
                       </>

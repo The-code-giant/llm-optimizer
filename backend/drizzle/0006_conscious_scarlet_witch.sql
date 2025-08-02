@@ -1,2 +1,4 @@
-ALTER TABLE "users" ADD COLUMN "name" varchar(255);--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "preferences" jsonb DEFAULT '{}'::jsonb;
+-- Skip adding name column as it already exists
+-- ALTER TABLE "users" ADD COLUMN "name" varchar(255);--> statement-breakpoint
+-- Skip adding preferences column as it already exists
+-- ALTER TABLE "users" ADD COLUMN "preferences" jsonb DEFAULT '{}'::jsonb;

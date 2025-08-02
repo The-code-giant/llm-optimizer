@@ -11,6 +11,8 @@ import {
   integer,
   pgEnum,
   uniqueIndex,
+  boolean,
+  decimal,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -37,6 +39,12 @@ export const sites = pgTable("sites", {
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // RAG-related fields
+  businessIntelligence: jsonb("business_intelligence").default({}),
+  ragEnabled: boolean("rag_enabled").default(false),
+  brandVoice: jsonb("brand_voice").default({}),
+  targetAudience: jsonb("target_audience").default({}),
+  servicesSummary: jsonb("services_summary").default([]),
 }, (table) => ({
   // Partial unique index that only applies to non-deleted sites
   urlUnique: uniqueIndex("sites_url_unique").on(table.url).where(sql`${table.deletedAt} IS NULL`),
@@ -130,11 +138,15 @@ export const pageContent = pgTable("page_content", {
   isActive: integer("is_active").default(0), // 0 = draft, 1 = deployed
   version: integer("version").default(1),
   metadata: jsonb("metadata").default({}), // Store additional data like keyword analysis, character counts, etc.
-  pageUrl: varchar("page_url", { length: 1024 }),
   deployedAt: timestamp("deployed_at"), // When this content was deployed
   deployedBy: varchar("deployed_by", { length: 255 }), // User ID who deployed it
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // RAG-related fields
+  ragEnhanced: boolean("rag_enhanced").default(false),
+  contextSources: text("context_sources").array().default([]),
+  ragScore: decimal("rag_score", { precision: 3, scale: 2 }),
+  similarityContext: jsonb("similarity_context").default({}),
 });
 
 export const contentSuggestions = pgTable("content_suggestions", {
@@ -185,4 +197,62 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   isActive: integer("is_active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// RAG System Tables
+
+export const siteKnowledgeBases = pgTable("site_knowledge_bases", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  siteId: uuid("site_id")
+    .notNull()
+    .references(() => sites.id, { onDelete: "cascade" }),
+  status: varchar("status", { length: 32 }).notNull().default("initializing"), // 'initializing', 'processing', 'ready', 'error', 'disabled'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  totalDocuments: integer("total_documents").notNull().default(0),
+  lastRefresh: timestamp("last_refresh"),
+  ragEnabled: boolean("rag_enabled").notNull().default(false),
+  settings: jsonb("settings").default({}),
+  errorMessage: text("error_message"),
+}, (table) => ({
+  siteIdUnique: uniqueIndex("site_knowledge_bases_site_id_unique").on(table.siteId),
+}));
+
+export const siteDocuments = pgTable("site_documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  siteId: uuid("site_id")
+    .notNull()
+    .references(() => sites.id, { onDelete: "cascade" }),
+  knowledgeBaseId: uuid("knowledge_base_id")
+    .notNull()
+    .references(() => siteKnowledgeBases.id, { onDelete: "cascade" }),
+  documentType: varchar("document_type", { length: 32 }).notNull(), // 'page', 'blog', 'service', 'about', 'contact', 'testimonial', 'faq', 'other'
+  url: text("url"),
+  title: text("title"),
+  content: text("content").notNull(),
+  metadata: jsonb("metadata").default({}),
+  embeddingId: text("embedding_id"),
+  chunkIndex: integer("chunk_index").default(0),
+  totalChunks: integer("total_chunks").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  lastCrawled: timestamp("last_crawled"),
+  status: varchar("status", { length: 32 }).notNull().default("pending"), // 'pending', 'processing', 'embedded', 'error', 'deleted'
+});
+
+export const ragQueries = pgTable("rag_queries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  siteId: uuid("site_id")
+    .notNull()
+    .references(() => sites.id, { onDelete: "cascade" }),
+  queryText: text("query_text").notNull(),
+  responseText: text("response_text").notNull(),
+  contextUsed: jsonb("context_used").default([]),
+  performanceMetrics: jsonb("performance_metrics").default({}),
+  userId: varchar("user_id", { length: 255 }).references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow(),
+  responseTimeMs: integer("response_time_ms"),
+  similarityScores: jsonb("similarity_scores").default([]),
+  feedbackScore: integer("feedback_score"),
+  feedbackComment: text("feedback_comment"),
 });

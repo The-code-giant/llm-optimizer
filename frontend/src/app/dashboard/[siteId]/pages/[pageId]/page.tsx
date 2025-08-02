@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/components/Toast";
-import ContentEditorModal from "@/components/content-editor-modal";
+
 import {
   Accordion,
   AccordionItem,
@@ -65,6 +65,7 @@ import {
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
 export default function PageAnalysisPage() {
   const router = useRouter();
   const { siteId, pageId } = useParams() as { siteId: string; pageId: string };
@@ -268,70 +269,7 @@ export default function PageAnalysisPage() {
     });
   };
 
-  const handleContentSave = async (
-    content: string,
-    deployImmediately?: boolean
-  ) => {
-    if (!editorModal) return;
-    const { contentType } = editorModal;
-    try {
-      const token = await getToken();
-      if (!token) {
-        setToast({ message: "Authentication error", type: "error" });
-        return;
-      }
-      // Get correct original content for context
-      let originalContent = "";
-      if (contentType === "title") {
-        originalContent = pageData?.title || "";
-      } else if (contentType === "description") {
-        originalContent = originalMetaDescription || "";
-      } else {
-        originalContent = "";
-      }
-      // Save to database (with deployImmediately if requested)
-      const response = await savePageContent(
-        token,
-        pageId,
-        contentType,
-        content,
-        originalContent,
-        editorModal.description,
-        { characterCount: content.length },
-        deployImmediately
-      );
-      // Optimistically update contentVersions with the new deployed content if deployImmediately
-      if (response && response.content && deployImmediately) {
-        setContentVersions((prev) => {
-          const updated = { ...prev };
-          // Remove any previous deployed version (isActive: 1) for this type
-          const filtered = (prev[contentType] || []).filter(
-            (c) => c.id !== response.content.id && c.isActive !== 1
-          );
-          updated[contentType] = [response.content, ...filtered];
-          return updated;
-        });
-      } else {
-        // If not deploying, refresh all data to ensure consistency
-        await fetchData();
-      }
-      setToast({
-        message: `${contentType} saved${
-          deployImmediately ? " and deployed" : ""
-        } successfully!`,
-        type: "success",
-      });
-    } catch (error: any) {
-      setToast({
-        message:
-          error.message ||
-          `Failed to save${
-            deployImmediately ? " and deploy" : ""
-          } ${contentType}`,
-        type: "error",
-      });
-    }
-  };
+
 
   const removeParagraph = (index: number) => {
     setContentData((prev) => ({
@@ -356,9 +294,10 @@ export default function PageAnalysisPage() {
         } undeployed successfully!`,
         type: "success",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to undeploy content";
       setToast({
-        message: error.message || "Failed to undeploy content",
+        message: errorMessage,
         type: "error",
       });
     } finally {
@@ -1206,19 +1145,7 @@ export default function PageAnalysisPage() {
                   </div>
                 </div>
 
-                {/* Content Editor Modal */}
-                {editorModal && (
-                  <ContentEditorModal
-                    isOpen={editorModal.isOpen}
-                    onClose={() => setEditorModal(null)}
-                    pageId={pageId}
-                    contentType={editorModal.contentType}
-                    currentContent={editorModal.currentContent}
-                    onSave={handleContentSave}
-                    title={editorModal.title}
-                    description={editorModal.description}
-                  />
-                )}
+
 
                 {/* Undeploy Confirmation Dialog */}
                 <Dialog

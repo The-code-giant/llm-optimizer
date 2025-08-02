@@ -4,6 +4,7 @@ import { sites, pages, analysisResults, pageContent, contentSuggestions, pageInj
 import { eq, desc, and } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { AnalysisService } from '../utils/analysisService';
+import { enhancedContentGenerator } from '../utils/enhancedContentGenerator';
 import OpenAI from 'openai';
 import cache from '../utils/cache';
 
@@ -1292,6 +1293,189 @@ router.delete('/:pageId', authenticateJWT, async (req: AuthenticatedRequest, res
   } catch (err) {
     console.error(`❌ Failed to delete page ${req.params.pageId}:`, err);
     next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/rag-generate:
+ *   post:
+ *     summary: Generate RAG-enhanced content for a page
+ *     tags: [Pages, RAG]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               contentType:
+ *                 type: string
+ *                 enum: [title, description, faq, paragraph, keywords]
+ *               topic:
+ *                 type: string
+ *               additionalContext:
+ *                 type: string
+ *               useRAG:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: RAG-enhanced content generated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 content:
+ *                   type: string
+ *                 ragEnhanced:
+ *                   type: boolean
+ *                 contextSources:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 ragScore:
+ *                   type: number
+ *                 suggestions:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       404:
+ *         description: Page not found or not authorized
+ */
+// Generate RAG-enhanced content for a page
+router.post('/:pageId/rag-generate', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pageId } = req.params;
+    const { contentType, topic, additionalContext, useRAG = true } = req.body;
+    
+    if (!contentType || !topic) {
+      return res.status(400).json({ error: 'Missing required fields: contentType, topic' });
+    }
+
+    // Get page and verify ownership
+    const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      return res.status(404).json({ error: 'Not authorized' });
+    }
+
+    console.log(`Generating RAG-enhanced ${contentType} for page ${pageId}`);
+
+    // Generate enhanced content
+    const response = await enhancedContentGenerator.generateEnhancedContent({
+      siteId: page.siteId,
+      pageId,
+      contentType,
+      topic,
+      additionalContext,
+      useRAG,
+    });
+
+    // Save the generated content
+    await enhancedContentGenerator.saveEnhancedContent(
+      pageId,
+      contentType,
+      response.content,
+      response.ragEnhanced,
+      response.contextSources,
+      response.ragScore
+    );
+
+    res.json({
+      success: true,
+      content: response.content,
+      ragEnhanced: response.ragEnhanced,
+      contextSources: response.contextSources,
+      ragScore: response.ragScore,
+      suggestions: response.suggestions,
+      performanceMetrics: response.performanceMetrics,
+    });
+
+  } catch (error) {
+    console.error('Error generating RAG-enhanced content:', error);
+    res.status(500).json({
+      error: 'Failed to generate RAG-enhanced content',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/rag-analytics:
+ *   get:
+ *     summary: Get RAG analytics for a page
+ *     tags: [Pages, RAG]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: RAG analytics for the page
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalGenerations:
+ *                   type: number
+ *                 ragEnhancedCount:
+ *                   type: number
+ *                 averageRagScore:
+ *                   type: number
+ *                 contentTypes:
+ *                   type: object
+ *       404:
+ *         description: Page not found or not authorized
+ */
+// Get RAG analytics for a page
+router.get('/:pageId/rag-analytics', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { pageId } = req.params;
+
+    // Get page and verify ownership
+    const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      return res.status(404).json({ error: 'Page not found' });
+    }
+
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      return res.status(404).json({ error: 'Not authorized' });
+    }
+
+    // Get analytics for the site
+    const analytics = await enhancedContentGenerator.getGenerationAnalytics(page.siteId);
+
+    res.json({
+      success: true,
+      analytics,
+    });
+
+  } catch (error) {
+    console.error('Error getting RAG analytics:', error);
+    res.status(500).json({
+      error: 'Failed to get RAG analytics',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 });
 

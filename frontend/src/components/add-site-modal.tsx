@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { addSite } from "@/lib/api";
+import { addSite, initializeRAGKnowledgeBase } from "@/lib/api";
 
 // Enhanced URL validation with Zod
 const urlSchema = z
@@ -134,7 +134,16 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
         return;
       }
 
-      await addSite(token, data.name, data.url);
+      const newSite = await addSite(token, data.name, data.url);
+      
+      // Automatically initialize RAG knowledge base for the new site
+      try {
+        await initializeRAGKnowledgeBase(token, newSite.id);
+        onSuccess("Site added successfully! RAG knowledge base is being initialized.");
+      } catch (ragError) {
+        console.error('Failed to initialize RAG:', ragError);
+        onSuccess("Site added successfully! RAG initialization will be available soon.");
+      }
       
       // Reset form and close modal
       reset();
@@ -142,7 +151,6 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
       
       // Notify parent component
       onSiteAdded();
-      onSuccess("Site added successfully!");
     } catch (err: unknown) {
       onError(err instanceof Error ? err.message : "Failed to add site");
     } finally {

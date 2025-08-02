@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { getSitesWithMetrics, SiteWithMetrics, addSite } from "@/lib/api";
+import { getSitesWithMetrics, SiteWithMetrics, addSite, initializeRAGKnowledgeBase } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,13 +68,22 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       const siteName = domain.replace(/^www\./, '');
 
       // Create the site
-      await addSite(token, siteName, websiteUrl);
+      const newSite = await addSite(token, siteName, websiteUrl);
       
-      // Show success message
-      setToast({ 
-        message: `Successfully added ${siteName} to your dashboard!`, 
-        type: "success" 
-      });
+      // Automatically initialize RAG knowledge base for the new site
+      try {
+        await initializeRAGKnowledgeBase(token, newSite.id);
+        setToast({ 
+          message: `Successfully added ${siteName} to your dashboard! RAG knowledge base is being initialized.`, 
+          type: "success" 
+        });
+      } catch (ragError) {
+        console.error('Failed to initialize RAG:', ragError);
+        setToast({ 
+          message: `Successfully added ${siteName} to your dashboard! RAG initialization will be available soon.`, 
+          type: "success" 
+        });
+      }
 
       // Refresh sites list
       await fetchSites();

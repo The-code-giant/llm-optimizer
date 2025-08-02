@@ -778,3 +778,102 @@ export async function changePlan(token: string, type: string) {
   });
   return handleResponse(res);
 }
+
+// RAG API Functions
+export interface RAGStatus {
+  status: 'initializing' | 'ready' | 'error' | 'not_found';
+  totalDocuments: number;
+  lastRefresh: string | null;
+  errorMessage?: string;
+}
+
+export interface RAGAnalytics {
+  totalGenerations: number;
+  ragEnhancedCount: number;
+  averageRagScore: number;
+  contentTypes: Record<string, number>;
+  performanceMetrics: {
+    averageResponseTime: number;
+    averageContextRetrievalTime: number;
+    averageGenerationTime: number;
+  };
+}
+
+export interface RAGGeneratedContent {
+  content: string;
+  ragEnhanced: boolean;
+  contextSources: string[];
+  ragScore: number;
+  suggestions: string[];
+  performanceMetrics: {
+    responseTime: number;
+    contextRetrievalTime: number;
+    generationTime: number;
+  };
+}
+
+export async function getRAGStatus(token: string, siteId: string): Promise<RAGStatus> {
+  const res = await fetch(`${API_BASE}/rag/status/${siteId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return handleResponse(res);
+}
+
+export async function initializeRAGKnowledgeBase(token: string, siteId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/rag/initialize/${siteId}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return handleResponse(res);
+}
+
+export async function refreshRAGKnowledgeBase(token: string, siteId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/rag/refresh/${siteId}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return handleResponse(res);
+}
+
+export async function generateRAGContent(
+  token: string,
+  pageId: string,
+  contentType: 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+  topic: string,
+  additionalContext?: string,
+  useRAG?: boolean
+): Promise<RAGGeneratedContent> {
+  const res = await fetch(`${API_BASE}/pages/${pageId}/rag-generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      contentType,
+      topic,
+      additionalContext,
+      useRAG: useRAG ?? true,
+    }),
+  });
+  return handleResponse(res);
+}
+
+export async function getRAGAnalytics(token: string, siteId: string, pageId?: string): Promise<RAGAnalytics> {
+  const url = pageId 
+    ? `${API_BASE}/pages/${pageId}/rag-analytics`
+    : `${API_BASE}/rag/analytics/${siteId}`;
+    
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return handleResponse(res);
+}
