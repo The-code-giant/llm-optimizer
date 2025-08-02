@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyToken } from "@clerk/backend";
 import { clerkClient } from "../lib/clerk-client";
-import { userService } from "../services/user.service";
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -47,8 +46,6 @@ export async function authenticateJWT(
       userId: user.id,
       email: user.emailAddresses[0]?.emailAddress || "",
     };
-
-   await userService.ensureUserExists(user.id, user.emailAddresses[0]?.emailAddress || "");
 
     next();
   } catch (err) {

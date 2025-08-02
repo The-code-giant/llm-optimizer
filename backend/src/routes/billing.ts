@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction, Request } from "express";
 import { authenticateJWT } from "../middleware/auth";
 import { db } from "../db/client";
-import {  userSubscriptions } from "../db/schema";
+import { userSubscriptions } from "../db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { StripeClient } from "../lib/stripe";
 import z from "zod";
@@ -36,57 +36,45 @@ router.get(
         .orderBy(desc(userSubscriptions.createdAt))
         .limit(1);
 
-      let subscription = userActiveSubscription?.[0];
-
-      if (!subscription) {
-        // fallback: for users which subscription not created while they signed up.
-
-        const stripeCustomerId = await new StripeClient().createCustomer({
-          email: authenticatedReq.user?.email as string,
-          userId: userId,
-        });
-
-        const newSubscription = await db
-          .insert(userSubscriptions)
-          .values({
-            userId: userId,
-            stripeCustomerId: stripeCustomerId as string,
-          })
-          .returning();
-
-        subscription = newSubscription[0];
-      }
-
-      if (subscription.subscriptionType === "free") {
-        // next billing would be 7 days after user subscription was created.
-        res.status(200).json({
-          type: "Free",
-          nextBilling: new Date(
-            new Date(subscription.createdAt as Date).getTime() +
-              7 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-        });
-        return;
-      }
-      // if subscription is not free, we need to get the next billing date from the subscription.
-
+      const subscription = userActiveSubscription?.[0];
       const stripe = new StripeClient();
 
-      const subscriptionInStripe = await stripe.getSubscription(
-        subscription.stripeSubscriptionId as string
-      );
 
-      console.log(subscriptionInStripe.next_pending_invoice_item_invoice);
+      if (subscription.stripeSubscriptionId) {
 
-      res.status(200).json({
-        type: subscription,
-        nextBilling: new Date(
-          (subscriptionInStripe.next_pending_invoice_item_invoice as number) *
+        const subscriptionInStripe = await stripe.getSubscription(
+          subscription.stripeSubscriptionId as string
+        );
+
+        if (subscriptionInStripe.trial_end && subscriptionInStripe.status === "trialing") {
+          res.status(200).json({
+            type: "trial",
+            nextBilling: new Date(
+              (subscriptionInStripe.trial_end as number) *
+              1000
+            ).toISOString(),
+            isActive: subscriptionInStripe.trial_end > Math.floor(Date.now() / 1000),
+            stripeStatus: subscriptionInStripe.status,
+          });
+
+          return;
+        }
+
+
+
+        res.status(200).json({
+          type: subscription.subscriptionType,
+          nextBilling: new Date(
+            (subscriptionInStripe.next_pending_invoice_item_invoice as number) *
             1000
-        ).toISOString(),
-        stripeStatus: subscriptionInStripe.status,
-      });
-      return;
+          ).toISOString(),
+          isActive: subscriptionInStripe.status === "active",
+          stripeStatus: subscriptionInStripe.status,
+        });
+
+
+        return;
+      }
     } catch (err) {
       next(err);
     }
@@ -125,32 +113,31 @@ router.post(
         .orderBy(desc(userSubscriptions.createdAt))
         .limit(1);
 
-      let currentActiveSubscription = userActiveSubscription?.[0];
-
-      if (!currentActiveSubscription) {
-        // fallback: for users which subscription not created while they signed up.
-
-        const stripeCustomerId = await new StripeClient().createCustomer({
-          email: authenticatedReq.user?.email as string,
-          userId: userId,
-        });
-
-        const newSubscription = await db
-          .insert(userSubscriptions)
-          .values({
-            userId: userId,
-            stripeCustomerId: stripeCustomerId as string,
-          })
-          .returning();
-
-        currentActiveSubscription = newSubscription[0];
-      }
+      const currentActiveSubscription = userActiveSubscription?.[0];
 
       const stripe = new StripeClient();
-
       const productPrice = await stripe.getProductPrice(type);
 
-      if (currentActiveSubscription.subscriptionType !== "free") {
+
+      if(currentActiveSubscription.subscriptionType === "free"){
+        // update the free trial subscription to the new plan.
+
+        const checkoutSession = await stripe.stripe.checkout.sessions.create({
+          customer: currentActiveSubscription.stripeCustomerId as string,
+          line_items: [{ price: productPrice, quantity: 1 }],
+          mode: "subscription",
+          success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=false`,
+          metadata: {
+            userId: userId,
+          }
+        });
+  
+        res.status(200).json({ redirectUrl: checkoutSession.url });
+        return;
+      }
+
+      if (currentActiveSubscription.stripeSubscriptionId) {
         const subInStripe = await stripe.getSubscription(
           currentActiveSubscription.stripeSubscriptionId as string
         );

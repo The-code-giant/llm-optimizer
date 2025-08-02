@@ -230,7 +230,7 @@ export default function BillingPage() {
                         <CardContent>
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                              <span className="text-2xl font-bold">
+                              <span className="text-2xl font-bold capitalize">
                                 {billing.plan} Plan
                               </span>
                               <Badge variant="outline">Active</Badge>

@@ -59,17 +59,7 @@ export class UserService {
 
   async subscribeToProPlanTrial(userId: string, stripeCustomerId: string) {
     const stripeClient = new StripeClient();
-    const allProduct = await stripeClient.getAllProducts();
-
-    const find = allProduct.data.find((item) => item.metadata.type === "pro");
-
-    console.log( "find product id", find?.id , find?.metadata)
-
-    if(!find){
-      console.error(`can not find pro product in side metadata`);
-      return
-    }
-    const productPrice = await stripeClient.getProductPrice(find.id);
+    const productPrice = await stripeClient.getProductPrice("pro");
 
     const newTrialSubscription = await stripeClient.stripe.subscriptions.create({
       customer: stripeCustomerId,
@@ -81,10 +71,6 @@ export class UserService {
         }
       }
     });
-
-    console.log( "newTrialSubscription", newTrialSubscription.id)
-
-    console.log( "newTrialSubscription", newTrialSubscription.billing_mode)
 
     await db.insert(userSubscriptions).values({
       userId: userId,
