@@ -19,6 +19,7 @@ import {
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import { usePathname, useRouter } from 'next/navigation'
+import Image from "next/image";
 
 export function NavbarComponent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -232,12 +233,19 @@ export function NavbarComponent() {
 const CustomNavbarLogo = () => {
   return (
     <Link href="/" className="relative z-20 mr-4 flex items-center space-x-2 px-2 py-1">
-      <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+      <Image
+        src="/logo/clever-search-logo-black.png"
+        alt="CleverSearch"
+        width={100}
+        height={50}
+        className="w-auto h-auto"
+      />
+      {/* <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
         <SparklesIcon className="w-5 h-5 text-white" />
       </div>
       <span className="text-xl font-bold text-gray-900 dark:text-white">
         Clever Search
-      </span>
+      </span> */}
     </Link>
   );
 };

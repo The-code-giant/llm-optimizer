@@ -39,10 +39,6 @@
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
-  "workspaces": [
-    "backend",
-    "frontend"
-  ],
   "devDependencies": {
     "concurrently": "^8.2.2"
   },

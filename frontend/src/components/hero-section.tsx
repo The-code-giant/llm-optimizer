@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { submitWebsiteUrl } from "@/lib/api";
-
+import { TypewriterEffect } from "@/components/ui/typewriter-effect";
 
 
 // URL validation schema
@@ -54,7 +54,12 @@ export default function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
+  const words = [{text: "AI & SEO"}, {text: "Visibility"},
+     {text: "in", className: "text-blue-500 dark:text-blue-600",
+     }, 
+     {text: "Minutes", className: "text-blue-500 dark:text-blue-600"
+  }]
+  // ["Boost Your Site&apos;s AI & SEO Visibility in Minutes", "Get Cited by ChatGPT, Claude, and Gemini", "Get More Traffic from AI-Powered Search"]
   const {
     register,
     handleSubmit,
@@ -95,9 +100,9 @@ export default function HeroSection() {
 
   return (
     <>
-      <main>
+      <main className="pt-28">
         <section className="overflow-hidden">
-          <div className="relative mx-auto max-w-5xl px-6 py-28 lg:py-20">
+          <div className="relative mx-auto max-w-7xl px-6 py-28 lg:py-20">
             <div className="lg:flex lg:items-center lg:gap-12">
               <div className="relative z-10 mx-auto max-w-xl text-center lg:ml-0 lg:w-1/2 lg:text-left">
                 <Link
@@ -114,7 +119,8 @@ export default function HeroSection() {
                 </Link>
 
                 <h1 className="mt-10 text-balance text-4xl font-bold md:text-5xl xl:text-5xl">
-                  Boost Your Site&apos;s AI & SEO Visibility in Minutes
+                  Boost Your Site&apos;s
+                  <TypewriterEffect words={words} />
                 </h1>
                 <p className="mt-8">
                   Our AI-powered platform helps you optimize your website for
@@ -189,7 +195,7 @@ export default function HeroSection() {
                 />
                 <Image
                   className="dark:hidden"
-                  src="/music-light.png"
+                  src="/dashboard/clever-search-site-page-dark.png"
                   alt="app illustration"
                   width={2796}
                   height={2008}

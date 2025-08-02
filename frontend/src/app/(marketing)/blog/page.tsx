@@ -26,8 +26,10 @@ async function getAllPostsMeta(): Promise<BlogMeta[]> {
   return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }
 
-export default async function Blog({ searchParams }: { searchParams?: { page?: string } }) {
-  const page = parseInt(searchParams?.page || '1', 10);
+export default async function Blog({ searchParams }: { searchParams?: Promise<{ page?: string }> }) {
+  const params = await searchParams;
+  const pageParams = params?.page;
+  const page = parseInt(pageParams || '1', 10);
   const allPosts = await getAllPostsMeta();
   const posts = allPosts.slice((page - 1) * POSTS_PER_PAGE, page * POSTS_PER_PAGE);
 
@@ -36,8 +38,6 @@ export default async function Blog({ searchParams }: { searchParams?: { page?: s
 
   const categories = [
     { name: "All", count: allPosts.length, active: true },
-    // Add more categories if you want to filter
   ];
-  console.log({posts});
   return <BlogListClient posts={posts} featuredPost={featuredPost} categories={categories} />;
 } 
