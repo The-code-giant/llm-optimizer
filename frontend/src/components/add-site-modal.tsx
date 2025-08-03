@@ -44,31 +44,32 @@ const urlSchema = z
   .refine((url) => {
     try {
       const urlObj = new URL(url);
+      // Allow localhost for development/testing
+      const localhostDomains = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+      if (localhostDomains.includes(urlObj.hostname)) {
+        return true;
+      }
+      // For non-localhost URLs, require a valid domain with at least one dot
       return urlObj.hostname.length > 0 && urlObj.hostname.includes('.');
     } catch {
       return false;
     }
-  }, "URL must have a valid domain with at least one dot (e.g., example.com)")
+  }, "URL must have a valid domain with at least one dot (e.g., example.com) or be localhost")
   .refine((url) => {
     try {
       const urlObj = new URL(url);
-      // Check for common invalid domains
-      const invalidDomains = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
-      return !invalidDomains.includes(urlObj.hostname);
-    } catch {
-      return false;
-    }
-  }, "Localhost and IP addresses are not allowed")
-  .refine((url) => {
-    try {
-      const urlObj = new URL(url);
-      // Check for valid TLD (top-level domain)
+      // Allow localhost for development/testing
+      const localhostDomains = ['localhost', '127.0.0.1', '0.0.0.0', '::1'];
+      if (localhostDomains.includes(urlObj.hostname)) {
+        return true;
+      }
+      // Check for valid TLD (top-level domain) for non-localhost URLs
       const hostnameParts = urlObj.hostname.split('.');
       return hostnameParts.length >= 2 && hostnameParts[hostnameParts.length - 1].length >= 2;
     } catch {
       return false;
     }
-  }, "URL must have a valid top-level domain (e.g., .com, .org, .net)")
+  }, "URL must have a valid top-level domain (e.g., .com, .org, .net) or be localhost")
   .transform((url) => {
     // Normalize URL: ensure it ends with trailing slash and is lowercase
     let normalizedUrl = url.toLowerCase().trim();

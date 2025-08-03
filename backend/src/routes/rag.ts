@@ -65,7 +65,7 @@ router.use(authenticateJWT);
  * Initialize knowledge base for a site
  * POST /api/rag/initialize/:siteId
  */
-router.post('/initialize/:siteId', async (req, res) => {
+router.post('/initialize/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -96,7 +96,7 @@ router.post('/initialize/:siteId', async (req, res) => {
  * Get knowledge base status
  * GET /api/rag/status/:siteId
  */
-router.get('/status/:siteId', async (req, res) => {
+router.get('/status/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -108,13 +108,21 @@ router.get('/status/:siteId', async (req, res) => {
     const status = await knowledgeBaseManager.getKnowledgeBaseStatus(siteId);
 
     if (!status) {
-      return res.status(404).json({ error: 'Knowledge base not found' });
+      // Return a not_found status instead of 404 error
+      res.json({
+        status: 'not_found',
+        totalDocuments: 0,
+        lastRefresh: null,
+      });
+      return;
     }
 
-    res.json({
-      success: true,
-      status,
-    });
+    // Map backend status to frontend expected status
+    const mappedStatus = {
+      ...status,
+      status: status.status === 'processing' ? 'initializing' : status.status,
+    };
+    res.json(mappedStatus);
   } catch (error) {
     console.error('Error getting knowledge base status:', error);
     res.status(500).json({
@@ -128,7 +136,7 @@ router.get('/status/:siteId', async (req, res) => {
  * Get knowledge base documents
  * GET /api/rag/documents/:siteId
  */
-router.get('/documents/:siteId', async (req, res) => {
+router.get('/documents/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -139,10 +147,7 @@ router.get('/documents/:siteId', async (req, res) => {
 
     const documents = await knowledgeBaseManager.getDocuments(siteId);
 
-    res.json({
-      success: true,
-      documents,
-    });
+    res.json(documents);
   } catch (error) {
     console.error('Error getting documents:', error);
     res.status(500).json({
@@ -156,7 +161,7 @@ router.get('/documents/:siteId', async (req, res) => {
  * Get knowledge base statistics
  * GET /api/rag/statistics/:siteId
  */
-router.get('/statistics/:siteId', async (req, res) => {
+router.get('/statistics/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -167,10 +172,7 @@ router.get('/statistics/:siteId', async (req, res) => {
 
     const statistics = await knowledgeBaseManager.getStatistics(siteId);
 
-    res.json({
-      success: true,
-      statistics,
-    });
+    res.json(statistics);
   } catch (error) {
     console.error('Error getting statistics:', error);
     res.status(500).json({
@@ -184,7 +186,7 @@ router.get('/statistics/:siteId', async (req, res) => {
  * Refresh knowledge base
  * POST /api/rag/refresh/:siteId
  */
-router.post('/refresh/:siteId', async (req, res) => {
+router.post('/refresh/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -214,7 +216,7 @@ router.post('/refresh/:siteId', async (req, res) => {
  * Delete knowledge base
  * DELETE /api/rag/delete/:siteId
  */
-router.delete('/delete/:siteId', async (req, res) => {
+router.delete('/delete/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -244,7 +246,7 @@ router.delete('/delete/:siteId', async (req, res) => {
  * Generate content using RAG
  * POST /api/rag/generate
  */
-router.post('/generate', async (req, res) => {
+router.post('/generate', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId, contentType, topic, additionalContext } = req.body;
     const userId = req.user?.userId;
@@ -285,7 +287,7 @@ router.post('/generate', async (req, res) => {
  * Process RAG query
  * POST /api/rag/query
  */
-router.post('/query', async (req, res) => {
+router.post('/query', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId, query, contextType, maxResults, similarityThreshold } = req.body;
     const userId = req.user?.userId;
@@ -327,7 +329,7 @@ router.post('/query', async (req, res) => {
  * Analyze content quality
  * POST /api/rag/analyze
  */
-router.post('/analyze', async (req, res) => {
+router.post('/analyze', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId, content, targetQuery } = req.body;
     const userId = req.user?.userId;
@@ -363,7 +365,7 @@ router.post('/analyze', async (req, res) => {
  * Get RAG analytics
  * GET /api/rag/analytics/:siteId
  */
-router.get('/analytics/:siteId', async (req, res) => {
+router.get('/analytics/:siteId', async (req: AuthenticatedRequest, res) => {
   try {
     const { siteId } = req.params;
     const userId = req.user?.userId;
@@ -374,10 +376,7 @@ router.get('/analytics/:siteId', async (req, res) => {
 
     const analytics = await ragService.getAnalytics(siteId);
 
-    res.json({
-      success: true,
-      analytics,
-    });
+    res.json(analytics);
   } catch (error) {
     console.error('Error getting RAG analytics:', error);
     res.status(500).json({

@@ -1,7 +1,12 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { URL } from 'url';
-import { callLLM } from './llmProviders';
+import OpenAI from 'openai';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export interface CrawledPage {
   url: string;
@@ -34,7 +39,7 @@ export interface CrawlResult {
 
 export class SiteCrawlerService {
   private readonly maxPages = 50; // Limit to prevent infinite crawling
-  private readonly maxDepth = 3; // Maximum depth for crawling
+  private readonly maxDepth = 1; // Maximum depth for crawling
   private readonly timeout = 10000; // 10 seconds timeout
   private readonly userAgent = 'CleverSearch-Bot/1.0';
 
@@ -80,9 +85,6 @@ export class SiteCrawlerService {
         }
       }
 
-      // Extract business intelligence from all pages
-      const businessIntelligence = this.extractBusinessIntelligence(pages);
-
       console.log(`Completed crawl for site ${siteId}: ${pages.length} pages, ${errors.length} errors`);
 
       return {
@@ -90,7 +92,12 @@ export class SiteCrawlerService {
         pages,
         totalPages: pages.length,
         errors,
-        businessIntelligence,
+        businessIntelligence: {
+          brandVoice: {},
+          targetAudience: {},
+          services: [],
+          contactInfo: {}
+        }, // Business intelligence will be generated in knowledge base manager
       };
     } catch (error) {
       console.error('Error in site crawler:', error);
@@ -128,7 +135,7 @@ export class SiteCrawlerService {
       
       const title = $('title').text().trim() || $('h1').first().text().trim();
       const content = this.extractMainContent($);
-      const documentType = this.classifyDocumentType(url, title, content);
+      const documentType = await this.classifyDocumentType(url, title, content);
       const metadata = this.extractMetadata($, url);
 
       if (!content || content.length < 50) {
@@ -198,19 +205,21 @@ export class SiteCrawlerService {
   /**
    * Classify document type based on URL and content
    */
-  private async classifyDocumentType(url: string, title: string, content: string): Promise<CrawledPage['documentType']> {
+  public async classifyDocumentType(url: string, title: string, content: string): Promise<CrawledPage['documentType']> {
     try {
       // Prepare the content for AI analysis (limit to first 2000 characters to avoid token limits)
       const contentPreview = content.substring(0, 2000);
       
       const prompt = `Analyze this webpage and classify it into one of these categories:
 - blog: Blog posts, articles, news, tutorials, guides
-- service: Service pages, product pages, what we offer
-- about: About us, company information, team pages
+- service: Service pages, product pages, what we offer, features, solutions
+- about: About us, company information, team pages, our story
 - contact: Contact information, contact forms, get in touch
 - testimonial: Customer reviews, testimonials, case studies
 - faq: Frequently asked questions, help pages, support
 - page: General pages, landing pages, other content
+
+IMPORTANT: Avoid classifying signup, login, auth, admin, or account pages as services.
 
 URL: ${url}
 Title: ${title}
@@ -218,14 +227,23 @@ Content Preview: ${contentPreview}
 
 Respond with only the category name (blog, service, about, contact, testimonial, faq, or page):`;
 
-      const response = await callLLM({
-        prompt,
-        maxTokens: 50,
-        temperature: 0.1, // Low temperature for consistent classification
-        provider: 'openai'
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at classifying web pages into content categories. Respond with only the category name.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 50,
       });
 
-      const classification = response.text.trim().toLowerCase();
+      const classification = completion.choices[0]?.message?.content?.trim().toLowerCase() || 'page';
       
       // Validate the response is one of our expected types
       const validTypes: CrawledPage['documentType'][] = ['blog', 'service', 'about', 'contact', 'testimonial', 'faq', 'page'];
@@ -249,6 +267,16 @@ Respond with only the category name (blog, service, about, contact, testimonial,
     const titleLower = title.toLowerCase();
     const contentLower = content.toLowerCase();
 
+    // Skip auth/admin pages
+    const skipPatterns = [
+      '/signup', '/login', '/register', '/auth', '/admin', '/dashboard',
+      '/cart', '/checkout', '/account', '/profile', '/settings'
+    ];
+    
+    if (skipPatterns.some(pattern => urlLower.includes(pattern))) {
+      return 'page';
+    }
+
     // Blog posts
     if (urlLower.includes('/blog/') || urlLower.includes('/blogs/') || urlLower.includes('/post/') || 
         urlLower.includes('/posts/') || urlLower.includes('/article/') || urlLower.includes('/articles/') ||
@@ -258,7 +286,9 @@ Respond with only the category name (blog, service, about, contact, testimonial,
 
     // Services
     if (urlLower.includes('/services/') || urlLower.includes('/service/') ||
-        contentLower.includes('our services') || contentLower.includes('what we do')) {
+        urlLower.includes('/features/') || urlLower.includes('/solutions/') ||
+        contentLower.includes('our services') || contentLower.includes('what we do') ||
+        contentLower.includes('features') || contentLower.includes('solutions')) {
       return 'service';
     }
 
@@ -384,168 +414,6 @@ Respond with only the category name (blog, service, about, contact, testimonial,
     ];
 
     return skipPatterns.some(pattern => pattern.test(url));
-  }
-
-  /**
-   * Extract business intelligence from crawled pages
-   */
-  private extractBusinessIntelligence(pages: CrawledPage[]): CrawlResult['businessIntelligence'] {
-    const allContent = pages.map(p => p.content).join(' ');
-    const allTitles = pages.map(p => p.title).join(' ');
-    const contactPages = pages.filter(p => p.documentType === 'contact');
-    const servicePages = pages.filter(p => p.documentType === 'service');
-    const aboutPages = pages.filter(p => p.documentType === 'about');
-
-    return {
-      brandVoice: this.extractBrandVoice(allContent, allTitles),
-      targetAudience: this.extractTargetAudience(allContent),
-      services: this.extractServices(servicePages),
-      contactInfo: this.extractContactInfo(contactPages),
-    };
-  }
-
-  /**
-   * Extract brand voice information
-   */
-  private extractBrandVoice(content: string, titles: string): any {
-    const contentLower = content.toLowerCase();
-    const titlesLower = titles.toLowerCase();
-
-    // Analyze tone and style
-    const formalWords = ['professional', 'expert', 'quality', 'reliable', 'trusted'];
-    const casualWords = ['friendly', 'approachable', 'easy', 'simple', 'fun'];
-    const technicalWords = ['technology', 'innovation', 'solution', 'platform', 'system'];
-
-    const tone = {
-      formal: formalWords.filter(word => contentLower.includes(word)).length,
-      casual: casualWords.filter(word => contentLower.includes(word)).length,
-      technical: technicalWords.filter(word => contentLower.includes(word)).length,
-    };
-
-    return {
-      tone,
-      primaryKeywords: this.extractKeywords(content, 10),
-      companyName: this.extractCompanyName(titles),
-    };
-  }
-
-  /**
-   * Extract target audience information
-   */
-  private extractTargetAudience(content: string): any {
-    const contentLower = content.toLowerCase();
-    
-    const audienceIndicators = {
-      b2b: ['business', 'enterprise', 'corporate', 'professional', 'industry'],
-      b2c: ['customer', 'consumer', 'personal', 'individual', 'family'],
-      technical: ['developer', 'engineer', 'technical', 'programmer', 'IT'],
-      nonTechnical: ['simple', 'easy', 'user-friendly', 'intuitive', 'straightforward'],
-    };
-
-    const audience: Record<string, number> = {};
-    for (const [type, keywords] of Object.entries(audienceIndicators)) {
-      audience[type] = keywords.filter(word => contentLower.includes(word)).length;
-    }
-
-    return audience;
-  }
-
-  /**
-   * Extract services information
-   */
-  private extractServices(servicePages: CrawledPage[]): any[] {
-    const services: any[] = [];
-
-    for (const page of servicePages) {
-      const service = {
-        title: page.title,
-        description: page.content.substring(0, 200),
-        url: page.url,
-      };
-      services.push(service);
-    }
-
-    return services;
-  }
-
-  /**
-   * Extract contact information
-   */
-  private extractContactInfo(contactPages: CrawledPage[]): any {
-    if (contactPages.length === 0) return {};
-
-    const contactContent = contactPages[0].content;
-    
-    // Extract email addresses
-    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
-    const emails = contactContent.match(emailRegex) || [];
-
-    // Extract phone numbers
-    const phoneRegex = /(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-    const phones = contactContent.match(phoneRegex) || [];
-
-    return {
-      emails: Array.from(new Set(emails)),
-      phones: Array.from(new Set(phones)),
-      address: this.extractAddress(contactContent),
-    };
-  }
-
-  /**
-   * Extract address information
-   */
-  private extractAddress(content: string): string {
-    // Simple address extraction - could be enhanced with NLP
-    const addressPatterns = [
-      /\d+\s+[A-Za-z\s]+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Place|Pl|Way|Terrace|Ter)/gi,
-      /\d+\s+[A-Za-z\s]+,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5}/gi,
-    ];
-
-    for (const pattern of addressPatterns) {
-      const match = content.match(pattern);
-      if (match) {
-        return match[0];
-      }
-    }
-
-    return '';
-  }
-
-  /**
-   * Extract keywords from content
-   */
-  private extractKeywords(content: string, count: number): string[] {
-    const words = content.toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .split(/\s+/)
-      .filter(word => word.length > 3);
-
-    const wordCount: { [key: string]: number } = {};
-    for (const word of words) {
-      wordCount[word] = (wordCount[word] || 0) + 1;
-    }
-
-    return Object.entries(wordCount)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, count)
-      .map(([word]) => word);
-  }
-
-  /**
-   * Extract company name from titles
-   */
-  private extractCompanyName(titles: string): string {
-    // Simple company name extraction
-    const titleWords = titles.split(/\s+/);
-    const commonWords = ['home', 'welcome', 'about', 'contact', 'services', 'blog'];
-    
-    for (const word of titleWords) {
-      if (word.length > 2 && !commonWords.includes(word.toLowerCase())) {
-        return word;
-      }
-    }
-
-    return '';
   }
 }
 

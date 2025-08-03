@@ -30,6 +30,7 @@ const sitemapImportSchema = z.object({
 // Helper function to ensure user exists in database
 async function ensureUserExists(userId: string, email: string) {
   try {
+    console.log("🔍 ensureUserExists - Starting for user:", userId);
     // Try to find the user first
     const existingUser = await db
       .select()
@@ -37,37 +38,60 @@ async function ensureUserExists(userId: string, email: string) {
       .where(eq(users.id, userId))
       .limit(1);
 
+    console.log("🔍 Existing user check result:", existingUser.length > 0 ? "Found" : "Not found");
+
     if (existingUser.length === 0) {
+      console.log("🔍 Creating new user...");
       // Create the user if they don't exist
       await db.insert(users).values({
         id: userId,
         email: email,
       });
+      console.log("🔍 User created successfully");
 
-      // create a customer in stripe
-      const stripeCustomerId = await new StripeClient().createCustomer({
-        email: email,
-        userId: userId,
-      });
-
-      if (stripeCustomerId) {
-        // create a free subscription for the user right after they sign up
-        await db.insert(userSubscriptions).values({
+      // Try to create a customer in stripe, but don't fail if it doesn't work
+      try {
+        console.log("🔍 Creating Stripe customer...");
+        const stripeCustomerId = await new StripeClient().createCustomer({
+          email: email,
           userId: userId,
-          stripeCustomerId,
         });
+        console.log("🔍 Stripe customer result:", stripeCustomerId ? "Created" : "Failed");
 
-        // update profile metadata with plan type
-        await clerkClient.users.updateUserMetadata(userId, {
-          publicMetadata: { planType: "free" },
-        });
+        if (stripeCustomerId) {
+          console.log("🔍 Creating user subscription...");
+          // create a free subscription for the user right after they sign up
+          await db.insert(userSubscriptions).values({
+            userId: userId,
+            stripeCustomerId,
+          });
+          console.log("🔍 User subscription created");
+
+          // Try to update Clerk metadata, but don't fail if it doesn't work
+          try {
+            console.log("🔍 Updating Clerk metadata...");
+            await clerkClient.users.updateUserMetadata(userId, {
+              publicMetadata: { planType: "free" },
+            });
+            console.log("🔍 Clerk metadata updated");
+          } catch (clerkError) {
+            console.warn("⚠️ Clerk metadata update failed:", clerkError);
+            // Don't throw - this is not critical
+          }
+        }
+      } catch (stripeError) {
+        console.warn("⚠️ Stripe customer creation failed:", stripeError);
+        // Don't throw - this is not critical for the main functionality
       }
     }
+    console.log("🔍 ensureUserExists - Completed successfully");
   } catch (error) {
+    console.error("❌ ensureUserExists - Error:", error);
     // User might already exist due to concurrent requests, ignore duplicate key errors
     if (!(error as any)?.constraint) {
       console.error("Error ensuring user exists:", error);
-      throw error;
+      // Don't throw the error - just log it and continue
+      // This prevents 500 errors from breaking the user experience
     }
   }
 }
@@ -261,18 +285,36 @@ router.get(
   authenticateJWT,
   async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
+      console.log("🔍 GET /sites - Starting request");
       const userId = req.user!.userId;
+      console.log("🔍 User ID:", userId);
 
       // Try cache first
-      const cachedSites = await cache.getUserSites(userId);
-      if (cachedSites) {
-        res.json(cachedSites);
-        return;
+      console.log("🔍 Checking cache...");
+      try {
+        const cachedSites = await cache.getUserSites(userId);
+        if (cachedSites) {
+          console.log("🔍 Cache hit, returning cached sites");
+          res.json(cachedSites);
+          return;
+        }
+      } catch (cacheError) {
+        console.warn("⚠️ Cache error:", cacheError);
+        // Continue without cache
       }
+      console.log("🔍 Cache miss, fetching from database");
 
       // Ensure user exists in our database
-      await ensureUserExists(userId, req.user!.email);
+      console.log("🔍 Ensuring user exists...");
+      try {
+        await ensureUserExists(userId, req.user!.email);
+        console.log("🔍 User ensured");
+      } catch (userError) {
+        console.warn("⚠️ User ensure error:", userError);
+        // Continue anyway - user might already exist
+      }
 
+      console.log("🔍 Fetching sites from database...");
       const userSites = await db
         .select()
         .from(sites)
@@ -282,13 +324,26 @@ router.get(
             sql`${sites.deletedAt} IS NULL`
           )
         );
+      console.log("🔍 Sites fetched:", userSites.length);
 
       // Cache the result for 5 minutes
-      await cache.setUserSites(userId, userSites);
+      console.log("🔍 Caching results...");
+      try {
+        await cache.setUserSites(userId, userSites);
+        console.log("🔍 Results cached");
+      } catch (cacheError) {
+        console.warn("⚠️ Cache set error:", cacheError);
+        // Continue without caching
+      }
 
       res.json(userSites);
     } catch (err) {
-      next(err);
+      console.error("❌ Error in GET /sites:", err);
+      // Return a more specific error message
+      res.status(500).json({
+        message: "Failed to fetch sites",
+        error: process.env.NODE_ENV === "development" ? (err as Error).message : "Internal server error"
+      });
     }
   }
 );
@@ -1314,17 +1369,18 @@ router.get(
       // Get content optimization impact
       const contentImpact = await db
         .select({
-          pageUrl: pageContent.pageUrl,
+          pageUrl: pages.url,
           contentType: pageContent.contentType,
           deployedAt: pageContent.deployedAt,
           metadata: pageContent.metadata,
         })
         .from(pageContent)
+        .innerJoin(pages, eq(pageContent.pageId, pages.id))
         .where(
           and(
             eq(pageContent.isActive, 1),
             sql`${pageContent.deployedAt} >= ${startDate.toISOString()}`,
-            sql`${pageContent.pageUrl} LIKE ${site.url + '%'}`
+            sql`${pages.url} LIKE ${site.url + '%'}`
           )
         )
         .orderBy(sql`${pageContent.deployedAt} DESC`);

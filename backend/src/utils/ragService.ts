@@ -310,19 +310,27 @@ Response:`;
    * Get RAG analytics for a site
    */
   async getAnalytics(siteId: string): Promise<{
-    totalQueries: number;
-    averageResponseTime: number;
-    averageSimilarityScore: number;
-    mostCommonQueries: string[];
-    performanceTrends: any[];
+    totalGenerations: number;
+    ragEnhancedCount: number;
+    averageRagScore: number;
+    contentTypes: Record<string, number>;
+    performanceMetrics: {
+      averageResponseTime: number;
+      averageContextRetrievalTime: number;
+      averageGenerationTime: number;
+    };
   }> {
     // TODO: Implement analytics from database
     return {
-      totalQueries: 0,
-      averageResponseTime: 0,
-      averageSimilarityScore: 0,
-      mostCommonQueries: [],
-      performanceTrends: [],
+      totalGenerations: 0,
+      ragEnhancedCount: 0,
+      averageRagScore: 0,
+      contentTypes: {},
+      performanceMetrics: {
+        averageResponseTime: 0,
+        averageContextRetrievalTime: 0,
+        averageGenerationTime: 0,
+      },
     };
   }
 }
