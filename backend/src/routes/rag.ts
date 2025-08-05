@@ -19,7 +19,7 @@ router.get('/test', (req, res) => {
 router.get('/test-pinecone', async (req, res) => {
   try {
     const { vectorStoreService } = await import('../utils/vectorStore');
-    const testResult = await vectorStoreService.isIndexReady('test-index');
+    const testResult = await vectorStoreService.isIndexReady();
     res.json({ 
       status: 'Pinecone connection test', 
       pinecone: 'connected',

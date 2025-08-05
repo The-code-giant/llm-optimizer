@@ -851,6 +851,9 @@ Provide JSON response:
     try {
       console.log(`Deleting knowledge base for site ${siteId}`);
       
+      // Delete vector store data for this site
+      await vectorStoreService.deleteSiteData(siteId);
+      
       // Update database
       await db.update(sites)
         .set({ 
