@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -101,7 +101,7 @@ const addSiteSchema = z.object({
 type AddSiteFormData = z.infer<typeof addSiteSchema>;
 
 interface AddSiteModalProps {
-  onSiteAdded: () => void;
+  onSiteAdded: (siteId?: string) => void;
   onError: (message: string) => void;
   onSuccess: (message: string) => void;
 }
@@ -134,14 +134,14 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
         return;
       }
 
-      await addSite(token, data.name, data.url);
+      const newSite = await addSite(token, data.name, data.url);
       
       // Reset form and close modal
       reset();
       setOpen(false);
       
-      // Notify parent component
-      onSiteAdded();
+      // Notify parent component with the new site ID
+      onSiteAdded(newSite.id);
       onSuccess("Site added successfully!");
     } catch (err: unknown) {
       onError(err instanceof Error ? err.message : "Failed to add site");
@@ -220,8 +220,16 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
             <Button 
               type="submit" 
               disabled={adding || !isValid}
+              className="min-w-[100px]"
             >
-              {adding ? "Adding..." : "Add Site"}
+              {adding ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                "Add Site"
+              )}
             </Button>
           </DialogFooter>
         </form>

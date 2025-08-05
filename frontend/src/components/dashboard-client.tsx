@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { getSitesWithMetrics, SiteWithMetrics, addSite } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -68,7 +68,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       const siteName = domain.replace(/^www\./, '');
 
       // Create the site
-      await addSite(token, siteName, websiteUrl);
+      const newSite = await addSite(token, siteName, websiteUrl);
       
       // Show success message
       setToast({ 
@@ -83,6 +83,11 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('website');
       router.replace(newUrl.pathname + newUrl.search);
+
+      // Redirect to the new site page after a short delay
+      setTimeout(() => {
+        router.push(`/dashboard/${newSite.id}`);
+      }, 1500);
     } catch (err) {
       console.error('Failed to create site:', err);
       setToast({ 
@@ -112,8 +117,22 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
     }
   }, [isLoaded, isSignedIn, router, initialSites.length, searchParams]);
 
-  const handleSiteAdded = () => {
-    fetchSites(); // Refresh the sites list
+  const handleSiteAdded = async (siteId?: string) => {
+    await fetchSites(); // Refresh the sites list
+    
+    // If a siteId is provided, redirect to that site page
+    if (siteId) {
+      // Show success message first
+      setToast({ 
+        message: "Site added successfully! Redirecting to site page...", 
+        type: "success" 
+      });
+      
+      // Redirect after a short delay to show the toast
+      setTimeout(() => {
+        router.push(`/dashboard/${siteId}`);
+      }, 1500);
+    }
   };
 
   const handleError = (message: string) => {

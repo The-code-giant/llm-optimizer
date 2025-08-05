@@ -148,6 +148,7 @@ export default function PageAnalysisPage() {
           originalContentResult.value.originalContent?.metaDescription || ""
         );
       }
+      console.log({pageDetails, analysisData, savedContent, originalContentResult})
       if (pageDetails.status === "fulfilled") {
         setPageData(pageDetails.value);
       } else {
@@ -425,7 +426,7 @@ export default function PageAnalysisPage() {
 
   // Find deployed paragraph
   const deployedParagraph = (contentVersions.paragraph || []).find((c) => c.isActive === 1);
-
+  console.log(contentVersions);
   return (
  <SidebarProvider
       style={

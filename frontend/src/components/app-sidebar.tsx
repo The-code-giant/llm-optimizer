@@ -93,7 +93,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton
                 asChild
                 className="data-[slot=sidebar-menu-button]:!p-1.5 h-[45px]"
-              ><>
+              >
+                <div>
                 <Image
                  className="block dark:hidden w-auto h-auto"
                   src="/logo/clever-search-logo-black.png"
@@ -109,7 +110,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   width={100}
                   height={50}
                 />
-                </>
+                </div>
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
