@@ -480,7 +480,7 @@ export default function PageAnalysisPage() {
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      Run First Analysis
+                      {analysis ? "Run Analysis Again" : "Run First Analysis"}
                     </Button>
                   </div>
 

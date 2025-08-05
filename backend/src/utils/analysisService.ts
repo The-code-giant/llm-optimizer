@@ -504,16 +504,49 @@ ${content.bodyText || 'No content found'}
     }
 
     const contentTypes = [
-      { type: 'title', maxTokens: 200 },
-      { type: 'description', maxTokens: 200 },
-      { type: 'faq', maxTokens: 800 },
-      { type: 'paragraph', maxTokens: 500 },
-      { type: 'keywords', maxTokens: 300 }
+      { type: 'title', maxTokens: 200, count: 5 },
+      { type: 'description', maxTokens: 200, count: 3 },
+      { type: 'faq', maxTokens: 800, count: 1 },
+      { type: 'paragraph', maxTokens: 500, count: 3 },
+      { type: 'keywords', maxTokens: 300, count: 1 }
     ];
 
-    for (const { type, maxTokens } of contentTypes) {
+    for (const { type, maxTokens, count } of contentTypes) {
       try {
-        const suggestions = await this.generateSpecificContentType(type as any, content, analysisResult, maxTokens, analysisResult.pageSummary);
+        let suggestions;
+        
+        // Generate multiple suggestions for titles, descriptions, and paragraphs
+        if (type === 'title') {
+          // Generate 5 title suggestions
+          const titlePromises = Array(count).fill(null).map(() => 
+            this.generateSpecificContentType('title', content, analysisResult, maxTokens, analysisResult.pageSummary)
+          );
+          const titles = await Promise.all(titlePromises);
+          suggestions = titles;
+        } else if (type === 'description') {
+          // Generate 3 description suggestions
+          const descPromises = Array(count).fill(null).map(() =>
+            this.generateSpecificContentType('description', content, analysisResult, maxTokens, analysisResult.pageSummary)
+          );
+          const descriptions = await Promise.all(descPromises);
+          suggestions = descriptions;
+        } else if (type === 'paragraph') {
+          // Generate 3 paragraph suggestions
+          const paragraphPromises = Array(count).fill(null).map(() =>
+            this.generateSpecificContentType('paragraph', content, analysisResult, maxTokens, analysisResult.pageSummary)
+          );
+          const paragraphs = await Promise.all(paragraphPromises);
+          suggestions = paragraphs;
+        } else {
+          // For FAQ and keywords, return single result (they're already comprehensive)
+          suggestions = await this.generateSpecificContentType(
+            type as 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+            content,
+            analysisResult,
+            maxTokens,
+            analysisResult.pageSummary
+          );
+        }
 
         // Replace existing suggestions for this content type
         await db.delete(contentSuggestions)
@@ -533,7 +566,7 @@ ${content.bodyText || 'No content found'}
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         });
 
-        console.log(`✅ Generated ${type} suggestions for page ${pageId}`);
+        console.log(`✅ Generated ${count} ${type} suggestions for page ${pageId}`);
       } catch (error) {
         console.error(`❌ Failed to generate ${type} suggestions:`, error);
       }
