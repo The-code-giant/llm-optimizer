@@ -126,11 +126,12 @@ router.post(
           customer: currentActiveSubscription.stripeCustomerId as string,
           line_items: [{ price: productPrice, quantity: 1 }],
           mode: "subscription",
+          allow_promotion_codes: true,
           success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=false`,
           metadata: {
             userId: userId,
-          }
+          },
         });
 
         res.status(200).json({ redirectUrl: checkoutSession.url });

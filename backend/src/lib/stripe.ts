@@ -49,6 +49,7 @@ export class StripeClient {
       customer: input.customer,
       line_items: input.line_items,
       mode: input.mode || "subscription",
+      allow_promotion_codes: true,
       success_url: input.success_url,
       cancel_url: input.cancel_url,
       metadata: {
