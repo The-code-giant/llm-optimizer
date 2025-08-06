@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { users } from "../db/schema";
+import { and, eq } from "drizzle-orm";
+import { users, userSubscriptions } from "../db/schema";
 import { db } from "../db/client";
 import { StripeClient } from "../lib/stripe";
 
@@ -82,6 +82,25 @@ export class UserService {
         }
       }
     });
+  }
+
+  async isUserSubIsActive(userId: string) {
+    const userSub = await db.select().from(userSubscriptions).where(and(eq(userSubscriptions.userId, userId), eq(userSubscriptions.isActive, 1))).limit(1);
+
+    if(userSub.length === 0){
+      return false;
+    }
+
+    try{
+      const stripeClient = new StripeClient();
+      const sub = await stripeClient.getSubscription(userSub[0].stripeSubscriptionId as string);
+
+      return ["active", "trialing"].includes(sub.status);
+    }catch(err){
+      console.error("Error checking user sub is active:", err);
+      return false
+    }
+
   }
 }
 

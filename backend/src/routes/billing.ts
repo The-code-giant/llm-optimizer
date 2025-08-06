@@ -5,6 +5,8 @@ import { userSubscriptions } from "../db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { StripeClient } from "../lib/stripe";
 import z from "zod";
+import { userService } from "../services/user.service";
+import cache from "../utils/cache";
 
 interface AuthenticatedRequest extends Request {
   user?: { userId: string; email: string };
@@ -116,7 +118,7 @@ router.post(
       const stripe = new StripeClient();
       const productPrice = await stripe.getProductPrice(type);
 
-      if(currentActiveSubscription.subscriptionType === "free"){
+      if (currentActiveSubscription.subscriptionType === "free") {
         // update the free trial subscription to the new plan.
 
         const checkoutSession = await stripe.stripe.checkout.sessions.create({
@@ -129,7 +131,7 @@ router.post(
             userId: userId,
           }
         });
-  
+
         res.status(200).json({ redirectUrl: checkoutSession.url });
         return;
       }
@@ -177,5 +179,23 @@ router.post(
     }
   }
 );
+
+router.get("/check-sub-status", authenticateJWT, async (req: Request, res: Response, next: NextFunction) => {
+  const authenticatedReq = req as AuthenticatedRequest;
+  const userId = authenticatedReq.user?.userId as string;
+
+  const cachedSubStatus = await cache.getUserSubStatus(userId);
+
+  if(cachedSubStatus){
+    res.status(200).json({ isActive : cachedSubStatus?.isActive ? true : false });
+    return
+  }
+
+  const isActive = await userService.isUserSubIsActive(userId);
+
+  await cache.setUserSubStatus(userId, isActive);
+
+  res.status(200).json({ isActive });
+});
 
 export default router;
