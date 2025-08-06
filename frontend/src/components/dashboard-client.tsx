@@ -12,7 +12,6 @@ import Link from "next/link";
 import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import Toast from "@/components/Toast";
 import { StatCard } from '@/components/ui/stat-card'
-import { TourTrigger } from '@/components/tours';
 
 interface DashboardClientProps {
   initialSites?: SiteWithMetrics[];
@@ -370,16 +369,6 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Tour Trigger Button */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <TourTrigger 
-          tourId="dashboard" 
-          className="shadow-xl bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-2xl transition-all duration-200"
-        >
-          Start Tour
-        </TourTrigger>
       </div>
     </>
   );
