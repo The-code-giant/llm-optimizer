@@ -779,3 +779,13 @@ export async function changePlan(token: string, type: string) {
   });
   return handleResponse(res);
 }
+
+export async function checkSubStatus(token: string): Promise<{
+  isActive: boolean;
+}> {
+  const res = await fetch(`${API_BASE}/billing/check-sub-status`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  return handleResponse(res);
+}

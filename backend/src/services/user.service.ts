@@ -6,13 +6,15 @@ import { StripeClient } from "../lib/stripe";
 export class UserService {
   currentCheckingUsers: string[] = [];
 
-  async ensureUserExists(userId: string, email: string) : Promise<void> {
+  async ensureUserExists(userId: string, email: string) : Promise<{isNewUser: boolean}> {
+    let isNewUser = false;
 
     if(this.currentCheckingUsers.includes(userId)){
-      return;
+      return {isNewUser};
     }
 
     this.currentCheckingUsers.push(userId);
+
 
     try {
       // Try to find the user first
@@ -37,7 +39,7 @@ export class UserService {
         });
 
         await this.subscribeToProPlanTrial(userId, stripeCustomerId as string);
-
+        isNewUser = true;
       } else {
         const user = existingUser[0];
 
@@ -66,6 +68,8 @@ export class UserService {
     }finally{
       this.currentCheckingUsers = this.currentCheckingUsers.filter(id => id !== userId);
     }
+
+    return { isNewUser };
   }
 
   async subscribeToProPlanTrial(userId: string, stripeCustomerId: string) {

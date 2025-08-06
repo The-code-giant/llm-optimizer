@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { DashboardLayout } from "../../../components/ui/dashboard-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
-import { Badge } from "../../../components/ui/badge";
+import { DashboardLayout } from "../../../../components/ui/dashboard-layout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
+import { Badge } from "../../../../components/ui/badge";
 import { BarChart3, TrendingUp, Activity, Zap } from "lucide-react";
-import Toast from "../../../components/Toast";
+import Toast from "../../../../components/Toast";
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { SiteHeader } from '@/components/site-header'

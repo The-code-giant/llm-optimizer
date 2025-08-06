@@ -191,6 +191,13 @@ router.get("/check-sub-status", authenticateJWT, async (req: Request, res: Respo
     return
   }
 
+  const {isNewUser} = await userService.ensureUserExists(userId , authenticatedReq.user?.email as string);
+
+  if(isNewUser){
+    res.status(200).json({ isActive : true });
+    return;
+  }
+
   const isActive = await userService.isUserSubIsActive(userId);
 
   await cache.setUserSubStatus(userId, isActive);
