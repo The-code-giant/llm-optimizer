@@ -70,6 +70,7 @@ import {
   SiteDetails,
 } from "@/lib/api";
 import { StatCard } from '@/components/ui/stat-card'
+import { TourTrigger } from "@/components/tours";
 
 interface ImportProgress {
   status: "idle" | "importing" | "processing" | "completed" | "error";
@@ -493,7 +494,7 @@ export default function SiteDetailsPage() {
 
                 <div className="space-y-6">
                   {/* Header */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between" data-tour="site-header">
                     <div className="flex items-center space-x-4">
                       <Button
                         variant="ghost"
@@ -560,7 +561,7 @@ export default function SiteDetailsPage() {
 
                   {/* Top Action Buttons */}
                   {site && activeTab === "overview" && (
-                    <Card>
+                    <Card data-tour="quick-actions">
                       <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
                         <CardDescription>
@@ -584,6 +585,7 @@ export default function SiteDetailsPage() {
                               <Button
                                 variant="outline"
                                 className="flex items-center"
+                                data-tour="add-pages"
                               >
                                 <ListPlus className="h-4 w-4 mr-2" />
                                 Manage Pages
@@ -757,7 +759,7 @@ export default function SiteDetailsPage() {
                         {activeTab === "overview" && (
                           <>
                             {/* Metrics Cards */}
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4" data-tour="metrics-overview">
                               <StatCard
                                 icon={FileText}
                                 title="Total Pages"
@@ -787,7 +789,7 @@ export default function SiteDetailsPage() {
 
 
                             {/* Pages Management */}
-                            <Card>
+                            <Card data-tour="pages-management">
                               <CardHeader>
                                 <div className="flex items-center justify-between">
                                   <div>
@@ -826,7 +828,7 @@ export default function SiteDetailsPage() {
                                 </div>
 
                                 {/* Filters and Search */}
-                                <div className="flex flex-wrap items-center gap-4 pt-4">
+                                <div className="flex flex-wrap items-center gap-4 pt-4" data-tour="search-filters">
                                   <div className="relative">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -983,7 +985,7 @@ export default function SiteDetailsPage() {
                                             </div>
                                           </div>
 
-                                          <div className="flex items-center space-x-2 ml-4">
+                                          <div className="flex items-center space-x-2 ml-4" data-tour="page-actions">
                                             <Link
                                               href={`/dashboard/${siteId}/pages/${page.id}`}
                                             >
@@ -1307,6 +1309,16 @@ export default function SiteDetailsPage() {
           </div>
         </div>
       </SidebarInset>
+      
+      {/* Tour Trigger Button */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <TourTrigger 
+          tourId="site-details" 
+          className="shadow-xl bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-2xl transition-all duration-200"
+        >
+          Start Tour
+        </TourTrigger>
+      </div>
     </SidebarProvider>
   );
 }

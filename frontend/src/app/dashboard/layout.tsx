@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@/components/ui/theme-provider";
 import { TourProvider, TourOverlay } from "@/components/tours";
 import { dashboardTour } from "@/components/tours/dashboard-tour";
+import { siteDetailsTour } from "@/components/tours/site-details-tour";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       enableSystem
       disableTransitionOnChange
     >
-      <TourProvider tours={[dashboardTour]}>
+      <TourProvider tours={[dashboardTour, siteDetailsTour]}>
         {children}
         <TourOverlay />
       </TourProvider>
