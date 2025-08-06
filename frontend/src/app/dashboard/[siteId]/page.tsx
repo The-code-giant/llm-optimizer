@@ -494,7 +494,7 @@ export default function SiteDetailsPage() {
 
                 <div className="space-y-6">
                   {/* Header */}
-                  <div className="flex items-center justify-between" data-tour="site-header">
+                  <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0" data-tour="site-header">
                     <div className="flex items-center space-x-4">
                       <Button
                         variant="ghost"
@@ -503,21 +503,21 @@ export default function SiteDetailsPage() {
                       >
                         <ArrowLeft className="h-4 w-4" />
                       </Button>
-                      <div>
-                        <h1 className="text-3xl font-bold">
+                      <div className="min-w-0 flex-1">
+                        <h1 className="text-2xl md:text-3xl font-bold truncate">
                           {loading
                             ? "Loading..."
                             : site?.name || "Site Details"}
                         </h1>
                         {site && (
-                          <p className="text-muted-foreground mt-1 flex items-center">
-                            <Globe className="h-4 w-4 mr-1" />
-                            {site.url}
+                          <p className="text-muted-foreground mt-1 flex items-center text-sm">
+                            <Globe className="h-4 w-4 mr-1 flex-shrink-0" />
+                            <span className="truncate">{site.url}</span>
                             <a
                               href={site.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="ml-2 text-primary hover:text-primary/80"
+                              className="ml-2 text-primary hover:text-primary/80 flex-shrink-0"
                             >
                               <ExternalLink className="h-4 w-4" />
                             </a>
@@ -525,36 +525,28 @@ export default function SiteDetailsPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      {/* Tab Navigation */}
-                      <div className="flex items-center space-x-1 border rounded-lg p-1">
-                        <Button
-                          variant={
-                            activeTab === "overview" ? "default" : "ghost"
-                          }
-                          size="sm"
-                          onClick={() => setActiveTab("overview")}
-                        >
-                          Overview
-                        </Button>
-                        <Button
-                          variant={
-                            activeTab === "analytics" ? "default" : "ghost"
-                          }
-                          size="sm"
-                          onClick={() => setActiveTab("analytics")}
-                        >
-                          Analytics
-                        </Button>
-                      </div>
-
-                      <Button variant="outline" onClick={refreshData}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Refresh
+                    
+                    {/* Tab Navigation - Mobile responsive */}
+                    <div className="flex items-center space-x-1 border rounded-lg p-1 w-full md:w-auto justify-center md:justify-start">
+                      <Button
+                        variant={
+                          activeTab === "overview" ? "default" : "ghost"
+                        }
+                        size="sm"
+                        onClick={() => setActiveTab("overview")}
+                        className="flex-1 md:flex-none"
+                      >
+                        Overview
                       </Button>
-                      <Button variant="outline" onClick={() => setShowSettings(true)}>
-                        <Settings className="h-4 w-4 mr-2" />
-                        Settings
+                      <Button
+                        variant={
+                          activeTab === "analytics" ? "default" : "ghost"
+                        }
+                        size="sm"
+                        onClick={() => setActiveTab("analytics")}
+                        className="flex-1 md:flex-none"
+                      >
+                        Analytics
                       </Button>
                     </div>
                   </div>
@@ -565,7 +557,7 @@ export default function SiteDetailsPage() {
                       <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
                         <CardDescription>
-                          Manage your site&apos; tracker and content deployment
+                          Manage your site&apos; tracker, content deployment, and site settings
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
@@ -725,6 +717,16 @@ export default function SiteDetailsPage() {
                               </div>
                             </DialogContent>
                           </Dialog>
+                          
+                          {/* Settings and Refresh buttons moved here */}
+                          <Button variant="outline" onClick={refreshData}>
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Refresh
+                          </Button>
+                          <Button variant="outline" onClick={() => setShowSettings(true)}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Settings
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -791,7 +793,7 @@ export default function SiteDetailsPage() {
                             {/* Pages Management */}
                             <Card data-tour="pages-management">
                               <CardHeader>
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                   <div>
                                     <CardTitle>
                                       Pages ({filteredAndSortedPages.length})
@@ -801,35 +803,57 @@ export default function SiteDetailsPage() {
                                     </CardDescription>
                                   </div>
 
-                                  {/* Bulk Actions */}
-                                  {selectedPages.size > 0 && (
-                                    <div className="flex items-center space-x-2">
-                                      <span className="text-sm text-muted-foreground">
-                                        {selectedPages.size} selected
-                                      </span>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleBulkAnalyze}
-                                      >
-                                        <Play className="h-4 w-4 mr-1" />
-                                        Analyze
-                                      </Button>
-                                      <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={handleBulkDelete}
-                                      >
-                                        <Trash2 className="h-4 w-4 mr-1" />
-                                        Delete
-                                      </Button>
-                                    </div>
-                                  )}
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                    {/* Add New Page Button */}
+                                    <Dialog
+                                      open={showPageManagement}
+                                      onOpenChange={setShowPageManagement}
+                                    >
+                                      <DialogTrigger asChild>
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          className="flex items-center w-full sm:w-auto"
+                                          data-tour="add-new-page"
+                                        >
+                                          <Plus className="h-4 w-4 mr-2" />
+                                          Add New Page
+                                        </Button>
+                                      </DialogTrigger>
+                                    </Dialog>
+
+                                    {/* Bulk Actions */}
+                                    {selectedPages.size > 0 && (
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                                        <span className="text-sm text-muted-foreground">
+                                          {selectedPages.size} selected
+                                        </span>
+                                        <div className="flex gap-2">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleBulkAnalyze}
+                                          >
+                                            <Play className="h-4 w-4 mr-1" />
+                                            Analyze
+                                          </Button>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleBulkDelete}
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-1" />
+                                            Delete
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
 
                                 {/* Filters and Search */}
-                                <div className="flex flex-wrap items-center gap-4 pt-4" data-tour="search-filters">
-                                  <div className="relative">
+                                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 pt-4" data-tour="search-filters">
+                                  <div className="relative w-full sm:w-auto">
                                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
                                       placeholder="Search pages..."
@@ -837,7 +861,7 @@ export default function SiteDetailsPage() {
                                       onChange={(e) =>
                                         setSearchTerm(e.target.value)
                                       }
-                                      className="pl-10 w-64"
+                                      className="pl-10 w-full sm:w-64"
                                     />
                                   </div>
 
@@ -846,7 +870,7 @@ export default function SiteDetailsPage() {
                                     onChange={(e) =>
                                       setScoreFilter(e.target.value as "all" | "high" | "medium" | "low")
                                     }
-                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background"
+                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background w-full sm:w-auto"
                                   >
                                     <option value="all">All Scores</option>
                                     <option value="high">High (80%+)</option>
@@ -861,7 +885,7 @@ export default function SiteDetailsPage() {
                                     onChange={(e) =>
                                       setSortBy(e.target.value as "title" | "url" | "score" | "lastScanned")
                                     }
-                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background"
+                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background w-full sm:w-auto"
                                   >
                                     <option value="title">Sort by Title</option>
                                     <option value="url">Sort by URL</option>
@@ -879,6 +903,7 @@ export default function SiteDetailsPage() {
                                         sortOrder === "asc" ? "desc" : "asc"
                                       )
                                     }
+                                    className="w-full sm:w-auto"
                                   >
                                     {sortOrder === "asc" ? (
                                       <SortAsc className="h-4 w-4" />
@@ -926,7 +951,7 @@ export default function SiteDetailsPage() {
                                         key={page.id}
                                         className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
                                       >
-                                        <div className="flex items-start justify-between">
+                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                           <div className="flex items-start space-x-3 flex-1 min-w-0">
                                             <Button
                                               variant="ghost"
@@ -934,7 +959,7 @@ export default function SiteDetailsPage() {
                                               onClick={() =>
                                                 handleSelectPage(page.id)
                                               }
-                                              className="p-1 mt-1"
+                                              className="p-1 mt-1 flex-shrink-0"
                                             >
                                               {selectedPages.has(page.id) ? (
                                                 <CheckSquare className="h-4 w-4" />
@@ -944,7 +969,7 @@ export default function SiteDetailsPage() {
                                             </Button>
 
                                             <div className="flex-1 min-w-0">
-                                              <div className="flex items-center space-x-3 mb-2">
+                                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 gap-2 mb-2">
                                                 <h3 className="font-medium truncate">
                                                   {page.title ||
                                                     "Untitled Page"}
@@ -958,6 +983,7 @@ export default function SiteDetailsPage() {
                                                       ? "secondary"
                                                       : "destructive"
                                                   }
+                                                  className="w-fit"
                                                 >
                                                   {page.llmReadinessScore}% LLM
                                                   Ready
@@ -966,7 +992,7 @@ export default function SiteDetailsPage() {
                                               <p className="text-sm text-muted-foreground truncate mb-2">
                                                 {page.url}
                                               </p>
-                                              <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-1 text-xs text-muted-foreground">
                                                 <span>
                                                   Last scanned:{" "}
                                                   {new Date(
@@ -985,13 +1011,15 @@ export default function SiteDetailsPage() {
                                             </div>
                                           </div>
 
-                                          <div className="flex items-center space-x-2 ml-4" data-tour="page-actions">
+                                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2 sm:ml-4" data-tour="page-actions">
                                             <Link
                                               href={`/dashboard/${siteId}/pages/${page.id}`}
+                                              className="w-full sm:w-auto"
                                             >
                                               <Button
                                                 variant="outline"
                                                 size="sm"
+                                                className="w-full sm:w-auto"
                                               >
                                                 View Analysis
                                               </Button>
@@ -1048,7 +1076,7 @@ export default function SiteDetailsPage() {
                                                   }
                                                 }
                                               }}
-                                              className="text-red-600 hover:text-red-800 border-red-300 hover:border-red-400"
+                                              className="text-red-600 hover:text-red-800 border-red-300 hover:border-red-400 w-full sm:w-auto"
                                             >
                                               <Trash2 className="h-4 w-4" />
                                             </Button>
