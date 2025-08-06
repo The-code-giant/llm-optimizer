@@ -31,7 +31,10 @@ export const CACHE_KEYS = {
   TRACKER_EVENTS: 'tracker_events',
   
   // Session cache
-  SESSION: 'session'
+  SESSION: 'session',
+
+  // User sub status
+  USER_SUB_STATUS: 'user:sub:status',
 };
 
 // Cache TTL constants (in seconds)
@@ -42,6 +45,7 @@ export const CACHE_TTL = {
   DASHBOARD_LONG: 1800,      // 30 minutes (site configuration)
   RATE_LIMIT_WINDOW: 60,     // 1 minute rate limiting window
   SESSION: 3600,             // 1 hour session cache
+  USER_SUB_STATUS: 1800,       // 30 minutes user sub status cache
 };
 
 interface CacheOptions {
@@ -176,6 +180,21 @@ class CacheService {
   async getSitePages(siteId: string): Promise<any> {
     const key = `${CACHE_KEYS.SITE_PAGES}:${siteId}`;
     return await this.get(key);
+  }
+
+  async getUserSubStatus(userId: string): Promise<{isActive: boolean} | null> {
+    const key = `${CACHE_KEYS.USER_SUB_STATUS}:${userId}`;
+    return this.get<{isActive: boolean}>(key);
+  }
+
+  async setUserSubStatus(userId: string, isActive: boolean): Promise<boolean> {
+    const key = `${CACHE_KEYS.USER_SUB_STATUS}:${userId}`;
+    return this.set(key, {isActive}, { ttl: CACHE_TTL.USER_SUB_STATUS });
+  }
+
+  async invalidateUserSub(userId: string): Promise<void> {
+    const key = `${CACHE_KEYS.USER_SUB_STATUS}:${userId}`;
+    await this.delete(key);
   }
 
   async setSitePages(siteId: string, pages: any): Promise<boolean> {

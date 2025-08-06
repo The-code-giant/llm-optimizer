@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { userSubscriptions } from "../db/schema";
 import { db } from "../db/client";
 import { eq } from "drizzle-orm";
+import cache from "../utils/cache";
 
 const router = Router();
 
@@ -60,6 +61,7 @@ const handleSubscriptionCreated = async (event: Stripe.Event) => {
     subscriptionType: productName as "pro" | "enterprise",
   });
 
+  await cache.invalidateUserSub(userId);
 };
 
 const handleSubscriptionUpdated = async (event: Stripe.Event) => {
@@ -81,6 +83,14 @@ const handleSubscriptionUpdated = async (event: Stripe.Event) => {
   }).where(eq(userSubscriptions.stripeSubscriptionId, subscriptionID));
 
   console.log( "subscription updated", subscriptionID)
+
+  const findSub = await db.query.userSubscriptions.findFirst({
+    where : eq(userSubscriptions.stripeSubscriptionId, subscriptionID)
+  })
+
+  if(findSub){
+    await cache.invalidateUserSub(findSub.userId);
+  }
 }
 
 router.post(

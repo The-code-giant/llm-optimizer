@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { getTeamMembers, addTeamMember, TeamMember } from "../../../lib/api";
-import Toast from "../../../components/Toast";
+import { getTeamMembers, addTeamMember, TeamMember } from "../../../../lib/api";
+import Toast from "../../../../components/Toast";
 import { AppSidebar } from '@/components/app-sidebar'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { SiteHeader } from '@/components/site-header'

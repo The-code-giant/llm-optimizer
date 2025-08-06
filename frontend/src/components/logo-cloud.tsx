@@ -6,43 +6,43 @@ import Image from 'next/image'
 const AI_LOGOS = [
     {
         src: '/ai-logos/openai.svg',
-        alt: 'OpenAI Logo',
+        alt: 'ChatGPT',
         width: 50,
         height: 50
     },
     {
         src: '/ai-logos/claude.svg',
-        alt: 'Claude Logo',
+        alt: 'Claude',
         width: 50,
         height: 50
     },
     {
         src: '/ai-logos/gemini.svg',
-        alt: 'Gemini Logo',
+        alt: 'Gemini',
         width: 50,
         height: 50
     },
     {
         src: '/ai-logos/perplexity.svg',
-        alt: 'Perplexity Logo',
+        alt: 'Perplexity',
         width: 50,
         height: 50
     },
     {
         src: '/ai-logos/deepseek.svg',
-        alt: 'DeepSeek Logo',
+        alt: 'DeepSeek',
         width: 50,
         height: 50
     },
     {
         src: '/ai-logos/grok.svg',
-        alt: 'Grok Logo',
+        alt: 'Grok',
         width: 50,
         height: 50
     },
     {
         src: '/ai-logos/metaai.svg',
-        alt: 'Meta AI Logo',
+        alt: 'Meta AI',
         width: 50,
         height: 50
     }
@@ -62,7 +62,7 @@ export default function LogoCloud() {
                             speed={40}
                             gap={112}>
                             {AI_LOGOS.map((logo, index) => (
-                                <div key={index} className="flex">
+                                <div key={index} className="flex flex-col items-center">
                                     <Image
                                         className="mx-auto h-6 w-fit dark:invert"
                                         src={logo.src}
@@ -74,6 +74,7 @@ export default function LogoCloud() {
                                             width: 'auto'
                                         }}
                                     />
+                                    <p className="text-sm">{logo.alt}</p>
                                 </div>
                             ))}
                         </InfiniteSlider>

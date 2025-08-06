@@ -1,18 +1,20 @@
-import { eq } from "drizzle-orm";
-import { users } from "../db/schema";
+import { and, eq } from "drizzle-orm";
+import { users, userSubscriptions } from "../db/schema";
 import { db } from "../db/client";
 import { StripeClient } from "../lib/stripe";
 
 export class UserService {
   currentCheckingUsers: string[] = [];
 
-  async ensureUserExists(userId: string, email: string) : Promise<void> {
+  async ensureUserExists(userId: string, email: string) : Promise<{isNewUser: boolean}> {
+    let isNewUser = false;
 
     if(this.currentCheckingUsers.includes(userId)){
-      return;
+      return {isNewUser};
     }
 
     this.currentCheckingUsers.push(userId);
+
 
     try {
       // Try to find the user first
@@ -37,7 +39,7 @@ export class UserService {
         });
 
         await this.subscribeToProPlanTrial(userId, stripeCustomerId as string);
-
+        isNewUser = true;
       } else {
         const user = existingUser[0];
 
@@ -66,6 +68,8 @@ export class UserService {
     }finally{
       this.currentCheckingUsers = this.currentCheckingUsers.filter(id => id !== userId);
     }
+
+    return { isNewUser };
   }
 
   async subscribeToProPlanTrial(userId: string, stripeCustomerId: string) {
@@ -82,6 +86,29 @@ export class UserService {
         }
       }
     });
+  }
+
+  async isUserSubIsActive(userId: string) {
+    const userSub = await db.query.userSubscriptions.findFirst({
+      where :
+       and(eq(userSubscriptions.userId, userId),
+       eq(userSubscriptions.isActive, 1))
+    });
+    
+    if(!userSub){
+      return false;
+    }
+
+    try{
+      const stripeClient = new StripeClient();
+      const sub = await stripeClient.getSubscription(userSub.stripeSubscriptionId as string);
+
+      return ["active", "trialing"].includes(sub.status);
+    }catch(err){
+      console.error("Error checking user sub is active:", err);
+      return false
+    }
+
   }
 }
 
