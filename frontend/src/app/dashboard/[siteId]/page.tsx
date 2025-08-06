@@ -549,6 +549,26 @@ export default function SiteDetailsPage() {
                         Analytics
                       </Button>
                     </div>
+                    
+                    {/* Tab-specific Tour Triggers */}
+                    <div className="flex items-center space-x-2">
+                      {activeTab === "overview" && (
+                        <TourTrigger 
+                          tourId="site-details" 
+                          className="shadow-lg bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-xl transition-all duration-200 text-xs"
+                        >
+                          Start Overview Tour
+                        </TourTrigger>
+                      )}
+                      {activeTab === "analytics" && (
+                        <TourTrigger 
+                          tourId="analytics" 
+                          className="shadow-lg bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-xl transition-all duration-200 text-xs"
+                        >
+                          Start Analytics Tour
+                        </TourTrigger>
+                      )}
+                    </div>
                   </div>
 
                   {/* Top Action Buttons */}
@@ -1337,16 +1357,6 @@ export default function SiteDetailsPage() {
           </div>
         </div>
       </SidebarInset>
-      
-      {/* Tour Trigger Button */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <TourTrigger 
-          tourId="site-details" 
-          className="shadow-xl bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-2xl transition-all duration-200"
-        >
-          Start Tour
-        </TourTrigger>
-      </div>
     </SidebarProvider>
   );
 }
