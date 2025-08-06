@@ -2,6 +2,7 @@ import AIOptimizationTabs from "@/components/ai-optimization-tabs";
 // import FAQs from "@/components/faqs";
 import HeroSection from "@/components/hero-section";
 import LogoCloud from "@/components/logo-cloud";
+import Features from "@/components/features-1";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { Button } from "@/components/ui/button";
 import { Footer } from "@/components/ui/footer";
@@ -10,6 +11,7 @@ import { ArrowUpIcon, SparklesIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import AnimatedDiv from "@/components/ui/animated-div";
 import FAQsThree from "@/components/faqs-3";
+import { Network, Sparkles, TrendingUp } from "lucide-react";
 export default function Home() {
   const stats = [
     {
@@ -41,6 +43,7 @@ export default function Home() {
       {/* Hero Section - Dark */}
       <HeroSection />
       <LogoCloud />
+      <Features />
       <section id="pricing" className="py-20 bg-blue-50">
         <div className="max-w-7xl mx-auto px-4">
           <AnimatedDiv
@@ -120,157 +123,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Content Optimization Section */}
-      <section id="features" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-16 items-center">
-          <AnimatedDiv
-            initial={{ opacity: 0, x: -60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900 leading-tight">
-              Increase your website&apos;s LLM citations and visibility.
-            </h2>
-            <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              Analyze your website content from an LLM&apos;s perspective and
-              get specific recommendations to improve how ChatGPT, Claude, and
-              Gemini understand and cite your content.
-            </p>
-            <ul className="space-y-4 text-gray-700">
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                Import your sitemap and analyze all pages for LLM-readiness with
-                AI-powered scoring.
-              </li>
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                Get specific, actionable recommendations to improve content
-                structure and clarity.
-              </li>
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                Inject AI-generated FAQs and structured content directly onto
-                your pages.
-              </li>
-              <li className="flex items-start">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                Track your LLM-readiness score and monitor citation improvements
-                over time.
-              </li>
-            </ul>
-          </AnimatedDiv>
-
-          <AnimatedDiv
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative"
-          >
-            {/* Dashboard Mockup */}
-            <div className="bg-white rounded-lg shadow-2xl p-6 border">
-              <div className="flex items-center justify-between mb-6">
-                <span className="text-purple-600 text-sm font-medium">
-                  LLM Citation Analysis
-                </span>
-              </div>
-
-              {/* Chart Placeholder */}
-              <div className="relative">
-                <div className="w-48 h-48 mx-auto relative">
-                  <svg className="w-full h-full" viewBox="0 0 200 200">
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#e5e7eb"
-                      strokeWidth="20"
-                    />
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#3b82f6"
-                      strokeWidth="20"
-                      strokeDasharray="251.2"
-                      strokeDashoffset="125.6"
-                      className="transform -rotate-90 origin-center"
-                    />
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#06b6d4"
-                      strokeWidth="20"
-                      strokeDasharray="251.2"
-                      strokeDashoffset="188"
-                      className="transform -rotate-90 origin-center"
-                    />
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="80"
-                      fill="none"
-                      stroke="#8b5cf6"
-                      strokeWidth="20"
-                      strokeDasharray="251.2"
-                      strokeDashoffset="213"
-                      className="transform -rotate-90 origin-center"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <div className="text-3xl font-bold text-gray-900">87</div>
-                    <div className="text-sm text-gray-600">LLM Score</div>
-                  </div>
-                </div>
-
-                {/* Legend */}
-                <div className="mt-6 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-gray-600">ChatGPT</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-cyan-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-gray-600">Claude</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                      <span className="text-sm text-gray-600">Gemini</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-gray-300 rounded-full mr-2"></div>
-                      <span className="text-sm text-gray-600">Others</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Stats */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">ChatGPT</span>
-                  <div className="flex items-center">
-                    <ArrowUpIcon className="w-4 h-4 text-green-500 mr-1" />
-                    <span className="text-sm font-medium">2.2%</span>
-                  </div>
-                </div>
-                <div className="text-2xl font-bold mt-1">2K citations</div>
-              </div>
-            </div>
-          </AnimatedDiv>
-        </div>
-      </section>
-
       {/* Content Deployment Section */}
       <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-16 items-center">
@@ -344,15 +196,40 @@ export default function Home() {
             className="order-1 lg:order-2"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900 leading-tight">
-              Inject optimized content directly onto your website.
+            The CleverSearch Optimization Loop
             </h2>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-              Move from analysis to action with AI-generated content suggestions
-              that you can deploy directly onto your pages without developer
-              assistance. Improve your LLM readiness score with structured
-              content that LLMs love to cite.
+              From crawl to clarity — in 3 steps.
             </p>
-            <ul className="space-y-4 text-gray-700">
+            <div className="space-y-4 text-gray-700">
+
+
+    <ol className="relative text-gray-500 border-s border-gray-200 dark:border-gray-700 dark:text-gray-400">                  
+    <li className="mb-10 ms-6">            
+        <span className="absolute flex items-center justify-center w-8 h-8 bg-green-200 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-green-900">
+           <Network className="w-3.5 h-3.5" />
+        </span>
+        <h3 className="font-medium leading-tight">Connect Your Site</h3>
+        <p className="text-sm">We audit your structure, content, and context in seconds.</p>
+    </li>
+    <li className="mb-10 ms-6">
+        <span className="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
+          <Sparkles className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+        </span>
+        <h3 className="font-medium leading-tight">Get Smart Recommendations</h3>
+        <p className="text-sm">We tell you exactly what’s holding you back — and how to fix it.</p>
+    </li>
+    <li className="mb-10 ms-6">
+        <span className="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
+            <TrendingUp className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+        </span>
+        <h3 className="font-medium leading-tight">Watch Performance Improve</h3>
+        <p className="text-sm">Your score, site visibility, and AI comprehension get better — fast.</p>
+    </li>
+    </ol>
+
+            </div>
+            {/* <ul className="space-y-4 text-gray-700">
               <li className="flex items-start">
                 <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 mr-3 flex-shrink-0"></div>
                 Get AI-generated FAQ sections, definitions, and structured
@@ -373,7 +250,7 @@ export default function Home() {
                 Track improvements in your LLM readiness score as you implement
                 recommendations.
               </li>
-            </ul>
+            </ul> */}
           </AnimatedDiv>
         </div>
       </section>
@@ -540,9 +417,9 @@ export default function Home() {
           >
             {/* Person with Glasses */}
             <div className="relative">
-              <div className="w-80 h-96 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-yellow-500/30 to-transparent"></div>
-                <span className="text-8xl relative z-10">👩‍💼</span>
+              <div className="w-80 h-96 rounded-2xl flex items-center justify-center mx-auto relative overflow-hidden">
+                <div className="absolute inset-0"></div>
+                {/* <span className="text-8xl relative z-10">👩‍💼</span> */}
               </div>
 
               {/* Floating UI Elements */}
