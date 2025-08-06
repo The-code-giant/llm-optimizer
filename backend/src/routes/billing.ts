@@ -119,7 +119,7 @@ router.post(
       const stripe = new StripeClient();
       const productPrice = await stripe.getProductPrice(type);
 
-      if (currentActiveSubscription.subscriptionType === "free") {
+      if (currentActiveSubscription?.subscriptionType === "free") {
         // update the free trial subscription to the new plan.
 
         const checkoutSession = await stripe.stripe.checkout.sessions.create({
@@ -137,7 +137,7 @@ router.post(
         return;
       }
 
-      if (currentActiveSubscription.stripeSubscriptionId) {
+      if (currentActiveSubscription?.stripeSubscriptionId) {
         const subInStripe = await stripe.getSubscription(
           currentActiveSubscription.stripeSubscriptionId as string
         );
