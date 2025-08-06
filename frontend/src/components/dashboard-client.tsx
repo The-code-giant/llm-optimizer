@@ -12,6 +12,7 @@ import Link from "next/link";
 import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import Toast from "@/components/Toast";
 import { StatCard } from '@/components/ui/stat-card'
+import { TourTrigger } from '@/components/tours';
 
 interface DashboardClientProps {
   initialSites?: SiteWithMetrics[];
@@ -202,7 +203,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       
       <div className="space-y-6">
         {/* Header */}
-        <div>
+        <div data-tour="welcome">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-2">
             Welcome back, {user?.emailAddresses[0]?.emailAddress?.split('@')[0]}! 
@@ -211,7 +212,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tour="stats-overview">
           <StatCard
             icon={Globe}
             title="Total Sites"
@@ -245,7 +246,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
         </div>
 
         {/* Sites Section */}
-        <Card>
+        <Card data-tour="sites-section">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -254,11 +255,13 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                   Monitor and manage your websites&apos; LLM optimization progress
                 </CardDescription>
               </div>
-              <AddSiteModal 
-                onSiteAdded={handleSiteAdded}
-                onError={handleError}
-                onSuccess={handleSuccess}
-              />
+              <div data-tour="add-site">
+                <AddSiteModal 
+                  onSiteAdded={handleSiteAdded}
+                  onError={handleError}
+                  onSuccess={handleSuccess}
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -289,11 +292,13 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                 <Globe className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No sites yet</h3>
                 <p className="text-muted-foreground mb-4">Get started by adding your first website to optimize for LLMs.</p>
-                <AddSiteModal 
-                  onSiteAdded={handleSiteAdded}
-                  onError={handleError}
-                  onSuccess={handleSuccess}
-                />
+                <div data-tour="add-site">
+                  <AddSiteModal 
+                    onSiteAdded={handleSiteAdded}
+                    onError={handleError}
+                    onSuccess={handleSuccess}
+                  />
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -365,6 +370,16 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Tour Trigger Button */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <TourTrigger 
+          tourId="dashboard" 
+          className="shadow-xl bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-2xl transition-all duration-200"
+        >
+          Start Tour
+        </TourTrigger>
       </div>
     </>
   );
