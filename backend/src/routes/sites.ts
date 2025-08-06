@@ -1,11 +1,12 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/client";
-import { sites, users, pages, pageAnalytics, pageContent, trackerData } from "../db/schema";
+import { sites, users, pages, pageAnalytics, pageContent, trackerData, analysisResults, contentSuggestions } from "../db/schema";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
 import { sitemapImportQueue } from "../utils/queue";
 import { randomUUID } from "crypto";
 import cache from "../utils/cache";
+import { AnalysisService } from "../utils/analysisService";
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -186,6 +187,72 @@ router.post(
 
       // Invalidate user sites cache
       await cache.invalidateUserSites(req.user!.userId);
+
+      // Create a default page for the site URL
+      const [defaultPage] = await db
+        .insert(pages)
+        .values({
+          siteId: site.id,
+          url: url,
+          title: name,
+          llmReadinessScore: 0, // Initial score
+        })
+        .returning();
+
+      // Trigger analysis for the new site URL asynchronously
+      try {
+        console.log(`🚀 Starting initial analysis for new site: ${url}`);
+        
+        // Perform the analysis
+        const analysisResult = await AnalysisService.analyzePage({
+          url: url,
+          forceRefresh: true
+        });
+
+        // Update the page with analysis results
+        await db.update(pages)
+          .set({ 
+            contentSnapshot: JSON.stringify(analysisResult.content),
+            title: analysisResult.content.title || defaultPage.title,
+            llmReadinessScore: analysisResult.score,
+            lastAnalysisAt: new Date(),
+            lastScannedAt: new Date()
+          })
+          .where(eq(pages.id, defaultPage.id));
+
+        // Store analysis results in database
+        await db.insert(analysisResults).values({
+          pageId: defaultPage.id,
+          analyzedAt: new Date(),
+          llmModelUsed: 'gpt-4o-mini',
+          score: analysisResult.score,
+          recommendations: JSON.stringify({
+            issues: analysisResult.issues,
+            recommendations: analysisResult.recommendations,
+            summary: analysisResult.summary,
+            pageSummary: analysisResult.pageSummary,
+            contentQuality: analysisResult.contentQuality,
+            technicalSEO: analysisResult.technicalSEO,
+            keywordAnalysis: analysisResult.keywordAnalysis,
+            llmOptimization: analysisResult.llmOptimization
+          }),
+          rawLlmOutput: JSON.stringify(analysisResult),
+        });
+
+        console.log(`✅ Initial analysis completed for ${url} - Score: ${analysisResult.score}/100`);
+
+        // Auto-generate content suggestions
+        try {
+          await AnalysisService.autoGenerateContentSuggestions(defaultPage.id, analysisResult.content, analysisResult);
+          console.log(`🤖 Auto-generated content suggestions for new site: ${url}`);
+        } catch (contentError) {
+          console.error(`❌ Failed to auto-generate content for new site ${url}:`, contentError);
+        }
+
+      } catch (analysisError) {
+        console.error(`❌ Initial analysis failed for new site ${url}:`, analysisError);
+        // Don't fail the site creation if analysis fails
+      }
 
       res.status(201).json(site);
     } catch (err) {

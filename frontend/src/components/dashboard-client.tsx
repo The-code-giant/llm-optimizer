@@ -5,13 +5,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { getSitesWithMetrics, SiteWithMetrics, addSite } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Globe, BarChart3, Clock, Zap, AlertCircle, CheckCircle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
 import Toast from "@/components/Toast";
 import { StatCard } from '@/components/ui/stat-card'
+import { TourTrigger } from '@/components/tours';
 
 interface DashboardClientProps {
   initialSites?: SiteWithMetrics[];
@@ -68,7 +69,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       const siteName = domain.replace(/^www\./, '');
 
       // Create the site
-      await addSite(token, siteName, websiteUrl);
+      const newSite = await addSite(token, siteName, websiteUrl);
       
       // Show success message
       setToast({ 
@@ -83,6 +84,11 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('website');
       router.replace(newUrl.pathname + newUrl.search);
+
+      // Redirect to the new site page after a short delay
+      setTimeout(() => {
+        router.push(`/dashboard/${newSite.id}`);
+      }, 1500);
     } catch (err) {
       console.error('Failed to create site:', err);
       setToast({ 
@@ -112,8 +118,22 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
     }
   }, [isLoaded, isSignedIn, router, initialSites.length, searchParams]);
 
-  const handleSiteAdded = () => {
-    fetchSites(); // Refresh the sites list
+  const handleSiteAdded = async (siteId?: string) => {
+    await fetchSites(); // Refresh the sites list
+    
+    // If a siteId is provided, redirect to that site page
+    if (siteId) {
+      // Show success message first
+      setToast({ 
+        message: "Site added successfully! Redirecting to site page...", 
+        type: "success" 
+      });
+      
+      // Redirect after a short delay to show the toast
+      setTimeout(() => {
+        router.push(`/dashboard/${siteId}`);
+      }, 1500);
+    }
   };
 
   const handleError = (message: string) => {
@@ -183,7 +203,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       
       <div className="space-y-6">
         {/* Header */}
-        <div>
+        <div data-tour="welcome">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-2">
             Welcome back, {user?.emailAddresses[0]?.emailAddress?.split('@')[0]}! 
@@ -192,7 +212,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-tour="stats-overview">
           <StatCard
             icon={Globe}
             title="Total Sites"
@@ -226,7 +246,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
         </div>
 
         {/* Sites Section */}
-        <Card>
+        <Card data-tour="sites-section">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -235,11 +255,13 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                   Monitor and manage your websites&apos; LLM optimization progress
                 </CardDescription>
               </div>
-              <AddSiteModal 
-                onSiteAdded={handleSiteAdded}
-                onError={handleError}
-                onSuccess={handleSuccess}
-              />
+              <div data-tour="add-site">
+                <AddSiteModal 
+                  onSiteAdded={handleSiteAdded}
+                  onError={handleError}
+                  onSuccess={handleSuccess}
+                />
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -270,11 +292,13 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                 <Globe className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No sites yet</h3>
                 <p className="text-muted-foreground mb-4">Get started by adding your first website to optimize for LLMs.</p>
-                <AddSiteModal 
-                  onSiteAdded={handleSiteAdded}
-                  onError={handleError}
-                  onSuccess={handleSuccess}
-                />
+                <div data-tour="add-site">
+                  <AddSiteModal 
+                    onSiteAdded={handleSiteAdded}
+                    onError={handleError}
+                    onSuccess={handleSuccess}
+                  />
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -346,6 +370,16 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Tour Trigger Button */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <TourTrigger 
+          tourId="dashboard" 
+          className="shadow-xl bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-2xl transition-all duration-200"
+        >
+          Start Tour
+        </TourTrigger>
       </div>
     </>
   );

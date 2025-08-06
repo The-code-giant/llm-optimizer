@@ -148,6 +148,7 @@ export default function PageAnalysisPage() {
           originalContentResult.value.originalContent?.metaDescription || ""
         );
       }
+      console.log({pageDetails, analysisData, savedContent, originalContentResult})
       if (pageDetails.status === "fulfilled") {
         setPageData(pageDetails.value);
       } else {
@@ -425,7 +426,7 @@ export default function PageAnalysisPage() {
 
   // Find deployed paragraph
   const deployedParagraph = (contentVersions.paragraph || []).find((c) => c.isActive === 1);
-
+  console.log(contentVersions);
   return (
  <SidebarProvider
       style={
@@ -479,7 +480,7 @@ export default function PageAnalysisPage() {
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      Run First Analysis
+                      {analysis ? "Run Analysis Again" : "Run First Analysis"}
                     </Button>
                   </div>
 

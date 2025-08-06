@@ -1,15 +1,15 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { Check, Copy, Loader2, Sparkles, Type } from "lucide-react";
+import { useEffect, useState } from "react";
 import { generateContentSuggestions, getCachedContentSuggestions, getOriginalPageContent, OriginalPageContent } from "../lib/api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
+import Toast from "./Toast";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Badge } from "./ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Loader2, Sparkles, Copy, Check, RefreshCw, Type, Globe, Edit3 } from "lucide-react";
-import Toast from "./Toast";
 
 interface TitleEditorModalProps {
   isOpen: boolean;
@@ -28,14 +28,11 @@ export default function TitleEditorModal({
   currentContent = '',
   onSave,
   title,
-  description
 }: TitleEditorModalProps) {
   const { getToken } = useAuth();
   const [editedContent, setEditedContent] = useState(currentContent);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingOriginal, setLoadingOriginal] = useState(false);
-  const [originalContent, setOriginalContent] = useState<OriginalPageContent | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
@@ -49,17 +46,14 @@ export default function TitleEditorModal({
   }, [currentContent, isOpen]);
 
   const loadOriginalContent = async () => {
-    setLoadingOriginal(true);
     try {
       const token = await getToken();
       if (!token) return;
       const result = await getOriginalPageContent(token, pageId);
-      setOriginalContent(result);
       if (!currentContent && result.originalContent?.title) {
         setEditedContent(result.originalContent.title);
       }
     } catch {}
-    setLoadingOriginal(false);
   };
 
   const loadExistingSuggestions = async () => {
@@ -122,7 +116,7 @@ export default function TitleEditorModal({
       setDeploying(false);
     }
   };
-
+console.log({suggestions});
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
@@ -154,7 +148,7 @@ export default function TitleEditorModal({
             </div>
             {suggestions.length > 0 && (
               <div className="flex flex-col gap-4">
-                {suggestions.map((suggestion, index) => (
+                {suggestions?.map((suggestion, index) => (
                   <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
                       <span className="text-sm text-muted-foreground break-words flex-1">{suggestion}</span>
