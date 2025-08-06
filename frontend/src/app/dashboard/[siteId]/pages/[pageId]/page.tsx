@@ -456,10 +456,12 @@ export default function PageAnalysisPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <Link href={`/dashboard/${siteId}`}>
-                        <Button variant="outline" size="sm">
-                          <ArrowLeft className="h-4 w-4 mr-2" />
-                          Back to Site
-                        </Button>
+                      <Button
+                        variant="ghost"
+                        className="p-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
                       </Link>
                       <div>
                         <h1 className="text-2xl font-bold">
