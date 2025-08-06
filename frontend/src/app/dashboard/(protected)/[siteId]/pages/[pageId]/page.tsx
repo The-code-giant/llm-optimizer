@@ -148,6 +148,7 @@ export default function PageAnalysisPage() {
           originalContentResult.value.originalContent?.metaDescription || ""
         );
       }
+      console.log({pageDetails, analysisData, savedContent, originalContentResult})
       if (pageDetails.status === "fulfilled") {
         setPageData(pageDetails.value);
       } else {
@@ -425,7 +426,7 @@ export default function PageAnalysisPage() {
 
   // Find deployed paragraph
   const deployedParagraph = (contentVersions.paragraph || []).find((c) => c.isActive === 1);
-
+  console.log(contentVersions);
   return (
  <SidebarProvider
       style={
@@ -455,10 +456,12 @@ export default function PageAnalysisPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <Link href={`/dashboard/${siteId}`}>
-                        <Button variant="outline" size="sm">
-                          <ArrowLeft className="h-4 w-4 mr-2" />
-                          Back to Site
-                        </Button>
+                      <Button
+                        variant="ghost"
+                        className="p-2"
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
                       </Link>
                       <div>
                         <h1 className="text-2xl font-bold">
@@ -479,7 +482,7 @@ export default function PageAnalysisPage() {
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      Run First Analysis
+                      {analysis ? "Run Analysis Again" : "Run First Analysis"}
                     </Button>
                   </div>
 

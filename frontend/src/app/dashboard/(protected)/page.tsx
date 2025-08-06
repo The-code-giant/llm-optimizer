@@ -2,7 +2,9 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardClient } from "@/components/dashboard-client";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { TourTrigger } from "@/components/tours";
 import { Suspense } from "react";
+
 export default function Page() {
   return (
     <SidebarProvider
@@ -26,6 +28,16 @@ export default function Page() {
               </div>
             </div>
           </div>
+        </div>
+        
+        {/* Tour Trigger Button - Dashboard specific */}
+        <div className="fixed bottom-4 right-4 z-50">
+          <TourTrigger 
+            tourId="dashboard" 
+            className="shadow-xl bg-background/95 backdrop-blur-sm border-primary/30 hover:bg-background hover:border-primary/50 hover:shadow-2xl transition-all duration-200"
+          >
+            Start Tour
+          </TourTrigger>
         </div>
       </SidebarInset>
     </SidebarProvider>

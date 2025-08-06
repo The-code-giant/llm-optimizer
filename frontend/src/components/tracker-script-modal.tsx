@@ -10,7 +10,11 @@ import {
   Copy,
   Globe,
   Settings,
-  Zap
+  Zap,
+  Play,
+  Monitor,
+  ShoppingCart,
+  Palette
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Toast from "./Toast";
@@ -24,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
+// Removed Select imports
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
 
@@ -38,14 +43,56 @@ interface TrackerScriptData {
   siteId: string;
   siteName: string;
   trackerId: string;
-  scriptHtml: string;
-  nextJsScript: string; // Add Next.js Script format
+  nextJsScript: string;
+  universalScript: string;
+  config: Record<string, unknown>;
   instructions: {
     installation: string;
     verification: string;
     support: string;
   };
 }
+
+type Platform = 'nextjs' | 'wordpress' | 'shopify' | 'wix' | 'squarespace' | 'other';
+
+const platforms = [
+  {
+    id: 'nextjs' as Platform,
+    name: 'Next.js',
+    icon: <Code className="h-4 w-4" />,
+    description: 'React framework with built-in optimizations'
+  },
+  {
+    id: 'wordpress' as Platform,
+    name: 'WordPress',
+    icon: <Monitor className="h-4 w-4" />,
+    description: 'Popular CMS platform'
+  },
+  {
+    id: 'shopify' as Platform,
+    name: 'Shopify',
+    icon: <ShoppingCart className="h-4 w-4" />,
+    description: 'E-commerce platform'
+  },
+  {
+    id: 'wix' as Platform,
+    name: 'Wix',
+    icon: <Palette className="h-4 w-4" />,
+    description: 'Website builder platform'
+  },
+  {
+    id: 'squarespace' as Platform,
+    name: 'Squarespace',
+    icon: <Globe className="h-4 w-4" />,
+    description: 'Website and e-commerce platform'
+  },
+  {
+    id: 'other' as Platform,
+    name: 'Other',
+    icon: <Settings className="h-4 w-4" />,
+    description: 'Custom or other platforms'
+  }
+];
 
 export default function TrackerScriptModal({
   isOpen,
@@ -57,13 +104,16 @@ export default function TrackerScriptModal({
   const [scriptData, setScriptData] = useState<TrackerScriptData | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('nextjs');
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
+  // fetchTrackerScript is stable and defined inline, safe to omit from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isOpen && siteId) {
       fetchTrackerScript();
     }
-  }, [isOpen, siteId]);
+  }, [isOpen, siteId, selectedPlatform]);
 
   const fetchTrackerScript = async () => {
     setLoading(true);
@@ -71,7 +121,7 @@ export default function TrackerScriptModal({
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
 
-      const response = await fetch(`${API_BASE}/sites/${siteId}/tracker-script`, {
+      const response = await fetch(`${API_BASE}/sites/${siteId}/tracker-script?platform=${selectedPlatform}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -84,9 +134,10 @@ export default function TrackerScriptModal({
 
       const data = await response.json();
       setScriptData(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load tracker script';
       setToast({ 
-        message: error.message || 'Failed to load tracker script', 
+        message: errorMessage, 
         type: 'error' 
       });
     } finally {
@@ -96,15 +147,20 @@ export default function TrackerScriptModal({
 
   const copyScript = async () => {
     if (!scriptData) return;
-    
+    const scriptToCopy = selectedPlatform === 'nextjs' ? scriptData.nextJsScript : scriptData.universalScript;
     try {
-      await navigator.clipboard.writeText(scriptData.nextJsScript);
+      await navigator.clipboard.writeText(scriptToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       setToast({ message: 'Script copied to clipboard!', type: 'success' });
-    } catch (error) {
+    } catch {
       setToast({ message: 'Failed to copy script', type: 'error' });
     }
+  };
+
+  const getCurrentScript = () => {
+    if (!scriptData) return '';
+    return selectedPlatform === 'nextjs' ? scriptData.nextJsScript : scriptData.universalScript;
   };
 
   const features = [
@@ -158,41 +214,59 @@ export default function TrackerScriptModal({
               <span>Tracker Script for {siteName}</span>
             </DialogTitle>
             <DialogDescription>
-              Copy and paste this script into your website to enable content optimization and analytics tracking.
+              Select your platform and copy the appropriate script to enable content optimization and analytics tracking.
             </DialogDescription>
           </DialogHeader>
 
+          {/* What This Script Does - moved to top */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="text-lg">What This Script Does</CardTitle>
+              <CardDescription>
+                Our lightweight tracking script enables powerful SEO optimization features
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {features.map((feature, index) => (
+                  <div key={index} className="flex items-start space-x-3">
+                    {feature.icon}
+                    <div>
+                      <h4 className="font-medium text-sm">{feature.title}</h4>
+                      <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Platform Button Group */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            {platforms.map((platform) => (
+              <Button
+                key={platform.id}
+                variant={selectedPlatform === platform.id ? "default" : "outline"}
+                className={`flex items-center space-x-2${selectedPlatform === platform.id ? ' ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedPlatform(platform.id)}
+              >
+                {platform.icon}
+                <span>{platform.name}</span>
+              </Button>
+            ))}
+          </div>
+
           {scriptData && (
             <div className="space-y-6">
-              {/* Features Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">What This Script Does</CardTitle>
-                  <CardDescription>
-                    Our lightweight tracking script enables powerful SEO optimization features
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {features.map((feature, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        {feature.icon}
-                        <div>
-                          <h4 className="font-medium text-sm">{feature.title}</h4>
-                          <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Script Display */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Your Tracking Script</span>
                     <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs">
+                        {platforms.find(p => p.id === selectedPlatform)?.name}
+                      </Badge>
                       <Badge variant="outline" className="text-xs">
                         Site ID: {scriptData.trackerId.slice(0, 8)}...
                       </Badge>
@@ -212,13 +286,13 @@ export default function TrackerScriptModal({
                     </div>
                   </CardTitle>
                   <CardDescription>
-                    This script is unique to your site and includes your tracking ID
+                    This script is optimized for {platforms.find(p => p.id === selectedPlatform)?.name} and includes your tracking ID
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="relative">
-                    <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border">
-                      <code className="text-gray-800">{scriptData.nextJsScript}</code>
+                    <pre className="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border max-h-48 overflow-y-auto">
+                      <code className="text-gray-800 whitespace-pre-wrap break-all">{getCurrentScript()}</code>
                     </pre>
                   </div>
                 </CardContent>
@@ -241,7 +315,7 @@ export default function TrackerScriptModal({
                       <div>
                         <h4 className="font-medium">Copy the Script</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          Click the "Copy Script" button above to copy the tracking code to your clipboard.
+                          Click the &quot;Copy Script&quot; button above to copy the tracking code to your clipboard.
                         </p>
                       </div>
                     </div>
@@ -253,7 +327,7 @@ export default function TrackerScriptModal({
                       <div>
                         <h4 className="font-medium">Paste in Your Website</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          {scriptData.instructions.installation}
+                          <span dangerouslySetInnerHTML={{ __html: scriptData.instructions.installation }} />
                         </p>
                         <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                           <p className="text-sm text-amber-800">
@@ -291,44 +365,6 @@ export default function TrackerScriptModal({
                 </CardContent>
               </Card>
 
-              {/* Platform-Specific Instructions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Platform-Specific Installation</CardTitle>
-                  <CardDescription>
-                    Quick guides for popular website platforms
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">WordPress</h4>
-                      <p className="text-xs text-gray-600">
-                        Go to Appearance → Theme Editor → header.php and paste the script before &lt;/head&gt;
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Shopify</h4>
-                      <p className="text-xs text-gray-600">
-                        Go to Online Store → Themes → Actions → Edit Code → theme.liquid and paste before &lt;/head&gt;
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Squarespace</h4>
-                      <p className="text-xs text-gray-600">
-                        Go to Settings → Advanced → Code Injection and paste in Header section
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Wix</h4>
-                      <p className="text-xs text-gray-600">
-                        Go to Settings → Custom Code → Add Custom Code and choose Head section
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Next Steps */}
               <Card className="border-green-200 bg-green-50">
                 <CardHeader>
@@ -349,6 +385,30 @@ export default function TrackerScriptModal({
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Video Tutorial Placeholder - moved to bottom */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Play className="h-5 w-5 text-red-500" />
+                    <span>Installation Tutorial</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Watch our step-by-step video guide for {platforms.find(p => p.id === selectedPlatform)?.name} installation
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="relative h-48 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <Play className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-500 font-medium text-sm">Video Tutorial Coming Soon</p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        We&apos;re creating detailed installation guides for each platform
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
@@ -363,7 +423,6 @@ export default function TrackerScriptModal({
           </div>
         </DialogContent>
       </Dialog>
-
       {toast && (
         <Toast
           message={toast.message}
@@ -373,4 +432,4 @@ export default function TrackerScriptModal({
       )}
     </>
   );
-} 
+}

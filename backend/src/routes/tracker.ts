@@ -482,19 +482,12 @@ router.get('/script/:trackerId',
         ? process.env.API_URL || 'https://api.llmoptimizer.com'
         : 'http://localhost:3001';
 
-      // Generate Next.js Script component with full configuration
+      // Generate Next.js Script component with simplified configuration
       const nextScriptFormat = `<Script
   id="clever-search-tracker"
   src="${apiBase}/tracker/v1/tracker.js"
   data-config={JSON.stringify({
-    "API_BASE": "${apiBase}",
-    "SITE_ID": "${site.trackerId}",
-    "VERSION": "1.0.0",
-    "RETRY_ATTEMPTS": 3,
-    "TIMEOUT": 2000,
-    "UPDATE_INTERVAL": 500,
-    "MAX_INTERVAL_DURATION": 120000,
-    "FAST_MODE": true
+    "SITE_ID": "${site.trackerId}"
   })}
   async
   strategy="beforeInteractive"
@@ -502,50 +495,13 @@ router.get('/script/:trackerId',
 
       // Also provide legacy inline script for non-Next.js users
       const legacyScriptHtml = `<!-- Clever Search Tracking Script -->
-<script>
-(function() {
-  'use strict';
-  
-  // Configuration
-  const CONFIG = {
-    API_BASE: '${apiBase}',
-    SITE_ID: '${site.trackerId}',
-    VERSION: '1.0.0',
-    RETRY_ATTEMPTS: 3,
-    TIMEOUT: 2000,
-    UPDATE_INTERVAL: 500,
-    MAX_INTERVAL_DURATION: 120000,
-    FAST_MODE: true
-  };
-
-  console.log('Clever Search: Loading tracker with config:', CONFIG);
-
-  // Load the main tracker script
-  const script = document.createElement('script');
-  script.src = CONFIG.API_BASE + '/tracker/v1/tracker.js?v=' + CONFIG.VERSION;
-  script.async = true;
-  script.defer = true;
-  
-  // Set configuration for the main script
-  script.setAttribute('data-config', JSON.stringify(CONFIG));
-  
-  script.onload = function() {
-    console.log('Clever Search: Tracker script loaded successfully');
-  };
-  
-  script.onerror = function() {
-    console.warn('Clever Search script failed to load');
-  };
-  
-  // Insert script
-  const firstScript = document.getElementsByTagName('script')[0];
-  if (firstScript && firstScript.parentNode) {
-    firstScript.parentNode.insertBefore(script, firstScript);
-  } else {
-    document.head.appendChild(script);
-  }
-})();
-</script>`;
+<script
+  id="clever-search-tracker"
+  src="${apiBase}/tracker/v1/tracker.js"
+  data-config='{"SITE_ID":"${site.trackerId}"}'
+  async
+  defer
+></script>`;
 
       const response = {
         siteId: site.id,
@@ -554,14 +510,7 @@ router.get('/script/:trackerId',
         nextJsScript: nextScriptFormat,
         scriptHtml: legacyScriptHtml,
         config: {
-          API_BASE: apiBase,
-          SITE_ID: site.trackerId,
-          VERSION: "1.0.0",
-          RETRY_ATTEMPTS: 3,
-          TIMEOUT: 2000,
-          UPDATE_INTERVAL: 500,
-          MAX_INTERVAL_DURATION: 120000,
-          FAST_MODE: true
+          SITE_ID: site.trackerId
         },
         instructions: {
           nextJs: "For Next.js projects, copy the 'nextJsScript' code and paste it in your component. Make sure to import Script from 'next/script'.",

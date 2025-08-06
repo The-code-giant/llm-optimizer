@@ -1,11 +1,12 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/client";
-import { sites, users, pages, pageAnalytics, pageContent, trackerData } from "../db/schema";
+import { sites, users, pages, pageAnalytics, pageContent, trackerData, analysisResults, contentSuggestions } from "../db/schema";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
 import { sitemapImportQueue } from "../utils/queue";
 import { randomUUID } from "crypto";
 import cache from "../utils/cache";
+import { AnalysisService } from "../utils/analysisService";
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -186,6 +187,72 @@ router.post(
 
       // Invalidate user sites cache
       await cache.invalidateUserSites(req.user!.userId);
+
+      // Create a default page for the site URL
+      const [defaultPage] = await db
+        .insert(pages)
+        .values({
+          siteId: site.id,
+          url: url,
+          title: name,
+          llmReadinessScore: 0, // Initial score
+        })
+        .returning();
+
+      // Trigger analysis for the new site URL asynchronously
+      try {
+        console.log(`🚀 Starting initial analysis for new site: ${url}`);
+        
+        // Perform the analysis
+        const analysisResult = await AnalysisService.analyzePage({
+          url: url,
+          forceRefresh: true
+        });
+
+        // Update the page with analysis results
+        await db.update(pages)
+          .set({ 
+            contentSnapshot: JSON.stringify(analysisResult.content),
+            title: analysisResult.content.title || defaultPage.title,
+            llmReadinessScore: analysisResult.score,
+            lastAnalysisAt: new Date(),
+            lastScannedAt: new Date()
+          })
+          .where(eq(pages.id, defaultPage.id));
+
+        // Store analysis results in database
+        await db.insert(analysisResults).values({
+          pageId: defaultPage.id,
+          analyzedAt: new Date(),
+          llmModelUsed: 'gpt-4o-mini',
+          score: analysisResult.score,
+          recommendations: JSON.stringify({
+            issues: analysisResult.issues,
+            recommendations: analysisResult.recommendations,
+            summary: analysisResult.summary,
+            pageSummary: analysisResult.pageSummary,
+            contentQuality: analysisResult.contentQuality,
+            technicalSEO: analysisResult.technicalSEO,
+            keywordAnalysis: analysisResult.keywordAnalysis,
+            llmOptimization: analysisResult.llmOptimization
+          }),
+          rawLlmOutput: JSON.stringify(analysisResult),
+        });
+
+        console.log(`✅ Initial analysis completed for ${url} - Score: ${analysisResult.score}/100`);
+
+        // Auto-generate content suggestions
+        try {
+          await AnalysisService.autoGenerateContentSuggestions(defaultPage.id, analysisResult.content, analysisResult);
+          console.log(`🤖 Auto-generated content suggestions for new site: ${url}`);
+        } catch (contentError) {
+          console.error(`❌ Failed to auto-generate content for new site ${url}:`, contentError);
+        }
+
+      } catch (analysisError) {
+        console.error(`❌ Initial analysis failed for new site ${url}:`, analysisError);
+        // Don't fail the site creation if analysis fails
+      }
 
       res.status(201).json(site);
     } catch (err) {
@@ -720,94 +787,57 @@ router.get(
         return;
       }
 
+      const platform = req.query.platform as string || 'nextjs';
+
       // Generate the API base URL
       const apiBase =
         process.env.NODE_ENV === "production"
           ? process.env.API_URL || "https://backend.cleversearch.ai"
           : "http://localhost:3001";
 
-      // Generate Next.js Script component with full configuration
+      // Generate Next.js Script component with simplified configuration
       const nextScriptFormat = `<Script
   id="clever-search-tracker"
   src="${apiBase}/tracker/v1/tracker.js"
   data-config={JSON.stringify({
-    "API_BASE": "${apiBase}",
-    "SITE_ID": "${site.trackerId}",
-    "VERSION": "1.0.0",
-    "RETRY_ATTEMPTS": 3,
-    "TIMEOUT": 2000,
-    "UPDATE_INTERVAL": 500,
-    "MAX_INTERVAL_DURATION": 120000,
-    "FAST_MODE": true
+    SITE_ID: "${site.trackerId}"
   })}
   async
   strategy="beforeInteractive"
 />`;
 
-      // Also provide legacy inline script for non-Next.js users
-      const legacyScriptHtml = `<!-- Clever Search Tracking Script -->
-<script>
-(function() {
-  'use strict';
-  
-  // Configuration
-  const CONFIG = {
-    API_BASE: '${apiBase}',
-    SITE_ID: '${site.trackerId}',
-    VERSION: "1.0.0",
-    RETRY_ATTEMPTS: 3,
-    TIMEOUT: 2000,
-    UPDATE_INTERVAL: 500,
-    MAX_INTERVAL_DURATION: 120000,
-    FAST_MODE: true
-  };
+      // For all non-Next.js platforms, use a plain <script> tag with simplified data-config
+      const universalScript = `<script
+  id="clever-search-tracker"
+  src="${apiBase}/tracker/v1/tracker.js"
+  data-config='{"SITE_ID":"${site.trackerId}"}'
+  async
+  defer
+></script>`;
 
-  // Load the main tracker script
-  const script = document.createElement('script');
-  script.src = CONFIG.API_BASE + '/tracker/v1/tracker.js?v=' + CONFIG.VERSION;
-  script.async = true;
-  script.defer = true;
-  
-  // Set configuration for the main script
-  script.setAttribute('data-config', JSON.stringify(CONFIG));
-  
-  script.onerror = function() {
-            console.warn('Clever Search script failed to load');
-  };
-  
-  // Insert script
-  const firstScript = document.getElementsByTagName('script')[0];
-  if (firstScript && firstScript.parentNode) {
-    firstScript.parentNode.insertBefore(script, firstScript);
-  } else {
-    document.head.appendChild(script);
-  }
-})();
-</script>`;
+      // Platform-specific installation instructions
+      const installInstructions: Record<string, string> = {
+        nextjs: `Add the <code>nextJsScript</code> to your Next.js app, preferably in <code>_app.tsx</code> or your main layout. Import <code>Script</code> from <code>next/script</code>.`,
+        wordpress: `Paste the <code>universalScript</code> into your theme's <code>header.php</code> file before <code>&lt;/head&gt;</code>.`,
+        shopify: `Paste the <code>universalScript</code> into your <code>theme.liquid</code> file before <code>&lt;/head&gt;</code>.`,
+        wix: `Add the <code>universalScript</code> in Wix's Custom Code section and choose the Head location.`,
+        squarespace: `Paste the <code>universalScript</code> in the Code Injection section under Settings → Advanced → Header.`,
+        other: `Paste the <code>universalScript</code> into your website's <code>&lt;head&gt;</code> section.`
+      };
 
       res.json({
         siteId: site.id,
         siteName: site.name,
         trackerId: site.trackerId,
         nextJsScript: nextScriptFormat,
-        scriptHtml: legacyScriptHtml,
+        universalScript: universalScript,
+        scriptHtml: universalScript, // for backward compatibility
         config: {
-          API_BASE: apiBase,
-          SITE_ID: site.trackerId,
-          VERSION: "1.0.0",
-          RETRY_ATTEMPTS: 3,
-          TIMEOUT: 2000,
-          UPDATE_INTERVAL: 500,
-          MAX_INTERVAL_DURATION: 120000,
-          FAST_MODE: true,
+          SITE_ID: site.trackerId
         },
         instructions: {
-          nextJs:
-            "For Next.js projects, copy the 'nextJsScript' code and paste it in your component. Make sure to import Script from 'next/script'.",
-          legacy:
-            "For other frameworks, copy the 'scriptHtml' code and paste it in your website's <head> section.",
-          verification:
-            "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
+          installation: installInstructions[platform] || installInstructions.other,
+          verification: "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
           support: "If you need help, contact our support team.",
         },
       });

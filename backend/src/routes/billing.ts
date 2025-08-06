@@ -35,7 +35,8 @@ router.get(
             eq(userSubscriptions.isActive, 1)
           )
         )
-        .orderBy(desc(userSubscriptions.createdAt))
+        .orderBy(desc
+          (userSubscriptions.createdAt))
         .limit(1);
 
       const subscription = userActiveSubscription?.[0];
@@ -181,6 +182,7 @@ router.post(
 );
 
 router.get("/check-sub-status", authenticateJWT, async (req: Request, res: Response, next: NextFunction) => {
+
   const authenticatedReq = req as AuthenticatedRequest;
   const userId = authenticatedReq.user?.userId as string;
 

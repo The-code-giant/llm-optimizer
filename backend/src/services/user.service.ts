@@ -89,15 +89,19 @@ export class UserService {
   }
 
   async isUserSubIsActive(userId: string) {
-    const userSub = await db.select().from(userSubscriptions).where(and(eq(userSubscriptions.userId, userId), eq(userSubscriptions.isActive, 1))).limit(1);
-
-    if(userSub.length === 0){
+    const userSub = await db.query.userSubscriptions.findFirst({
+      where :
+       and(eq(userSubscriptions.userId, userId),
+       eq(userSubscriptions.isActive, 1))
+    });
+    
+    if(!userSub){
       return false;
     }
 
     try{
       const stripeClient = new StripeClient();
-      const sub = await stripeClient.getSubscription(userSub[0].stripeSubscriptionId as string);
+      const sub = await stripeClient.getSubscription(userSub.stripeSubscriptionId as string);
 
       return ["active", "trialing"].includes(sub.status);
     }catch(err){
