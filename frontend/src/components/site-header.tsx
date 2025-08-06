@@ -1,9 +1,8 @@
 'use client'
-import { Button } from "@/components/ui/button"
+import { NAV_DATA } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeSwitcher } from "@/components/ui/theme-switcher"
-import { NAV_DATA } from "@/components/app-sidebar"
 import { usePathname } from "next/navigation"
 export function SiteHeader() {
   const pathname = usePathname()
