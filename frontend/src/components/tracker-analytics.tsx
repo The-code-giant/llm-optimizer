@@ -244,25 +244,26 @@ export default function TrackerAnalytics({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Analytics - {siteName}</h2>
-          <p className="text-muted-foreground">Comprehensive tracking and performance metrics</p>
+      <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:items-start sm:space-y-0">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold truncate">Analytics - {siteName}</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">Comprehensive tracking and performance metrics</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center space-x-1 border rounded-lg p-1">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+          <div className="flex items-center space-x-1 border rounded-lg p-1 w-full sm:w-auto justify-center sm:justify-start">
             {(['24h', '7d', '30d', '90d'] as const).map((range) => (
               <Button
                 key={range}
                 variant={timeRange === range ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setTimeRange(range)}
+                className="flex-1 sm:flex-none"
               >
                 {range}
               </Button>
             ))}
           </div>
-          <Button variant="outline" onClick={loadAnalytics}>
+          <Button variant="outline" onClick={loadAnalytics} className="w-full sm:w-auto">
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
@@ -270,12 +271,14 @@ export default function TrackerAnalytics({
 
       {/* Main Analytics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="demographics">Traffic Sources</TabsTrigger>
-          <TabsTrigger value="performance">Page Performance</TabsTrigger>
-          <TabsTrigger value="activity">Recent Activity</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+          <TabsList className="!flex !w-max min-w-full">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Overview</TabsTrigger>
+            <TabsTrigger value="demographics" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Traffic Sources</TabsTrigger>
+            <TabsTrigger value="performance" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Page Performance</TabsTrigger>
+            <TabsTrigger value="activity" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Recent Activity</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
@@ -337,10 +340,10 @@ export default function TrackerAnalytics({
               <CardContent>
                 <div className="space-y-3">
                   {analytics.topPages.map((page, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                    <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-lg space-y-2 sm:space-y-0">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{page.url}</p>
-                        <div className="flex items-center space-x-4 mt-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 space-y-1 sm:space-y-0">
                           <span className="text-xs text-muted-foreground">{formatNumber(page.views)} views</span>
                           <span className="text-xs text-muted-foreground">{page.avgLoadTime}ms load</span>
                           <span className="text-xs text-muted-foreground">{page.bounceRate}% bounce</span>
@@ -374,24 +377,24 @@ export default function TrackerAnalytics({
               <CardContent>
                 <div className="space-y-3">
                   {analytics.contentPerformance.map((content, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                    <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border border-border rounded-lg space-y-2 sm:space-y-0">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
                           <p className="text-sm font-medium capitalize">{content.contentType}</p>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs w-fit">
                             {content.deployedCount} deployed
                           </Badge>
                         </div>
-                        <div className="flex items-center space-x-4 mt-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 space-y-1 sm:space-y-0">
                           <span className="text-xs text-muted-foreground">
                             {formatNumber(content.views)} views
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs text-muted-foreground truncate">
                             Top: {content.topPerformingUrl}
                           </span>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <p className="text-sm font-medium text-green-600 dark:text-green-400">
                           +{content.avgImprovementPercent}%
                         </p>
@@ -421,7 +424,7 @@ export default function TrackerAnalytics({
                 <CardContent>
                   <div className="space-y-4">
                     {demographics.trafficSources.map((source, index) => (
-                      <div key={index} className="flex items-center justify-between">
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                         <div className="flex items-center space-x-3">
                           <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
                             <span className="text-xs font-medium">{index + 1}</span>
@@ -431,9 +434,9 @@ export default function TrackerAnalytics({
                             <p className="text-xs text-muted-foreground">{formatNumber(source.count)} sessions</p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="text-sm font-medium">{source.percentage}%</p>
-                          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="w-full sm:w-24 h-2 bg-muted rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-primary rounded-full" 
                               style={{ width: `${source.percentage}%` }}
@@ -458,7 +461,7 @@ export default function TrackerAnalytics({
                 <CardContent>
                   <div className="space-y-4">
                     {Object.entries(demographics.deviceBreakdown).map(([device, count]) => (
-                      <div key={device} className="flex items-center justify-between">
+                      <div key={device} className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                         <div className="flex items-center space-x-3">
                           {getDeviceIcon(device)}
                           <div>
@@ -466,7 +469,7 @@ export default function TrackerAnalytics({
                             <p className="text-xs text-muted-foreground">{formatNumber(count)} sessions</p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-left sm:text-right">
                           <p className="text-sm font-medium">
                             {Math.round((count / demographics.totalSessions) * 100)}%
                           </p>
@@ -545,10 +548,10 @@ export default function TrackerAnalytics({
                   <div className="space-y-4">
                     {pagePerformance.pagePerformance.map((page, index) => (
                       <div key={index} className="border border-border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 space-y-2 sm:space-y-0">
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate">{page.url}</p>
-                            <div className="flex items-center space-x-4 mt-1">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mt-1 space-y-1 sm:space-y-0">
                               <span className="text-xs text-muted-foreground">{formatNumber(page.views)} views</span>
                               <span className="text-xs text-muted-foreground">{page.avgLoadTime}ms load</span>
                               <span className="text-xs text-muted-foreground">{page.bounceRate}% bounce</span>
@@ -556,13 +559,13 @@ export default function TrackerAnalytics({
                           </div>
                           <div className="flex items-center space-x-2">
                             <Badge 
-                              variant={page.performanceScore >= 80 ? "default" : page.performanceScore >= 60 ? "secondary" : "destructive"}
+                              variant={page.performanceScore >= 80 ? "default" : page.performanceScore >= 60 ? "secondary" : "outline"}
                               className="text-xs"
                             >
-                              {page.performanceScore}/100
+                              {page.performanceScore}% Score
                             </Badge>
                             {page.hasOptimizedContent && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="default" className="text-xs">
                                 Optimized
                               </Badge>
                             )}
