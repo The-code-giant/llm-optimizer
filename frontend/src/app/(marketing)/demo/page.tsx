@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
@@ -16,29 +16,31 @@ import {
   CogIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
+import { InlineWidget } from "react-calendly";
+
 
 export default function Demo() {
-  const [selectedTime, setSelectedTime] = useState('');
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    company: '',
-    website: '',
-    role: '',
-    teamSize: '',
-    goals: ''
-  });
+  // const [selectedTime, setSelectedTime] = useState('');
+  // const [formData, setFormData] = useState({
+  //   firstName: '',
+  //   lastName: '',
+  //   email: '',
+  //   company: '',
+  //   website: '',
+  //   role: '',
+  //   teamSize: '',
+  //   goals: ''
+  // });
 
-  const timeSlots = [
-    '9:00 AM EST',
-    '10:00 AM EST',
-    '11:00 AM EST',
-    '1:00 PM EST',
-    '2:00 PM EST',
-    '3:00 PM EST',
-    '4:00 PM EST'
-  ];
+  // const timeSlots = [
+  //   '9:00 AM EST',
+  //   '10:00 AM EST',
+  //   '11:00 AM EST',
+  //   '1:00 PM EST',
+  //   '2:00 PM EST',
+  //   '3:00 PM EST',
+  //   '4:00 PM EST'
+  // ];
 
   const demoFeatures = [
     {
@@ -72,23 +74,24 @@ export default function Demo() {
     "Ask questions about implementation"
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  //   setFormData({
+  //     ...formData,
+  //     [e.target.name]: e.target.value
+  //   });
+  // };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Demo booking:', { ...formData, selectedTime });
-  };
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   // Handle form submission
+  //   console.log('Demo booking:', { ...formData, selectedTime });
+  // };
+
 
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="bg-black text-white pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4">
@@ -102,9 +105,11 @@ export default function Demo() {
                 See Clever Search in action
               </h1>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-                Book a personalized demo to discover how AI optimization can transform your content's visibility in ChatGPT, Claude, and Gemini responses.
+                Book a personalized demo to discover how AI optimization can
+                transform your content's visibility in ChatGPT, Claude, and
+                Gemini responses.
               </p>
-              
+
               <div className="space-y-4 mb-8">
                 {benefits.slice(0, 3).map((benefit, index) => (
                   <div key={index} className="flex items-center">
@@ -132,7 +137,9 @@ export default function Demo() {
                 <p className="text-gray-400">Choose your preferred time slot</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <InlineWidget url="https://calendly.com/paimanrasoli789/30min" />
+
+              {/* <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -257,7 +264,7 @@ export default function Demo() {
                   Book Your Demo
                   <ArrowRightIcon className="w-5 h-5 ml-2" />
                 </Button>
-              </form>
+              </form> */}
             </motion.div>
           </div>
         </div>
@@ -269,7 +276,6 @@ export default function Demo() {
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -277,7 +283,8 @@ export default function Demo() {
               What you'll see in your demo
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Our product experts will walk you through the platform and show you exactly how LLM optimization works for your specific use case.
+              Our product experts will walk you through the platform and show
+              you exactly how LLM optimization works for your specific use case.
             </p>
           </motion.div>
 
@@ -287,7 +294,6 @@ export default function Demo() {
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="bg-white rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300"
               >
@@ -296,8 +302,12 @@ export default function Demo() {
                     <feature.icon className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 leading-relaxed">
+                      {feature.description}
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -312,7 +322,6 @@ export default function Demo() {
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -320,7 +329,8 @@ export default function Demo() {
               What you'll learn
             </h2>
             <p className="text-lg text-gray-600">
-              By the end of your demo, you'll have a clear understanding of your optimization potential.
+              By the end of your demo, you'll have a clear understanding of your
+              optimization potential.
             </p>
           </motion.div>
 
@@ -330,7 +340,6 @@ export default function Demo() {
                 key={index}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -40 : 40 }}
                 animate={{ opacity: 1, x: 0 }}
-                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="flex items-center p-6 bg-gray-50 rounded-xl"
               >
@@ -348,7 +357,6 @@ export default function Demo() {
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
@@ -360,35 +368,41 @@ export default function Demo() {
           <div className="grid lg:grid-cols-3 gap-8">
             {[
               {
-                quote: "The demo was incredibly insightful. Seeing our actual website analyzed in real-time made the value immediately clear.",
+                quote:
+                  "The demo was incredibly insightful. Seeing our actual website analyzed in real-time made the value immediately clear.",
                 author: "Sarah Chen",
                 role: "Marketing Director",
-                company: "TechFlow Solutions"
+                company: "TechFlow Solutions",
               },
               {
-                quote: "I was skeptical about AI optimization, but the demo showed concrete data and results. We signed up the same day.",
+                quote:
+                  "I was skeptical about AI optimization, but the demo showed concrete data and results. We signed up the same day.",
                 author: "Mike Rodriguez",
                 role: "Content Manager",
-                company: "Growth Labs"
+                company: "Growth Labs",
               },
               {
-                quote: "The personalized recommendations we got during the demo saved us months of trial and error. Highly recommend.",
+                quote:
+                  "The personalized recommendations we got during the demo saved us months of trial and error. Highly recommend.",
                 author: "Emily Watson",
                 role: "SEO Specialist",
-                company: "Digital Dynamics"
-              }
+                company: "Digital Dynamics",
+              },
             ].map((testimonial, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
-                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="bg-white rounded-xl p-8 shadow-sm"
               >
-                <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.quote}"</p>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  "{testimonial.quote}"
+                </p>
                 <div>
-                  <div className="font-semibold text-gray-900">{testimonial.author}</div>
+                  <div className="font-semibold text-gray-900">
+                    {testimonial.author}
+                  </div>
                   <div className="text-gray-500">{testimonial.role}</div>
                   <div className="text-gray-500">{testimonial.company}</div>
                 </div>
@@ -404,47 +418,50 @@ export default function Demo() {
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-8">
-              Demo FAQ
-            </h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-8">Demo FAQ</h2>
           </motion.div>
 
           <div className="space-y-6">
             {[
               {
                 question: "How long is the demo?",
-                answer: "Demos typically last 30 minutes, with time for questions at the end. We can extend if needed to cover all your questions."
+                answer:
+                  "Demos typically last 30 minutes, with time for questions at the end. We can extend if needed to cover all your questions.",
               },
               {
                 question: "Will you analyze my actual website?",
-                answer: "Yes! We'll run a live analysis of your website during the demo so you can see real results and recommendations."
+                answer:
+                  "Yes! We'll run a live analysis of your website during the demo so you can see real results and recommendations.",
               },
               {
                 question: "Is there any commitment required?",
-                answer: "Not at all. The demo is completely free with no obligation. It's designed to help you understand if LLM optimization is right for your business."
+                answer:
+                  "Not at all. The demo is completely free with no obligation. It's designed to help you understand if LLM optimization is right for your business.",
               },
               {
                 question: "Can my team join the demo?",
-                answer: "Absolutely! We encourage team participation. Just let us know how many people will be joining when you book."
+                answer:
+                  "Absolutely! We encourage team participation. Just let us know how many people will be joining when you book.",
               },
               {
                 question: "What if I need to reschedule?",
-                answer: "No problem. You can reschedule or cancel anytime by clicking the link in your confirmation email."
-              }
+                answer:
+                  "No problem. You can reschedule or cancel anytime by clicking the link in your confirmation email.",
+              },
             ].map((faq, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="bg-gray-50 rounded-xl p-6"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{faq.question}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  {faq.question}
+                </h3>
                 <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
               </motion.div>
             ))}
@@ -458,26 +475,30 @@ export default function Demo() {
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 leading-tight">
               Ready to see the future of content optimization?
             </h2>
             <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-              Book your personalized demo today and discover how AI optimization can transform your content strategy.
+              Book your personalized demo today and discover how AI optimization
+              can transform your content strategy.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4"
-                onClick={() => document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() =>
+                  document
+                    .querySelector("form")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
               >
                 Schedule Demo
               </Button>
               <Link href="/contact">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="outline"
                   className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-4"
                 >
