@@ -44,20 +44,22 @@ export default function Home() {
       <HeroSection />
       <LogoCloud />
       <Features />
-      <section id="pricing" className="py-20 bg-blue-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <AnimatedDiv
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-              Why an AI search and discovery strategy is critical.
-            </h2>
-          </AnimatedDiv>
+      <section id="pricing" className="py-20 bg-white">
+        <div className="mx-auto max-w-7xl space-y-8 px-6 md:space-y-16">
+          <div className="relative z-10 mx-auto max-w-xl space-y-6 text-center">
+            <AnimatedDiv
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
+                Why an AI search and discovery strategy is critical.
+              </h2>
+            </AnimatedDiv>
+          </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid gap-12 divide-y *:text-center md:grid-cols-3 md:gap-2 md:divide-x md:divide-y-0">
             {stats.map((stat, index) => (
               <AnimatedDiv
                 key={index}
@@ -66,12 +68,12 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 className="text-center"
               >
-                <div className="text-6xl lg:text-7xl font-light text-gray-900 mb-4">
-                  <AnimatedCounter end={stat.number} suffix={stat.suffix} />
+                <div className="space-y-4">
+                  <div className="text-5xl font-bold">
+                    <AnimatedCounter end={stat.number} suffix={stat.suffix} />
+                  </div>
+                  <p>{stat.label}</p>
                 </div>
-                <p className="text-lg text-gray-700 mb-4 leading-relaxed max-w-sm mx-auto">
-                  {stat.label}
-                </p>
                 <p className="text-sm text-gray-500 underline">{stat.source}</p>
               </AnimatedDiv>
             ))}
@@ -196,38 +198,49 @@ export default function Home() {
             className="order-1 lg:order-2"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900 leading-tight">
-            The CleverSearch Optimization Loop
+              The CleverSearch Optimization Loop
             </h2>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
               From crawl to clarity — in 3 steps.
             </p>
             <div className="space-y-4 text-gray-700">
-
-
-    <ol className="relative text-gray-500 border-s border-gray-200 dark:border-gray-700 dark:text-gray-400">                  
-    <li className="mb-10 ms-6">            
-        <span className="absolute flex items-center justify-center w-8 h-8 bg-green-200 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-green-900">
-           <Network className="w-3.5 h-3.5" />
-        </span>
-        <h3 className="font-medium leading-tight">Connect Your Site</h3>
-        <p className="text-sm">We audit your structure, content, and context in seconds.</p>
-    </li>
-    <li className="mb-10 ms-6">
-        <span className="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-          <Sparkles className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-        </span>
-        <h3 className="font-medium leading-tight">Get Smart Recommendations</h3>
-        <p className="text-sm">We tell you exactly what’s holding you back — and how to fix it.</p>
-    </li>
-    <li className="mb-10 ms-6">
-        <span className="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
-            <TrendingUp className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-        </span>
-        <h3 className="font-medium leading-tight">Watch Performance Improve</h3>
-        <p className="text-sm">Your score, site visibility, and AI comprehension get better — fast.</p>
-    </li>
-    </ol>
-
+              <ol className="relative text-gray-500 border-s border-gray-200 dark:border-gray-700 dark:text-gray-400">
+                <li className="mb-10 ms-6">
+                  <span className="absolute flex items-center justify-center w-8 h-8 bg-green-200 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-green-900">
+                    <Network className="w-3.5 h-3.5" />
+                  </span>
+                  <h3 className="font-medium leading-tight">
+                    Connect Your Site
+                  </h3>
+                  <p className="text-sm">
+                    We audit your structure, content, and context in seconds.
+                  </p>
+                </li>
+                <li className="mb-10 ms-6">
+                  <span className="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
+                    <Sparkles className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                  </span>
+                  <h3 className="font-medium leading-tight">
+                    Get Smart Recommendations
+                  </h3>
+                  <p className="text-sm">
+                    We tell you exactly what’s holding you back — and how to fix
+                    it.
+                  </p>
+                </li>
+                <li className="mb-10 ms-6">
+                  <span className="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -start-4 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
+                    <TrendingUp className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                  </span>
+                  <h3 className="font-medium leading-tight">
+                    Watch Performance Improve
+                  </h3>
+                  <p className="text-sm">
+                    Your score, site visibility, and AI comprehension get better
+                    — fast.
+                  </p>
+                </li>
+              </ol>
             </div>
             {/* <ul className="space-y-4 text-gray-700">
               <li className="flex items-start">
@@ -265,7 +278,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-              Real results from LLM optimization.
+              Real results from Cleversearch.
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               See how businesses are succeeding with LLM optimization strategies
@@ -379,6 +392,11 @@ export default function Home() {
       {/* Statistics Section */}
 
       {/* Hero CTA Section - Dark */}
+
+      {/* Final Section */}
+      {/* <FAQs /> */}
+      <FAQsThree />
+
       <section className="bg-black text-white py-20">
         <div className="max-w-7xl mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
           <AnimatedDiv
@@ -480,8 +498,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Final Section */}
-      <section id="resources" className="py-20 bg-white">
+      <Footer />
+    </div>
+  );
+}
+
+
+
+/*     <section id="resources" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <AnimatedDiv
             initial={{ opacity: 0, y: 60 }}
@@ -501,7 +525,6 @@ export default function Home() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
             >
-              {/* Content Grid Mockup */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-red-500 rounded-lg p-4 text-white">
                   <div className="text-xs mb-2">🔥 Top performing content</div>
@@ -568,9 +591,5 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {/* <FAQs /> */}
-      <FAQsThree />
-      <Footer />
-    </div>
-  );
-}
+
+*/

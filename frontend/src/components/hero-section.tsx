@@ -152,7 +152,7 @@ export default function HeroSection() {
                           disabled={isSubmitting}
                         >
                           <span className="hidden md:block">
-                            {isSubmitting ? "Analyzing..." : "Get Started"}
+                            {isSubmitting ? "Analyzing..." : "Analyze my site"}
                           </span>
                           <SendHorizonal
                             className="relative mx-auto size-5 md:hidden"
