@@ -1,24 +1,20 @@
-'use client';
-
-import React from 'react';
+ 
 import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/ui/navbar";
+import ScrollToFormButton from "@/components/ScrollToFormButton";
 import { Footer } from "@/components/ui/footer";
-import { motion } from 'framer-motion';
-import Link from "next/link";
-import { 
+import { Navbar } from "@/components/ui/navbar";
+import {
   CalendarDaysIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  PlayIcon,
-  UserGroupIcon,
   ChartBarIcon,
+  CheckCircleIcon,
+  ClockIcon,
   CogIcon,
-  ArrowRightIcon
+  PlayIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
-import { InlineWidget } from "react-calendly";
-
-
+import Link from "next/link";
+import CalendlyWidget from '@/components/calendly-widget';
+import AnimatedDiv from "@/components/ui/animated-div";
 export default function Demo() {
   // const [selectedTime, setSelectedTime] = useState('');
   // const [formData, setFormData] = useState({
@@ -96,7 +92,7 @@ export default function Demo() {
       <section className="bg-black text-white pt-24 pb-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div
+            <AnimatedDiv
               initial={{ opacity: 0, x: -60 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8 }}
@@ -106,7 +102,7 @@ export default function Demo() {
               </h1>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                 Book a personalized demo to discover how AI optimization can
-                transform your content's visibility in ChatGPT, Claude, and
+                transform your content&apos;s visibility in ChatGPT, Claude, and
                 Gemini responses.
               </p>
 
@@ -123,9 +119,10 @@ export default function Demo() {
                 <ClockIcon className="w-5 h-5 mr-2" />
                 <span>30-minute personalized session</span>
               </div>
-            </motion.div>
+            </AnimatedDiv>
 
-            <motion.div
+            <AnimatedDiv
+        
               initial={{ opacity: 0, x: 60 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
@@ -137,7 +134,7 @@ export default function Demo() {
                 <p className="text-gray-400">Choose your preferred time slot</p>
               </div>
 
-              <InlineWidget url="https://calendly.com/paimanrasoli789/30min" />
+              <CalendlyWidget />
 
               {/* <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
@@ -265,7 +262,7 @@ export default function Demo() {
                   <ArrowRightIcon className="w-5 h-5 ml-2" />
                 </Button>
               </form> */}
-            </motion.div>
+            </AnimatedDiv>
           </div>
         </div>
       </section>
@@ -273,24 +270,24 @@ export default function Demo() {
       {/* What You'll See */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <motion.div
+          <AnimatedDiv
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-              What you'll see in your demo
+              What you&apos;ll see in your demo
             </h2>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               Our product experts will walk you through the platform and show
               you exactly how LLM optimization works for your specific use case.
             </p>
-          </motion.div>
+          </AnimatedDiv>
 
           <div className="grid lg:grid-cols-2 gap-12">
             {demoFeatures.map((feature, index) => (
-              <motion.div
+              <AnimatedDiv
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -310,7 +307,7 @@ export default function Demo() {
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </AnimatedDiv>
             ))}
           </div>
         </div>
@@ -319,24 +316,24 @@ export default function Demo() {
       {/* Benefits */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4">
-          <motion.div
+          <AnimatedDiv
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-8">
-              What you'll learn
+              What you&apos;ll learn
             </h2>
             <p className="text-lg text-gray-600">
-              By the end of your demo, you'll have a clear understanding of your
+              By the end of your demo, you&apos;ll have a clear understanding of your
               optimization potential.
             </p>
-          </motion.div>
+          </AnimatedDiv>
 
           <div className="grid md:grid-cols-2 gap-6">
             {benefits.map((benefit, index) => (
-              <motion.div
+              <AnimatedDiv
                 key={index}
                 initial={{ opacity: 0, x: index % 2 === 0 ? -40 : 40 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -345,7 +342,7 @@ export default function Demo() {
               >
                 <CheckCircleIcon className="w-6 h-6 text-green-500 mr-4 flex-shrink-0" />
                 <span className="text-gray-700 font-medium">{benefit}</span>
-              </motion.div>
+              </AnimatedDiv>
             ))}
           </div>
         </div>
@@ -354,7 +351,7 @@ export default function Demo() {
       {/* Testimonials */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <motion.div
+          <AnimatedDiv
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -363,7 +360,7 @@ export default function Demo() {
             <h2 className="text-4xl font-bold text-gray-900 mb-8">
               What others say about our demos
             </h2>
-          </motion.div>
+          </AnimatedDiv>
 
           <div className="grid lg:grid-cols-3 gap-8">
             {[
@@ -389,7 +386,7 @@ export default function Demo() {
                 company: "Digital Dynamics",
               },
             ].map((testimonial, index) => (
-              <motion.div
+              <AnimatedDiv
                 key={index}
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -397,7 +394,7 @@ export default function Demo() {
                 className="bg-white rounded-xl p-8 shadow-sm"
               >
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  "{testimonial.quote}"
+                  &quot;{testimonial.quote}&quot;
                 </p>
                 <div>
                   <div className="font-semibold text-gray-900">
@@ -406,7 +403,7 @@ export default function Demo() {
                   <div className="text-gray-500">{testimonial.role}</div>
                   <div className="text-gray-500">{testimonial.company}</div>
                 </div>
-              </motion.div>
+              </AnimatedDiv>
             ))}
           </div>
         </div>
@@ -415,14 +412,14 @@ export default function Demo() {
       {/* FAQ */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4">
-          <motion.div
+          <AnimatedDiv
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
             <h2 className="text-4xl font-bold text-gray-900 mb-8">Demo FAQ</h2>
-          </motion.div>
+          </AnimatedDiv>
 
           <div className="space-y-6">
             {[
@@ -452,7 +449,7 @@ export default function Demo() {
                   "No problem. You can reschedule or cancel anytime by clicking the link in your confirmation email.",
               },
             ].map((faq, index) => (
-              <motion.div
+              <AnimatedDiv
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -463,7 +460,7 @@ export default function Demo() {
                   {faq.question}
                 </h3>
                 <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-              </motion.div>
+              </AnimatedDiv>
             ))}
           </div>
         </div>
@@ -472,7 +469,7 @@ export default function Demo() {
       {/* CTA */}
       <section className="py-20 bg-black text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
-          <motion.div
+          <AnimatedDiv
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -484,29 +481,26 @@ export default function Demo() {
               Book your personalized demo today and discover how AI optimization
               can transform your content strategy.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+              <ScrollToFormButton
                 size="lg"
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4"
-                onClick={() =>
-                  document
-                    .querySelector("form")
-                    ?.scrollIntoView({ behavior: "smooth" })
-                }
+                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4 cursor-pointer"
+                targetSelector="calendly-widget"
+                offset={120}
               >
                 Schedule Demo
-              </Button>
-              <Link href="/contact">
+              </ScrollToFormButton>
+              <Link href="/contact" className="w-full">
                 <Button
                   size="lg"
                   variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-4"
+                  className="border-white text-black hover:bg-white hover:text-black rounded-full px-8 py-4 cursor-pointer"
                 >
                   Contact Sales
                 </Button>
               </Link>
             </div>
-          </motion.div>
+          </AnimatedDiv>
         </div>
       </section>
 
