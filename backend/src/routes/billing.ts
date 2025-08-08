@@ -26,7 +26,7 @@ router.get(
     try {
       const userId = authenticatedReq.user?.userId as string;
 
-      const userActiveSubscription = await db
+      let userActiveSubscription = await db
         .select()
         .from(userSubscriptions)
         .where(
@@ -39,11 +39,31 @@ router.get(
           (userSubscriptions.createdAt))
         .limit(1);
 
-      const subscription = userActiveSubscription?.[0];
+      let subscription = userActiveSubscription?.[0];
       const stripe = new StripeClient();
 
+      // If no active subscription record yet, ensure user exists (creates Stripe customer and trial sub via webhook)
+      if (!subscription) {
+        try {
+          await userService.ensureUserExists(userId, authenticatedReq.user?.email as string);
+          userActiveSubscription = await db
+            .select()
+            .from(userSubscriptions)
+            .where(
+              and(
+                eq(userSubscriptions.userId, userId),
+                eq(userSubscriptions.isActive, 1)
+              )
+            )
+            .orderBy(desc(userSubscriptions.createdAt))
+            .limit(1);
+          subscription = userActiveSubscription?.[0];
+        } catch (e) {
+          // fall through to safe default response
+        }
+      }
 
-      if (subscription.stripeSubscriptionId) {
+      if (subscription?.stripeSubscriptionId) {
 
         const subscriptionInStripe = await stripe.getSubscription(
           subscription.stripeSubscriptionId as string
@@ -76,6 +96,15 @@ router.get(
 
         return;
       }
+
+      // If still no subscription info, return a safe default (free/trial)
+      res.status(200).json({
+        type: subscription?.subscriptionType || "free",
+        nextBilling: null,
+        isActive: true,
+        stripeStatus: "trialing",
+      });
+      return;
     } catch (err) {
       next(err);
     }
