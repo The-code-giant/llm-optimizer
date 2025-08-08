@@ -1,7 +1,7 @@
 import { Router, Response, NextFunction, Request } from "express";
 import { authenticateJWT } from "../middleware/auth";
 import { db } from "../db/client";
-import { userSubscriptions } from "../db/schema";
+import { userSubscriptions, users } from "../db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { StripeClient } from "../lib/stripe";
 import z from "zod";
@@ -99,6 +99,7 @@ router.post(
 
     try {
       const userId = authenticatedReq.user?.userId as string;
+      const userEmail = authenticatedReq.user?.email as string;
 
       const { type } = parse.data;
 
@@ -119,11 +120,33 @@ router.post(
       const stripe = new StripeClient();
       const productPrice = await stripe.getProductPrice(type);
 
+      // Resolve stripeCustomerId from current subscription or users table, or create if missing
+      let stripeCustomerId: string | undefined = currentActiveSubscription?.stripeCustomerId as string | undefined;
+      if (!stripeCustomerId) {
+        const userRecord = await db.query.users.findFirst({ where: eq(users.id, userId) });
+        stripeCustomerId = userRecord?.stripeCustomerId || undefined;
+      }
+      if (!stripeCustomerId) {
+        // Ensure the user exists and has a Stripe customer
+        try {
+          await userService.ensureUserExists(userId, userEmail);
+          const refreshedUser = await db.query.users.findFirst({ where: eq(users.id, userId) });
+          stripeCustomerId = refreshedUser?.stripeCustomerId || undefined;
+        } catch (err) {
+          console.error("Error ensuring user and stripe customer existence:", err);
+        }
+      }
+
+      if (!stripeCustomerId) {
+        res.status(500).json({ message: "Stripe customer not found for user" });
+        return;
+      }
+
       if (currentActiveSubscription?.subscriptionType === "free") {
         // update the free trial subscription to the new plan.
 
         const checkoutSession = await stripe.stripe.checkout.sessions.create({
-          customer: currentActiveSubscription.stripeCustomerId as string,
+          customer: stripeCustomerId,
           line_items: [{ price: productPrice, quantity: 1 }],
           mode: "subscription",
           allow_promotion_codes: true,
@@ -162,7 +185,7 @@ router.post(
       // create a new subscription with the new plan checkout session.
 
       const checkoutSession = await stripe.createCheckoutSession({
-        customer: currentActiveSubscription.stripeCustomerId as string,
+        customer: stripeCustomerId,
         line_items: [{ price: productPrice, quantity: 1 }],
         mode: "subscription",
         success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
