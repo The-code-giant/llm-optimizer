@@ -1,0 +1,87 @@
+## Clever Search — Project Execution & UI Rules
+
+### Purpose
+Anchor rules for this project to ensure consistent, autonomous execution and UI patterns across tasks. Read this file at the start of every session.
+
+### Autonomous Execution Policy
+- Always read the Memory Bank (`memory/`) first; reconcile with the codebase before acting.
+- Default to end-to-end execution: plan → implement → lint/build/type-check → fix → summarize.
+- Only pause for user input when blocked by missing credentials or ambiguous requirements.
+- Prefer built-in components and existing patterns over inventing new ones.
+- After significant changes, update the Memory Bank (especially `activeContext` and `progress`).
+- Do NOT commit/push unless the user explicitly instructs to do so.
+
+### UI Patterns (Dashboard/Frontend)
+- Use shadcn/ui defaults; avoid custom components unless necessary.
+- Tailwind CSS v4 conventions; do not introduce `tailwind.config.js`.
+- Wrap page main content in a `Card` for consistent dashboard look.
+- Platform selection UX: use a horizontal button group (not a Select) for platforms (Next.js, WordPress, Shopify, Wix, Squarespace, Other).
+- Tracker modal layout:
+  - “What this script does” section at the top.
+  - Script snippet card uses these constraints to avoid overflow:
+    - `max-h-48`, `overflow-y-auto`, `whitespace-pre-wrap`, `break-all`.
+  - Video tutorial card at the bottom, compact:
+    - Fixed height (`h-48`), responsive container, per-platform label, placeholder until YouTube links provided.
+
+### Tracker Script Rules
+- Snippet config must be minimal: include only `SITE_ID` in `data-config`.
+- Do NOT pass `API_BASE` in the snippet; defaults are handled inside `backend/public/tracker/v1/tracker.js`.
+- Next.js snippet: use `<Script ... strategy="beforeInteractive" async />`.
+- Universal snippet (non-React/Next.js): plain `<script ... async defer></script>`.
+- Backend should return both `nextJsScript` and `universalScript` along with `instructions` tailored per platform, but avoid duplicated, platform-specific install sections in the UI.
+- SPA/Next.js navigation must be handled by the tracker for route changes.
+
+### Backend & Infra Conventions
+- No Docker for local dev; use direct processes, Neon serverless PostgreSQL, and external Redis.
+- Cache invalidation must trigger on content deploy/undeploy and injected content changes.
+- Endpoints should be explicit and minimal; avoid over-configuring snippets—defaults live in the tracker.
+
+### Domain Verification
+- Default method: Email-based domain ownership verification (send expiring link to admin@, webmaster@, etc.).
+- Fallbacks: meta tag, file upload, DNS TXT.
+- Restrict sensitive actions to verified domains only.
+
+### Tooling & Process
+- Use the mcp CLI to create branches, commit, and push when instructed.
+- Run type-checks and lints after edits; ensure a green build before marking tasks complete.
+- Keep code readable and explicit; prefer clarity over cleverness.
+
+### Next.js + shadcn/ui Conventions
+- Next.js App Router, Server Components by default; mark client components with `"use client"`.
+- Prefer latest Next.js APIs: `next/navigation`, Route Handlers in `app/`, `next/font`, dynamic metadata.
+- Styling: Tailwind v4 utilities; avoid custom config unless required.
+- shadcn/ui usage:
+  - Always install components via the latest shadcn CLI instead of hand-writing components.
+  - Keep components in `frontend/src/components/ui/` with original structure and exports.
+  - Do not modify shadcn-generated code unless necessary; extend via wrappers/composition.
+  - Prefer composable primitives (e.g., `Dialog`, `Card`, `Table`, `Tabs`) and follow shadcn patterns for slots/variants.
+  - When a new UI pattern is needed, check shadcn registry first; if missing, compose existing primitives.
+  - Ensure accessibility and keyboard interactions are preserved from shadcn defaults.
+
+### Forms & Validation Standards
+- Always use shadcn/ui `Form` primitives with `react-hook-form` and Zod.
+- Use `@hookform/resolvers/zod` `zodResolver(schema)` for RHF integration.
+- Co-locate the Zod schema with the form component; export schema if shared by server.
+- Display field-level errors via shadcn `FormMessage`; use `FormDescription` sparingly.
+- Disable submit while pending; show success/error via the shared `Toast` component.
+- Prefer controlled form fields backed by shadcn inputs/selects; avoid custom uncontrolled inputs.
+- For server mutations, re-validate with the same Zod schema; return structured errors mapped to RHF.
+
+### Adding shadcn Components (Procedure)
+1. Use the latest CLI: `npx shadcn@latest add <component>`.
+2. Keep naming consistent with registry (no renames).
+3. If customization is required, wrap the component rather than editing the generated file.
+4. Document significant UI additions in the Memory Bank when they introduce a new pattern.
+
+### Component Design Principles
+- Build the smallest possible components with a single, clear responsibility.
+- Maximize Server Components. Use Client Components only when required for interactivity (stateful UI, browser APIs, effects).
+- Isolate client-side logic into tiny islands and compose them inside Server Components.
+- Prefer composition over configuration. Extract reusable UI primitives early.
+- Keep props minimal and strongly typed; avoid excessive prop drilling (prefer context or local composition).
+
+### When in Doubt
+- Follow Memory Bank and these rules.
+- Maintain minimal snippet config (SITE_ID only) and platform button UX.
+- Update docs after non-trivial changes.
+

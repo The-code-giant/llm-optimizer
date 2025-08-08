@@ -215,6 +215,8 @@ The core business logic orchestrates data flow, interacts with external services
     *   Return a list of the active content snippets (`id`, `type`, `content`) for that page. Keep this endpoint very fast.
 
 6.  **Tracker Data Collection:**
+    *   Snippet generation now returns minimal configuration. Scripts only include `SITE_ID` in `data-config`. All other defaults (e.g., `API_BASE`) are handled within the tracker script itself.
+    *   The tracker script detects Next.js environments and adapts to SPA navigation (client-side route changes).
     *   Receive request from client-side Tracker script (`POST /tracker/{trackerId}/data`).
     *   Look up `site_id` by `trackerId`.
     *   Perform minimal validation.

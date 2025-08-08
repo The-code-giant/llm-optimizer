@@ -59,6 +59,10 @@ alwaysApply: false
 
   UI and Styling
   - Use Shadcn UI and Radix UI for component foundations.
+  - Always add shadcn components via the latest CLI, do not hand‑roll:
+    - `npx shadcn@latest add <component>`
+    - Keep generated files under `frontend/src/components/ui/` with original structure/exports.
+    - Prefer composition/wrappers over editing generated files; preserve a11y and interactions.
   - Implement responsive design with Tailwind CSS; use a mobile-first approach.
   - Use Stylus as CSS Modules for component-specific styles:
     - Create a .module.styl file for each component that needs custom styling.
@@ -94,6 +98,14 @@ alwaysApply: false
   - Apply classes using the styles object:
     <div className={styles.containerClass}>
 
+  Next.js App Router Conventions
+  - Use App Router with Server Components by default; add `"use client"` only when necessary.
+  - Prefer the latest Next.js APIs: `next/navigation`, Route Handlers in `app/`, `next/font`, Metadata API.
+  - Use dynamic imports for non-critical client components and wrap in `Suspense` as needed.
+  - Co-locate route logic in `app/` (loading, error, layout, route handlers).
+  - Design components to be as small and reusable as possible. Compose small primitives.
+  - Maximize Server Components; confine client code to the smallest islands needed for interactivity.
+
   Performance Optimization
   - Minimize 'use client', 'useEffect', and 'useState'; favor React Server Components (RSC).
   - Wrap client components in Suspense with fallback.
@@ -104,10 +116,12 @@ alwaysApply: false
   - Use PurgeCSS with Tailwind to remove unused styles in production.
 
   Forms and Validation
-  - Use controlled components for form inputs.
-  - Implement form validation (client-side and server-side).
-  - Consider using libraries like react-hook-form for complex forms.
-  - Use Zod or Joi for schema validation.
+  - Always use shadcn/ui `Form` with `react-hook-form` and Zod.
+  - Integrate using `@hookform/resolvers/zod` and `zodResolver(schema)`.
+  - Use controlled inputs from shadcn (Input, Select, Checkbox, Textarea) bound to RHF.
+  - Show validation errors with `FormMessage`; add helper text via `FormDescription`.
+  - Co-locate Zod schemas with the component; export for server reuse when needed.
+  - On submit, disable the button and show progress; surface toast notifications for outcomes.
 
   Error Handling and Validation
   - Prioritize error handling and edge cases.
@@ -124,10 +138,6 @@ alwaysApply: false
   - Implement proper ARIA attributes.
   - Ensure keyboard navigation support.
 
-  Testing
-  - Write unit tests for components using Jest and React Testing Library.
-  - Implement integration tests for critical user flows.
-  - Use snapshot testing judiciously.
 
   Security
   - Sanitize user inputs to prevent XSS attacks.
@@ -146,6 +156,12 @@ alwaysApply: false
   - Balance the use of Tailwind utility classes with Stylus modules:
     - Use Tailwind for rapid development and consistent spacing/sizing.
     - Use Stylus modules for complex, unique component styles.
+
+  Adding shadcn Components (Procedure)
+  - Use the latest registry CLI to add components: `npx shadcn@latest add <component>`
+  - Keep component names and exports as provided by the registry (no renames).
+  - If customization is needed, create a wrapper component; avoid editing generated files directly.
+  - Prefer shadcn primitives (Dialog, Card, Table, Tabs, Select, etc.) and compose for new patterns before creating custom components.
 
   Follow Next.js docs for Data Fetching, Rendering, and Routing.
     

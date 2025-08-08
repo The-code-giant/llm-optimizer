@@ -40,6 +40,11 @@ The Clever Search is a SaaS product designed to help website owners, particularl
 
 **Description:** A lightweight JavaScript snippet that users place on their website to collect basic page data (URL, title, meta description, headings, potentially sections of body text) and anonymized traffic metrics (page views, unique visitors) relevant to LLM visibility. This script also facilitates the dynamic injection of content managed via the dashboard.
 
+The script now requires only a single configuration value: `SITE_ID`. All other configuration values (such as `API_BASE`, timeouts, retry counts) use sensible defaults embedded in the tracker script and no longer need to be included in the snippet. Two formats are provided:
+
+- Next.js format using `next/script`
+- Universal HTML `<script>` format for all other platforms (WordPress, Shopify, Wix, Squarespace, etc.)
+
 #### User Stories
 *   As a user, I want a simple JavaScript snippet I can easily add to my website header or via a tag manager so the Clever Search can collect necessary data.
 *   As a user, I want the script to be very lightweight and not impact my website's loading speed or user experience.
@@ -47,8 +52,9 @@ The Clever Search is a SaaS product designed to help website owners, particularl
 *   As a user, I want the script to dynamically display content I configure in the dashboard on my website pages.
 
 #### Acceptance Criteria
-*   The system provides a single JS snippet code block for the user to copy.
-*   The snippet can be installed directly in the `<head>` or `<body>` of an HTML page, or via common Tag Management Systems (e.g., Google Tag Manager).
+*   The system provides two snippet code blocks: (1) Next.js, (2) Universal HTML script; the universal script works across non-React platforms.
+*   The snippet requires only `SITE_ID` in `data-config`. `API_BASE` and other options are defaulted within the tracker.
+*   The snippet can be installed directly in the `<head>` or `<body>` of an HTML page, or via common Tag Management Systems (e.g., Google Tag Manager), or the Next.js layout using `next/script`.
 *   Upon page load, the script successfully captures and sends:
     *   Page URL
     *   Page Title (`<title>`)
@@ -62,6 +68,7 @@ The Clever Search is a SaaS product designed to help website owners, particularl
 *   The script's performance impact is negligible (e.g., adds < 50ms to page load, < 50KB transfer size).
 *   The script loads asynchronously and does not block page rendering.
 *   The script includes functionality to receive and render HTML content payloads from the backend at specified locations (via CSS selectors or logical placements).
+*   The script automatically detects Next.js environments and adapts its behavior for SPA navigation.
 
 #### Edge Cases
 *   Website uses a complex Single Page Application (SPA) framework (React, Vue, Angular) where DOM changes don't trigger traditional page loads. *Needs to handle client-side navigation events.*
@@ -189,7 +196,7 @@ The Clever Search is a SaaS product designed to help website owners, particularl
 *   A "Settings" section allows users to:
     *   Manage their site(s).
     *   Update the sitemap URL and trigger re-import.
-    *   Copy the tracker script snippet.
+    *   Copy the tracker script snippet using a platform button group (Next.js, WordPress, Shopify, Wix, Squarespace, Other). The snippet updates dynamically per selection and includes only the `SITE_ID`.
     *   Manage billing information (placeholder for MVP).
     *   View account details.
 *   The dashboard is responsive and usable on different screen sizes.

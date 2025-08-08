@@ -130,7 +130,7 @@ The UI must be intuitive and simple for non-technical users, abstracting away th
     *   Crucially, a way to specify *where* the content should be injected. For MVP, this could be limited options like "Append to body," "Before first `<h2>` tag," or associating it with a predefined "slot" on the page template if applicable. *Avoid* complex visual drag-and-drop unless it's explicitly in scope.
     *   A clear "Preview" option (perhaps opening a new tab with the content rendered in context) and a "Inject Content" button.
     *   Clear feedback on injection status (Success/Error).
-*   **Settings Page:** Input field to display/copy the Tracker Script code. Options for site-wide analysis preferences.
+*   **Settings Page:** A platform button group (Next.js, WordPress, Shopify, Wix, Squarespace, Other) to display and copy the correct Tracker Script snippet. The snippet includes only `SITE_ID` in `data-config`. Options for site-wide analysis preferences.
 *   **Visual Feedback:** Use loading spinners, progress bars (especially for Sitemap Import and Analysis), success toasts, and error messages prominently.
 *   **Responsiveness:** Ensure the dashboard is usable on different screen sizes, although the primary use case might be desktop.
 

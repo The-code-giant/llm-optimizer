@@ -9,11 +9,11 @@ The package.json scripts were simplified from **37 scripts** to **19 essential s
 - `start:dev` - Replaced by `dev`
 - `dev:setup`, `dev:start`, `dev:init`, `dev:wait` - Internal complexity removed
 - `dev:restart` - Use `stop` + `dev` instead
-- `dev:logs:*` (4 scripts) - Use `logs` + Docker commands
-- `dev:status`, `dev:build` - Use Docker commands directly
-- `dev:shell:*` (4 scripts) - Use Docker commands directly  
+- `dev:logs:*` (4 scripts) - Consolidated into standard `logs` flow
+- `dev:status`, `dev:build` - Consolidated under root npm scripts
+- `dev:shell:*` (4 scripts) - Not needed without containers  
 - `db:create`, `db:generate`, `db:studio:local`, `db:reset` - Simplified to essential DB commands
-- `tools:start`, `tools:stop` - Use Docker profiles directly
+- `tools:start`, `tools:stop` - Removed (no Docker profiles)
 - `*:all` suffix scripts - Shortened to base names
 
 ### ✅ Simplified Scripts (19 scripts)
@@ -65,4 +65,4 @@ npm run install          # Consistent naming
 - `npm run dev:logs` → `npm run logs`
 - `npm run dev:stop` → `npm run stop`
 - `npm run *:all` → `npm run *`
-- Service-specific commands → Use Docker directly: `docker compose logs backend` 
+- Service-specific container commands → Use root npm scripts instead (no Docker)
