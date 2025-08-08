@@ -10,10 +10,7 @@ import {
   BarChart3,
   Bell,
   Calendar,
-  CheckCircle,
   CheckSquare,
-  Clock,
-  Download,
   ExternalLink,
   FileText,
   Globe,
@@ -30,7 +27,6 @@ import {
   Trash2,
   TrendingUp,
   Upload,
-  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -58,26 +54,19 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import ImportSitemapForm from "@/components/ImportSitemapForm";
+import AddSinglePageForm from "@/components/AddSinglePageForm";
 import {
-  addPage,
   deletePage,
   deletePages,
   deleteSite,
   getPages,
   getSiteDetails,
-  importSitemap,
   Page,
   SiteDetails,
 } from "@/lib/api";
 import { StatCard } from '@/components/ui/stat-card'
 import { TourTrigger } from "@/components/tours";
-
-interface ImportProgress {
-  status: "idle" | "importing" | "processing" | "completed" | "error";
-  total?: number;
-  processed?: number;
-  message?: string;
-}
 
 export default function SiteDetailsPage() {
   const router = useRouter();
@@ -88,10 +77,6 @@ export default function SiteDetailsPage() {
   const [pages, setPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sitemapUrl, setSitemapUrl] = useState("");
-  const [manualUrl, setManualUrl] = useState("");
-  const [importing, setImporting] = useState(false);
-  const [addingPage, setAddingPage] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<
@@ -101,9 +86,6 @@ export default function SiteDetailsPage() {
   const [scoreFilter, setScoreFilter] = useState<
     "all" | "high" | "medium" | "low"
   >("all");
-  const [importProgress, setImportProgress] = useState<ImportProgress>({
-    status: "idle",
-  });
   const [toast, setToast] = useState<{
     message: string;
     type: "success" | "error" | "info";
@@ -119,6 +101,8 @@ export default function SiteDetailsPage() {
   const [activeTab, setActiveTab] = useState<"overview" | "analytics">(
     "overview"
   );
+
+  // Add Single Page and Import Sitemap handled by extracted components
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -154,88 +138,9 @@ export default function SiteDetailsPage() {
     fetchData();
   }, [isLoaded, isSignedIn, getToken, siteId, router]);
 
-  async function handleImportSitemap(e: React.FormEvent) {
-    e.preventDefault();
-    setImporting(true);
-    setError(null);
-    setImportProgress({ status: "importing", message: "Fetching sitemap..." });
+  // sitemap import moved to ImportSitemapForm
 
-    try {
-      const token = await getToken();
-      if (!token || !siteId) {
-        setError("Failed to get authentication token");
-        return;
-      }
-
-      // Validate sitemap URL
-      if (!sitemapUrl.includes("sitemap")) {
-        throw new Error("URL doesn't appear to be a valid sitemap");
-      }
-
-      setImportProgress({
-        status: "processing",
-        message: "Processing sitemap entries...",
-      });
-
-      await importSitemap(token, siteId, sitemapUrl);
-
-      setImportProgress({
-        status: "completed",
-        message: "Sitemap imported successfully!",
-      });
-
-      setToast({
-        message: "Sitemap import completed! Refreshing pages...",
-        type: "success",
-      });
-      setSitemapUrl("");
-
-      // Refresh pages after import
-      setTimeout(async () => {
-        const pagesData = await getPages(token, siteId);
-        setPages(pagesData);
-        setImportProgress({ status: "idle" });
-      }, 2000);
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to import sitemap";
-      setError(errorMessage);
-      setImportProgress({
-        status: "error",
-        message: errorMessage,
-      });
-      setToast({ message: errorMessage, type: "error" });
-    } finally {
-      setImporting(false);
-    }
-  }
-
-  async function handleAddManualPage(e: React.FormEvent) {
-    e.preventDefault();
-    setAddingPage(true);
-    try {
-      const token = await getToken();
-      if (!token || !siteId) {
-        setError("Failed to get authentication token");
-        return;
-      }
-
-      // Call the real API to add the page
-      await addPage(token, siteId, manualUrl);
-      setToast({ message: "Page added successfully!", type: "success" });
-      setManualUrl("");
-
-      // Refresh pages
-      const pagesData = await getPages(token, siteId);
-      setPages(pagesData);
-    } catch (err: unknown) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to add page";
-      setToast({ message: errorMessage, type: "error" });
-    } finally {
-      setAddingPage(false);
-    }
-  }
+  // removed old handleAddManualPage in favor of react-hook-form onSubmit
 
   const refreshData = async () => {
     if (!siteId) return;
@@ -606,65 +511,11 @@ export default function SiteDetailsPage() {
                                     </CardDescription>
                                   </CardHeader>
                                   <CardContent className="space-y-4">
-                                    <form
-                                      onSubmit={handleImportSitemap}
-                                      className="space-y-4"
-                                    >
-                                      <Input
-                                        type="url"
-                                        placeholder="https://yoursite.com/sitemap.xml"
-                                        value={sitemapUrl}
-                                        onChange={(e) =>
-                                          setSitemapUrl(e.target.value)
-                                        }
-                                        required
-                                        disabled={importing}
-                                      />
-
-                                      {importProgress.status !== "idle" && (
-                                        <div className="p-3 bg-gray-50 rounded-lg">
-                                          <div className="flex items-center space-x-2">
-                                            {importProgress.status ===
-                                              "importing" && (
-                                              <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
-                                            )}
-                                            {importProgress.status ===
-                                              "processing" && (
-                                              <Clock className="h-4 w-4 text-yellow-600" />
-                                            )}
-                                            {importProgress.status ===
-                                              "completed" && (
-                                              <CheckCircle className="h-4 w-4 text-green-600" />
-                                            )}
-                                            {importProgress.status ===
-                                              "error" && (
-                                              <XCircle className="h-4 w-4 text-red-600" />
-                                            )}
-                                            <span className="text-sm">
-                                              {importProgress.message}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      <Button
-                                        type="submit"
-                                        disabled={importing}
-                                        className="w-full"
-                                      >
-                                        {importing ? (
-                                          <>
-                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                            Importing...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Import Sitemap
-                                          </>
-                                        )}
-                                      </Button>
-                                    </form>
+                                    <ImportSitemapForm
+                                      siteId={siteId}
+                                      onPagesUpdated={(pagesData) => setPages(pagesData)}
+                                      onToast={(t) => setToast(t)}
+                                    />
                                   </CardContent>
                                 </Card>
 
@@ -680,38 +531,13 @@ export default function SiteDetailsPage() {
                                     </CardDescription>
                                   </CardHeader>
                                   <CardContent>
-                                    <form
-                                      onSubmit={handleAddManualPage}
-                                      className="space-y-4"
-                                    >
-                                      <Input
-                                        type="url"
-                                        placeholder="https://yoursite.com/specific-page"
-                                        value={manualUrl}
-                                        onChange={(e) =>
-                                          setManualUrl(e.target.value)
-                                        }
-                                        required
-                                        disabled={addingPage}
+                                    {site && (
+                                      <AddSinglePageForm
+                                        siteId={siteId}
+                                        siteUrl={site.url}
+                                        onToast={(t) => setToast(t)}
                                       />
-                                      <Button
-                                        type="submit"
-                                        disabled={addingPage}
-                                        className="w-full"
-                                      >
-                                        {addingPage ? (
-                                          <>
-                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                            Adding...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Add Page
-                                          </>
-                                        )}
-                                      </Button>
-                                    </form>
+                                    )}
                                   </CardContent>
                                 </Card>
                               </div>
