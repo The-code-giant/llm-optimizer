@@ -16,9 +16,9 @@
   - Migration plan created for enhancements
 
 ## Current Status
-- **Phase:** Schema analysis completed, ready for implementation
-- **Next Priority:** Create database migration for tracker enhancements
-- **Focus:** Backend API endpoints implementation
+- **Phase:** Tracker script and dashboard integration updates in progress
+- **Next Priority:** Finalize tracker endpoints (/tracker/content, /tracker/event) and migrations
+- **Focus:** Frontend tracker modal UX (platform buttons, per-platform videos), simplified script snippets (SITE_ID only), and backend response consistency
 
 ## Infrastructure Update (July 2025)
 - Docker is no longer used for local development or deployment.

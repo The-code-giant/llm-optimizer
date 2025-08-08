@@ -72,6 +72,11 @@ npm run build        # Build all projects
 - [Scripts Guide](SCRIPTS_GUIDE.md) - Complete list of available commands
 - [Memory Bank](memory/) - Project documentation and context
 
+## 🧾 Notes on Infrastructure (No Docker)
+- This project no longer uses Docker for local development or deployment.
+- Use direct processes (npm scripts) locally and PM2/systemd on servers.
+- Database: Neon PostgreSQL. Cache/Queue: external Redis.
+
 ## 🏁 Contributing
 1. Fork the repository
 2. Create a feature branch

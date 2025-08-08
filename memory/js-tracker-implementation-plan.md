@@ -7,13 +7,13 @@
 (function() {
   'use strict';
   
-  // Configuration
+  // Configuration (defaults are embedded in the runtime script; only SITE_ID is required in snippet)
   const CONFIG = {
-    API_BASE: 'https://api.llmoptimizer.com',
-    SITE_ID: '{{SITE_ID}}', // Replaced during script generation
-    VERSION: '1.0.0',
-    RETRY_ATTEMPTS: 3,
-    TIMEOUT: 5000
+    API_BASE: configData.API_BASE || 'http://localhost:3001',
+    SITE_ID: configData.SITE_ID || '{{SITE_ID}}',
+    VERSION: configData.VERSION || '1.0.0',
+    RETRY_ATTEMPTS: configData.RETRY_ATTEMPTS || 3,
+    TIMEOUT: configData.TIMEOUT || 2000
   };
 
   // Main tracker class

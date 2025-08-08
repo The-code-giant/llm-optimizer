@@ -5,7 +5,7 @@
 
 ## 1. Technology Summary
 
-The recommended technology stack adopts a modern, service-oriented approach suitable for a SaaS product focused on data processing, AI integration, and a user-friendly interface. It comprises a lightweight client-side JavaScript tracker, a robust Python backend for data ingestion and AI processing, a reliable PostgreSQL database for structured data, and a responsive React frontend for the user dashboard. Deployment will leverage Docker containers on a major cloud provider, managed via a service for scalability and ease of operations.
+The recommended technology stack adopts a modern approach suitable for a SaaS product focused on data processing, AI integration, and a user-friendly interface. It comprises a lightweight client-side JavaScript tracker, a robust TypeScript/Node.js backend for data ingestion and AI processing, a reliable PostgreSQL database for structured data, and a responsive Next.js frontend for the user dashboard. Deployment uses direct processes (no Docker) with Neon serverless PostgreSQL and an external Redis instance.
 
 ## 2. Frontend Recommendations
 
@@ -40,10 +40,10 @@ The recommended technology stack adopts a modern, service-oriented approach suit
 
 ## 5. DevOps Considerations
 
-- **Containerization:** **Docker**
-  - _Justification:_ Packages the application (backend, potentially frontend build, scheduled tasks) into portable containers, ensuring consistency across development, staging, and production environments. Simplifies deployment and scaling.
-- **Deployment Platform:** **Managed Container Service on a Major Cloud Provider (e.g., AWS ECS/Fargate, GCP Cloud Run, Azure Container Instances)**
-  - _Justification:_ Provides managed infrastructure for running Docker containers, abstracting away server management. Allows focusing on application development while benefiting from scalability, reliability, and integration with other cloud services (database, storage, monitoring). Start simple and scale up as needed.
+- **Process Management:** **PM2/systemd**
+  - _Justification:_ Run backend and frontend as direct processes without containers. Simpler local and server setup.
+- **Databases/Cache:** **Neon PostgreSQL + External Redis**
+  - _Justification:_ Managed, scalable services without container orchestration.
 - **CI/CD:** **GitHub Actions or GitLab CI**
   - _Justification:_ Automate the build, test, and deployment process whenever code changes are pushed. Ensures code quality and enables frequent, reliable deployments, crucial for a SaaS product iterating rapidly.
 - **Infrastructure as Code (IaC):** **Terraform or AWS CloudFormation / GCP Deployment Manager (for future scaling)**

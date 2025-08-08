@@ -91,8 +91,8 @@ The add site form is now **100% functional** with complete database persistence 
 
 ### 1. Access the Application
 ```bash
-# Make sure services are running
-make start
+# Start services (frontend + backend)
+npm run dev
 
 # Open your browser and navigate to:
 http://localhost:3000
@@ -117,10 +117,9 @@ http://localhost:3000
 
 ### 4. Verify Database Persistence
 ```bash
-# Check the database directly
-docker compose exec postgres psql -U postgres -d cleaver_search_dev
-
-# Run these SQL queries:
+# Check the database (Neon or your Postgres connection)
+# Use your preferred SQL client connected to NEON_DATABASE_URL
+# Then run these SQL queries:
 SELECT * FROM users;
 SELECT * FROM sites;
 ```
@@ -192,9 +191,9 @@ All data is properly persisted in the database and the user experience is profes
 
 If you encounter any issues:
 
-1. **Authentication errors**: Verify CLERK_SECRET_KEY is set in docker-compose.yml
-2. **Database connection**: Ensure PostgreSQL container is healthy
-3. **API errors**: Check backend logs with `docker compose logs backend`
+1. **Authentication errors**: Verify CLERK_SECRET_KEY is set in your `.env`
+2. **Database connection**: Verify `NEON_DATABASE_URL` and network access
+3. **API errors**: Check the terminal where `npm run dev` is running (backend logs)
 4. **Frontend issues**: Check browser console for JavaScript errors
 
 All components are working together seamlessly to provide a complete site management experience! 
