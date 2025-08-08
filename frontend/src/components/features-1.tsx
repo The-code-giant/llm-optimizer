@@ -7,8 +7,8 @@ export default function Features() {
         <section id="features" className="bg-zinc-50 py-16 md:py-32 dark:bg-transparent">
             <div className="@container mx-auto max-w-7xl px-6">
                 <div className="text-center">
-                    <h2 className="text-balance text-4xl font-semibold lg:text-5xl">Built to cover your needs</h2>
-                    <p className="mt-4">Optimize your content for AI-powered search and boost your visibility across all major LLM platforms.</p>
+                    <h2 className="text-balance text-4xl font-semibold lg:text-5xl">Search Engine Optimization for AI</h2>
+                    <p className="mt-4">Optimize your content structure and metadata to reach new customers who are using AI for search.</p>
                 </div>
                 <div className="@min-4xl:max-w-full @min-4xl:grid-cols-3 mx-auto mt-8 grid max-w-sm gap-6 *:text-center md:mt-16">
                     <Card className="group shadow-zinc-950/5">

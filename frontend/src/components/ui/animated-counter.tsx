@@ -48,7 +48,6 @@ export function AnimatedCounter({ end, duration = 2, suffix = '', prefix = '' }:
       initial={{ opacity: 0, y: 20 }}
       animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
-      className="font-bold text-3xl md:text-4xl text-blue-600"
     >
       {prefix}{count.toLocaleString()}{suffix}
     </motion.span>
