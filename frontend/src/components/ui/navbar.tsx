@@ -1,25 +1,24 @@
 "use client";
 
 import {
+  MobileNav,
+  MobileNavHeader,
+  MobileNavMenu,
+  MobileNavToggle,
   Navbar,
+  NavbarButton,
   NavBody,
   NavItems,
-  MobileNav,
-  NavbarButton,
-  MobileNavHeader,
-  MobileNavToggle,
-  MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
-import { motion } from "framer-motion";
-import Link from "next/link";
-import { useState, useCallback, useEffect } from "react";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import {
-  SparklesIcon,
-  UserCircleIcon,
+  UserCircleIcon
 } from "@heroicons/react/24/outline";
-import { usePathname, useRouter } from 'next/navigation'
+import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from "react";
 
 export function NavbarComponent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -118,10 +117,11 @@ export function NavbarComponent() {
                     transition={{ duration: 0.2 }}
                     className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50"
                   >
-                    <Link href="/dashboard">
-                      <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Dashboard
-                      </button>
+                    <Link
+                      href="/dashboard"
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Dashboard
                     </Link>
                     <button
                       onClick={handleSignOut}
@@ -134,12 +134,12 @@ export function NavbarComponent() {
               </div>
             ) : (
               <>
-                <Link href="/login">
-                  <NavbarButton variant="secondary">Sign In</NavbarButton>
-                </Link>
-                <Link href="/register">
-                  <NavbarButton variant="primary">Get Started</NavbarButton>
-                </Link>
+                <NavbarButton as={Link} href="/login" variant="secondary">
+                  Sign In
+                </NavbarButton>
+                <NavbarButton as={Link} href="/register" variant="primary">
+                  Get Started
+                </NavbarButton>
               </>
             )}
           </div>
@@ -157,7 +157,6 @@ export function NavbarComponent() {
 
           <MobileNavMenu
             isOpen={isMobileMenuOpen}
-            onClose={() => setIsMobileMenuOpen(false)}
           >
             {navItems.map((item, idx) => (
               <button
@@ -177,17 +176,18 @@ export function NavbarComponent() {
                       {user?.emailAddresses[0]?.emailAddress}
                     </span>
                   </div>
-                  <Link href="/dashboard">
-                    <NavbarButton
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      variant="secondary"
-                      className="w-full"
-                    >
-                      Dashboard
-                    </NavbarButton>
-                  </Link>
+                  <NavbarButton
+                    as={Link}
+                    href="/dashboard"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    Dashboard
+                  </NavbarButton>
                   <div>
                   <NavbarButton
+                    as="button"
                     onClick={() => {
                       handleSignOut();
                       setIsMobileMenuOpen(false);
@@ -201,24 +201,24 @@ export function NavbarComponent() {
                 </>
               ) : (
                 <>
-                  <Link href="/login">
-                    <NavbarButton
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      variant="secondary"
-                      className="w-full"
-                    >
-                      Sign In
-                    </NavbarButton>
-                  </Link>
-                  <Link href="/register">
-                    <NavbarButton
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      variant="primary"
-                      className="w-full"
-                    >
-                      Get Started
-                    </NavbarButton>
-                  </Link>
+                  <NavbarButton
+                    as={Link}
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    variant="secondary"
+                    className="w-full"
+                  >
+                    Sign In
+                  </NavbarButton>
+                  <NavbarButton
+                    as={Link}
+                    href="/register"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    variant="primary"
+                    className="w-full"
+                  >
+                    Get Started
+                  </NavbarButton>
                 </>
               )}
             </div>
