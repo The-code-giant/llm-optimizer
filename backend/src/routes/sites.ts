@@ -170,9 +170,26 @@ router.post(
       // Ensure user exists in our database
       await userService.ensureUserExists(req.user!.userId, req.user!.email);
 
+      // Before creating the site, attempt to analyze the homepage to ensure it's reachable
+      let analysisResult: any;
+      try {
+        console.log(`🔎 Validating and analyzing site before creation: ${url}`);
+        analysisResult = await AnalysisService.analyzePage({
+          url,
+          forceRefresh: true,
+        });
+      } catch (analysisError) {
+        console.error(`❌ Analysis failed during site creation for ${url}:`, analysisError);
+        res.status(400).json({
+          message:
+            "We couldn't reach or analyze the website. Please verify the URL is correct and publicly accessible, then try again.",
+        });
+        return;
+      }
+
       // Generate trackerId and set status
       const trackerId = randomUUID();
-      const status = "created";
+      const status = "active";
 
       const [site] = await db
         .insert(sites)
@@ -188,39 +205,24 @@ router.post(
       // Invalidate user sites cache
       await cache.invalidateUserSites(req.user!.userId);
 
-      // Create a default page for the site URL
+      // Create a default page for the site URL with analysis data
       const [defaultPage] = await db
         .insert(pages)
         .values({
           siteId: site.id,
           url: url,
-          title: name,
-          llmReadinessScore: 0, // Initial score
+          title: analysisResult?.content?.title || name,
+          llmReadinessScore: analysisResult?.score || 0,
+          contentSnapshot: analysisResult?.content
+            ? JSON.stringify(analysisResult.content)
+            : undefined,
+          lastAnalysisAt: new Date(),
+          lastScannedAt: new Date(),
         })
         .returning();
 
-      // Trigger analysis for the new site URL asynchronously
+      // Store analysis results in database
       try {
-        console.log(`🚀 Starting initial analysis for new site: ${url}`);
-        
-        // Perform the analysis
-        const analysisResult = await AnalysisService.analyzePage({
-          url: url,
-          forceRefresh: true
-        });
-
-        // Update the page with analysis results
-        await db.update(pages)
-          .set({ 
-            contentSnapshot: JSON.stringify(analysisResult.content),
-            title: analysisResult.content.title || defaultPage.title,
-            llmReadinessScore: analysisResult.score,
-            lastAnalysisAt: new Date(),
-            lastScannedAt: new Date()
-          })
-          .where(eq(pages.id, defaultPage.id));
-
-        // Store analysis results in database
         await db.insert(analysisResults).values({
           pageId: defaultPage.id,
           analyzedAt: new Date(),
@@ -234,25 +236,15 @@ router.post(
             contentQuality: analysisResult.contentQuality,
             technicalSEO: analysisResult.technicalSEO,
             keywordAnalysis: analysisResult.keywordAnalysis,
-            llmOptimization: analysisResult.llmOptimization
+            llmOptimization: analysisResult.llmOptimization,
           }),
           rawLlmOutput: JSON.stringify(analysisResult),
         });
-
-        console.log(`✅ Initial analysis completed for ${url} - Score: ${analysisResult.score}/100`);
-
-        // Auto-generate content suggestions
-        try {
-          await AnalysisService.autoGenerateContentSuggestions(defaultPage.id, analysisResult.content, analysisResult);
-          console.log(`🤖 Auto-generated content suggestions for new site: ${url}`);
-        } catch (contentError) {
-          console.error(`❌ Failed to auto-generate content for new site ${url}:`, contentError);
-        }
-
-      } catch (analysisError) {
-        console.error(`❌ Initial analysis failed for new site ${url}:`, analysisError);
-        // Don't fail the site creation if analysis fails
+      } catch (contentError) {
+        console.error(`❌ Failed to persist analysis results for new site ${url}:`, contentError);
       }
+
+      console.log(`✅ Site created and analysis succeeded for ${url} - Score: ${analysisResult.score}/100`);
 
       res.status(201).json(site);
     } catch (err) {

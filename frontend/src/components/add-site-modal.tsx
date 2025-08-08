@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Sparkles, CheckCircle, AlertCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -106,10 +106,13 @@ interface AddSiteModalProps {
   onSuccess: (message: string) => void;
 }
 
-export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalProps) {
+export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps, 'onError'>) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const { getToken } = useAuth();
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<"validating" | "analyzing" | "finalizing" | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     register,
@@ -126,25 +129,67 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
 
   const onSubmit = async (data: AddSiteFormData) => {
     setAdding(true);
+    setPhase("validating");
+    setProgress(10);
+    setFormError(null);
 
     try {
       const token = await getToken();
       if (!token) {
-        onError("Failed to get authentication token");
+        setFormError("Failed to get authentication token");
         return;
       }
 
+      // Fancy staged loader progression while waiting for API
+      const ticker = setInterval(() => {
+        setProgress((p) => {
+          const next = Math.min(85, p + 5 + Math.random() * 5);
+          // move through phases as progress increases
+          setPhase((ph) => {
+            if (next > 30 && ph === "validating") return "analyzing";
+            return ph;
+          });
+          return next;
+        });
+      }, 400);
+
       const newSite = await addSite(token, data.name, data.url);
-      
+      clearInterval(ticker);
+
+      // Finish the staged steps so users can see Analyzing and Finalizing
+      // Step 1: ensure we show analyzing (if not already), bump progress
+      setPhase((ph) => (ph === "validating" ? "analyzing" : ph));
+      setProgress((p) => (p < 92 ? 92 : p));
+      await new Promise((r) => setTimeout(r, 500));
+
+      // Step 2: finalizing
+      setPhase("finalizing");
+      setProgress(98);
+      await new Promise((r) => setTimeout(r, 600));
+
+      // Step 3: complete
+      setProgress(100);
+      await new Promise((r) => setTimeout(r, 300));
+
       // Reset form and close modal
       reset();
       setOpen(false);
-      
-      // Notify parent component with the new site ID
+      setPhase(null);
+      setProgress(0);
+      setFormError(null);
+
+      // Notify parent and show success on the main page
       onSiteAdded(newSite.id);
       onSuccess("Site added successfully!");
     } catch (err: unknown) {
-      onError(err instanceof Error ? err.message : "Failed to add site");
+      setPhase(null);
+      setProgress(0);
+      // Keep modal open and show error inside the form (no page-level toast)
+      setFormError(
+        err instanceof Error
+          ? err.message
+          : "Failed to add site. Please verify the URL is correct and publicly accessible, then try again."
+      );
     } finally {
       setAdding(false);
     }
@@ -165,7 +210,7 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
           Add Site
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[520px]">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Add New Website</DialogTitle>
@@ -174,6 +219,12 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+                {formError && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
+                    <p className="text-sm text-destructive">{formError}</p>
+                  </div>
+                )}
             <div className="grid gap-2">
               <Label htmlFor="name">Site Name</Label>
               <Input
@@ -207,6 +258,52 @@ export function AddSiteModal({ onSiteAdded, onError, onSuccess }: AddSiteModalPr
                 </p>
               )}
             </div>
+
+                {adding && (
+                  <div className="rounded-md border bg-muted p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Sparkles className="w-4 h-4" />
+                        <span>Setting up your site</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-background rounded-full overflow-hidden">
+                      <div className="h-2 bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        {phase === "validating" ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-primary" />
+                        )}
+                        <span>Validating website URL</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm opacity-90">
+                        {phase === "analyzing" ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : phase === "finalizing" || phase === null ? (
+                          <CheckCircle className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Loader2 className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span>Analyzing homepage content</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm opacity-90">
+                        {phase === "finalizing" ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                        ) : phase === null && progress === 100 ? (
+                          <CheckCircle className="w-4 h-4 text-primary" />
+                        ) : (
+                          <Loader2 className="w-4 h-4 text-muted-foreground" />
+                        )}
+                        <span>Finalizing setup</span>
+                      </div>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">This may take ~10–20 seconds if your site is slow to respond.</p>
+                  </div>
+                )}
           </div>
           <DialogFooter>
             <Button
