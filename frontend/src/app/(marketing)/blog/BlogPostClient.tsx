@@ -11,7 +11,7 @@ import { BlogMeta } from "./BlogListClient";
 import Image from "next/image";
 interface BlogPostClientProps {
   meta: BlogMeta;
-  relatedPosts: any[];
+  relatedPosts: [{ title: string, href: string, category: string, readTime: string }];
   children: ReactNode;
 }
 
