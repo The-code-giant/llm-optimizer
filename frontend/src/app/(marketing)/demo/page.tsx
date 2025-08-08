@@ -490,7 +490,7 @@ export default function Demo() {
               >
                 Schedule Demo
               </ScrollToFormButton>
-              <Link href="/contact" className="w-full">
+              <Link href="/contact" >
                 <Button
                   size="lg"
                   variant="outline"
