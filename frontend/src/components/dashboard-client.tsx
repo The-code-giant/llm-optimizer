@@ -135,6 +135,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
     }
   };
 
+  // Keep this available for other flows; AddSiteModal will not call it on failure now
   const handleError = (message: string) => {
     setError(message);
     setToast({ message, type: "error" });
@@ -198,7 +199,14 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
 
   return (
     <>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+          durationMs={toast.type === 'error' ? 10000 : 4000}
+        />
+      )}
       
       <div className="space-y-6">
         {/* Header */}
@@ -257,7 +265,6 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
               <div data-tour="add-site">
                 <AddSiteModal 
                   onSiteAdded={handleSiteAdded}
-                  onError={handleError}
                   onSuccess={handleSuccess}
                 />
               </div>
@@ -294,7 +301,6 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
                 <div data-tour="add-site">
                   <AddSiteModal 
                     onSiteAdded={handleSiteAdded}
-                    onError={handleError}
                     onSuccess={handleSuccess}
                   />
                 </div>

@@ -4,13 +4,14 @@ interface ToastProps {
   message: string;
   type?: "success" | "error" | "info";
   onClose: () => void;
+  durationMs?: number;
 }
 
-export default function Toast({ message, type = "info", onClose }: ToastProps) {
+export default function Toast({ message, type = "info", onClose, durationMs = 3000 }: ToastProps) {
   useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
+    const timer = setTimeout(onClose, durationMs);
     return () => clearTimeout(timer);
-  }, [onClose]);
+  }, [onClose, durationMs]);
 
   let bg = "bg-blue-600";
   if (type === "success") bg = "bg-green-600";
