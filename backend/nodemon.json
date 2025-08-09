@@ -4,7 +4,9 @@
   "ignore": ["src/**/*.spec.ts", "src/**/*.test.ts"],
   "exec": "ts-node --transpile-only src/index.ts",
   "env": {
-    "NODE_ENV": "development"
+    "NODE_ENV": "development",
+    "ENABLE_BACKGROUND_JOBS": "false",
+    "USE_NODE_PG": "false"
   },
   "delay": "1000",
   "legacyWatch": true,
