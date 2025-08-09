@@ -32,9 +32,16 @@ import {
 } from "./middleware/rateLimit";
 
 // Import workers to start background job processing
-import "./utils/sitemapWorker";
-import "./utils/analysisWorker";
-import "./utils/eventProcessor";
+// Conditionally start background workers (can be disabled in development)
+const enableBackgroundJobs = process.env.ENABLE_BACKGROUND_JOBS === "true";
+if (enableBackgroundJobs) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("./utils/sitemapWorker");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("./utils/analysisWorker");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  require("./utils/eventProcessor");
+}
 
 // Sentry initialization
 let sentryInitialized = false;
