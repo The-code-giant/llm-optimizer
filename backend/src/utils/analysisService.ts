@@ -356,7 +356,7 @@ ${content.bodyText || 'No content found'}
         }),
       });
 
-      const { object: parsed } = await generateObject({
+      const { object: parsed } = await generateObject<any>({
         model: aiOpenAI(OPENAI_MODEL),
         system: `${SHARED_SYSTEM}\n\n${this.ANALYSIS_PROMPT}`,
         schema: AnalysisSchema,
@@ -519,48 +519,39 @@ ${content.bodyText || 'No content found'}
     }
 
     const contentTypes = [
-      { type: 'title', maxTokens: 200, count: 5 },
-      { type: 'description', maxTokens: 200, count: 3 },
-      { type: 'faq', maxTokens: 800, count: 1 },
-      { type: 'paragraph', maxTokens: 500, count: 3 },
-      { type: 'keywords', maxTokens: 300, count: 1 }
+      { type: 'title' as const, count: 3 },
+      { type: 'description' as const, count: 3 },
+      { type: 'faq' as const, count: 1 },
+      { type: 'paragraph' as const, count: 3 },
+      { type: 'keywords' as const, count: 1 },
     ];
 
-    for (const { type, maxTokens, count } of contentTypes) {
+    const pageSummary = analysisResult.pageSummary || analysisResult.summary || '';
+
+    for (const { type, count } of contentTypes) {
       try {
         let suggestions;
-        
-        // Generate multiple suggestions for titles, descriptions, and paragraphs
+
+        // Use the same generation strategy as the API endpoint
         if (type === 'title') {
-          // Generate 5 title suggestions
-          const titlePromises = Array(count).fill(null).map(() => 
-            this.generateSpecificContentType('title', content, analysisResult, maxTokens, analysisResult.pageSummary)
-          );
-          const titles = await Promise.all(titlePromises);
-          suggestions = titles;
-        } else if (type === 'description') {
-          // Generate 3 description suggestions
-          const descPromises = Array(count).fill(null).map(() =>
-            this.generateSpecificContentType('description', content, analysisResult, maxTokens, analysisResult.pageSummary)
-          );
-          const descriptions = await Promise.all(descPromises);
-          suggestions = descriptions;
-        } else if (type === 'paragraph') {
-          // Generate 3 paragraph suggestions
-          const paragraphPromises = Array(count).fill(null).map(() =>
-            this.generateSpecificContentType('paragraph', content, analysisResult, maxTokens, analysisResult.pageSummary)
-          );
-          const paragraphs = await Promise.all(paragraphPromises);
-          suggestions = paragraphs;
-        } else {
-          // For FAQ and keywords, return single result (they're already comprehensive)
-          suggestions = await this.generateSpecificContentType(
-            type as 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+          suggestions = await this.generateOptimizedTitleList(
             content,
-            analysisResult,
-            maxTokens,
-            analysisResult.pageSummary
+            pageSummary,
+            content.metaDescription || '',
+            3
           );
+        } else if (type === 'description') {
+          suggestions = await this.generateOptimizedDescriptionList(
+            content,
+            pageSummary,
+            3
+          );
+        } else if (type === 'paragraph') {
+          suggestions = await this.generateSpecificContentType('paragraph', content, analysisResult, 500, pageSummary);
+        } else if (type === 'faq') {
+          suggestions = await this.generateSpecificContentType('faq', content, analysisResult, 800, pageSummary);
+        } else if (type === 'keywords') {
+          suggestions = await this.generateSpecificContentType('keywords', content, analysisResult, 300, pageSummary);
         }
 
         // Replace existing suggestions for this content type
@@ -576,12 +567,12 @@ ${content.bodyText || 'No content found'}
           contentType: type,
           suggestions,
           requestContext: 'Auto-generated during analysis',
-          aiModel: 'gpt-4o-mini',
+          aiModel: process.env.OPENAI_MODEL || 'gpt-5-mini',
           generatedAt: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         });
 
-        console.log(`✅ Generated ${count} ${type} suggestions for page ${pageId}`);
+        console.log(`✅ Generated ${Array.isArray(suggestions) ? suggestions.length : 1} ${type} suggestions for page ${pageId}`);
       } catch (error) {
         console.error(`❌ Failed to generate ${type} suggestions:`, error);
       }
