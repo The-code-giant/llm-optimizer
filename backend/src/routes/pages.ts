@@ -450,21 +450,26 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
     try {
       // Get page summary for better context
       let pageSummary = '';
-      if (analysis?.recommendations) {
-        try {
-          const recommendations = typeof analysis.recommendations === 'string' 
-            ? JSON.parse(analysis.recommendations) 
-            : (analysis.recommendations || {});
-          pageSummary = recommendations.pageSummary || '';
-        } catch (error) {
-          console.log('Could not parse page summary from analysis');
+      try {
+        // Prefer structured text from rawLlmOutput if present
+        if (analysis?.rawLlmOutput) {
+          // Attempt to parse JSON, else use raw text
+          try {
+            const parsed = JSON.parse(analysis.rawLlmOutput);
+            pageSummary = parsed?.summary || analysis.rawLlmOutput;
+          } catch {
+            pageSummary = analysis.rawLlmOutput;
+          }
         }
+      } catch {
+        pageSummary = '';
       }
 
-      // Create PageContent object for the new functions
+      // Create PageContent object using real stored content when possible
+      // Prefer the page title; use currentContent only as a fallback for fields being edited
       const pageContentObj = {
-        title: page.title || currentContent || '',
-        metaDescription: currentContent || '',
+        title: page.title || '',
+        metaDescription: currentContent && contentType === 'description' ? currentContent : (analysis?.rawLlmOutput || ''),
         url: page.url
       };
 
@@ -507,37 +512,28 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
            }
          };
 
-         // Generate multiple suggestions based on content type
+         // Generate suggestions based on content type (batched for better diversity)
          if (contentType === 'title') {
-           // Generate 5 title suggestions
-           const titlePromises = Array(5).fill(null).map(() => 
-             AnalysisService.generateSpecificContentType('title', pageContentObj, analysisResult, 1000, pageSummary)
-           );
-           const titles = await Promise.all(titlePromises);
-           suggestions = titles;
-         } else if (contentType === 'description') {
-           // Generate 3 description suggestions  
-           const descPromises = Array(3).fill(null).map(() =>
-             AnalysisService.generateSpecificContentType('description', pageContentObj, analysisResult, 1000, pageSummary)
-           );
-           const descriptions = await Promise.all(descPromises);
-           suggestions = descriptions;
-         } else if (contentType === 'paragraph') {
-           // Generate 3 paragraph suggestions
-           const paragraphPromises = Array(3).fill(null).map(() =>
-             AnalysisService.generateSpecificContentType('paragraph', pageContentObj, analysisResult, 1000, pageSummary)
-           );
-           const paragraphs = await Promise.all(paragraphPromises);
-           suggestions = paragraphs;
-         } else {
-           // For FAQ and keywords, return single result (they're already comprehensive)
-           suggestions = await AnalysisService.generateSpecificContentType(
-             contentType as 'title' | 'description' | 'faq' | 'paragraph' | 'keywords',
+           suggestions = await AnalysisService.generateOptimizedTitleList(
              pageContentObj,
-             analysisResult,
-             1000,
-             pageSummary
+             pageSummary,
+             pageContentObj.metaDescription || '',
+             10
            );
+         } else if (contentType === 'description') {
+           suggestions = await AnalysisService.generateOptimizedDescriptionList(
+             pageContentObj,
+             pageSummary,
+             4
+           );
+         } else if (contentType === 'paragraph') {
+           suggestions = await AnalysisService.generateSpecificContentType('paragraph', pageContentObj, analysisResult, 1000, pageSummary);
+         } else if (contentType === 'faq') {
+           suggestions = await AnalysisService.generateSpecificContentType('faq', pageContentObj, analysisResult, 1000, pageSummary);
+         } else if (contentType === 'keywords') {
+           suggestions = await AnalysisService.generateSpecificContentType('keywords', pageContentObj, analysisResult, 1000, pageSummary);
+         } else {
+           throw new Error('Unsupported contentType');
          }
        } catch (serviceError: any) {
          console.error(`Failed to generate ${contentType} suggestions:`, serviceError);
@@ -557,7 +553,7 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
       contentType,
       suggestions,
       requestContext: additionalContext,
-      aiModel: 'gpt-4o-mini',
+      aiModel: process.env.OPENAI_MODEL || 'gpt-4o',
       generatedAt: new Date(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
     });

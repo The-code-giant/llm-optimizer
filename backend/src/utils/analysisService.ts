@@ -1,14 +1,24 @@
-import OpenAI from 'openai';
 import axios from 'axios';
 import { JSDOM } from 'jsdom';
 import { db } from '../db/client';
 import { contentSuggestions } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
+import { generateText, generateObject } from 'ai';
+import { z } from 'zod';
+import { createOpenAI } from '@ai-sdk/openai';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize Vercel AI SDK OpenAI provider
+const aiOpenAI = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Centralize the model selection; default to GPT‑5 Mini as requested
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini';
+
+// Shared guardrails for all generations
+const SHARED_SYSTEM = `You are a senior GEO (Generative Engine Optimization) strategist and copywriter.
+- Produce benefit-first, action-oriented copy users would actually click.
+- Respect strict length rules and avoid generic phrasing or boilerplate.
+- Prefer specificity, clarity, and measurable outcomes; no exclamation marks.
+- Optimize for LLM citation: self-contained, extractable, precise.
+- Tone: expert, trustworthy, and helpful for marketing/SEO leaders.`;
 
 export interface AnalysisResult {
   score: number;
@@ -290,73 +300,78 @@ MAIN CONTENT:
 ${content.bodyText || 'No content found'}
 `;
 
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini', // Using cost-effective model
-        messages: [
-          {
-            role: 'system',
-            content: this.ANALYSIS_PROMPT
-          },
-          {
-            role: 'user',
-            content: contentForAnalysis
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 2000,
+      // Structured output via generateObject (validated)
+      const AnalysisSchema = z.object({
+        overallScore: z.number().default(0),
+        summary: z.string().default(''),
+        issues: z.array(z.string()).default([]),
+        recommendations: z.array(z.string()).default([]),
+        contentQuality: z.object({
+          clarity: z.number().default(0),
+          structure: z.number().default(0),
+          completeness: z.number().default(0),
+        }).default({ clarity: 0, structure: 0, completeness: 0 }),
+        technicalSEO: z.object({
+          headingStructure: z.number().default(0),
+          semanticMarkup: z.number().default(0),
+          contentDepth: z.number().default(0),
+          titleOptimization: z.number().default(0),
+          metaDescription: z.number().default(0),
+          schemaMarkup: z.number().default(0),
+        }).default({
+          headingStructure: 0,
+          semanticMarkup: 0,
+          contentDepth: 0,
+          titleOptimization: 0,
+          metaDescription: 0,
+          schemaMarkup: 0,
+        }),
+        keywordAnalysis: z.object({
+          primaryKeywords: z.array(z.string()).default([]),
+          longTailKeywords: z.array(z.string()).default([]),
+          keywordDensity: z.number().default(0),
+          semanticKeywords: z.array(z.string()).default([]),
+          missingKeywords: z.array(z.string()).default([]),
+        }).default({
+          primaryKeywords: [],
+          longTailKeywords: [],
+          keywordDensity: 0,
+          semanticKeywords: [],
+          missingKeywords: [],
+        }),
+        llmOptimization: z.object({
+          definitionsPresent: z.boolean().default(false),
+          faqsPresent: z.boolean().default(false),
+          structuredData: z.boolean().default(false),
+          citationFriendly: z.boolean().default(false),
+          topicCoverage: z.number().default(0),
+          answerableQuestions: z.number().default(0),
+        }).default({
+          definitionsPresent: false,
+          faqsPresent: false,
+          structuredData: false,
+          citationFriendly: false,
+          topicCoverage: 0,
+          answerableQuestions: 0,
+        }),
       });
 
-      const responseText = completion.choices[0]?.message?.content;
-      if (!responseText) {
-        throw new Error('No response from OpenAI');
-      }
+      const { object: parsed } = await generateObject({
+        model: aiOpenAI(OPENAI_MODEL),
+        system: `${SHARED_SYSTEM}\n\n${this.ANALYSIS_PROMPT}`,
+        schema: AnalysisSchema,
+        prompt: contentForAnalysis,
+      });
 
-      // Parse JSON response
-      let parsedResult;
-      try {
-        // Extract JSON from response (in case there's extra text)
-        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : responseText;
-        parsedResult = JSON.parse(jsonString);
-      } catch (parseError) {
-        console.error('Failed to parse OpenAI response:', responseText);
-        throw new Error('Failed to parse analysis results');
-      }
-
-      // Map to our AnalysisResult interface
       const result: AnalysisResult = {
-        score: parsedResult.overallScore || 0,
-        summary: parsedResult.summary || 'Analysis completed',
-        issues: parsedResult.issues || [],
-        recommendations: parsedResult.recommendations || [],
-        contentQuality: {
-          clarity: parsedResult.contentQuality?.clarity || 0,
-          structure: parsedResult.contentQuality?.structure || 0,
-          completeness: parsedResult.contentQuality?.completeness || 0,
-        },
-        technicalSEO: {
-          headingStructure: parsedResult.technicalSEO?.headingStructure || 0,
-          semanticMarkup: parsedResult.technicalSEO?.semanticMarkup || 0,
-          contentDepth: parsedResult.technicalSEO?.contentDepth || 0,
-          titleOptimization: parsedResult.technicalSEO?.titleOptimization || 0,
-          metaDescription: parsedResult.technicalSEO?.metaDescription || 0,
-          schemaMarkup: parsedResult.technicalSEO?.schemaMarkup || 0,
-        },
-        keywordAnalysis: {
-          primaryKeywords: parsedResult.keywordAnalysis?.primaryKeywords || [],
-          longTailKeywords: parsedResult.keywordAnalysis?.longTailKeywords || [],
-          keywordDensity: parsedResult.keywordAnalysis?.keywordDensity || 0,
-          semanticKeywords: parsedResult.keywordAnalysis?.semanticKeywords || [],
-          missingKeywords: parsedResult.keywordAnalysis?.missingKeywords || [],
-        },
-        llmOptimization: {
-          definitionsPresent: parsedResult.llmOptimization?.definitionsPresent || false,
-          faqsPresent: parsedResult.llmOptimization?.faqsPresent || false,
-          structuredData: parsedResult.llmOptimization?.structuredData || false,
-          citationFriendly: parsedResult.llmOptimization?.citationFriendly || false,
-          topicCoverage: parsedResult.llmOptimization?.topicCoverage || 0,
-          answerableQuestions: parsedResult.llmOptimization?.answerableQuestions || 0,
-        }
+        score: parsed.overallScore ?? 0,
+        summary: parsed.summary ?? 'Analysis completed',
+        issues: parsed.issues ?? [],
+        recommendations: parsed.recommendations ?? [],
+        contentQuality: parsed.contentQuality,
+        technicalSEO: parsed.technicalSEO,
+        keywordAnalysis: parsed.keywordAnalysis,
+        llmOptimization: parsed.llmOptimization,
       };
 
       return result;
@@ -599,23 +614,12 @@ Webpage Details:
 
 Provide a clear, informative summary that would help a content strategist understand the page's purpose and target audience.`;
 
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are an expert content analyst. Provide clear, comprehensive summaries that capture the essence and purpose of web content.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+      const { text: summary } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+        system: 'You are an expert content analyst. Provide clear, comprehensive summaries that capture the essence and purpose of web content.',
+        prompt,
         temperature: 0.3,
-        max_tokens: 600,
       });
-
-      const summary = completion.choices[0]?.message?.content?.trim();
       return summary || 'Unable to generate page summary';
     } catch (error) {
       console.error('❌ Failed to generate page summary:', error);
@@ -628,43 +632,39 @@ Provide a clear, informative summary that would help a content strategist unders
    */
   private static async generateOptimizedTitle(content: PageContent, pageSummary: string, description: string): Promise<string> {
     const systemPrompt = `
-You are an expert in Generative Engine Optimization (GEO), the emerging discipline of optimizing content to be referenced and recommended by large language models (LLMs) like ChatGPT, Claude, Gemini, and Perplexity.
-Your job is to:
-- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
-- Increase semantic richness: Use natural language that matches how users ask questions (e.g. “best tools for X”, “how do I…”). Include related keywords and phrases LLMs associate with the topic.
-- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
-- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
-- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
-- CRITICAL: Title must be 60 characters or less and include primary keywords.
-- Always output only valid JSON as instructed by the user.
-`;
+      You are an expert in Generative Engine Optimization (GEO), the emerging discipline of optimizing content to be referenced and recommended by large language models (LLMs) like ChatGPT, Claude, Gemini, and Perplexity.
+      Your job is to:
+      - Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
+      - Increase semantic richness: Use natural language that matches how users ask questions (e.g. “best tools for X”, “how do I…”). Include related keywords and phrases LLMs associate with the topic.
+      - Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
+      - Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
+      - Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
+      - CRITICAL: Title must be 60 characters or less and include primary keywords.
+      - Always output only valid JSON as instructed by the user.
+      `;
 
-    const userPrompt = `Here is the content to optimize:
-Title: ${content.title || ''}
-Summary: ${pageSummary}
-Description: ${description}
+          const userPrompt = `Here is the content to optimize:
+      Title: ${content.title || ''}
+      Summary: ${pageSummary}
+      Description: ${description}
 
-Please rewrite the title with the above enhancements. REQUIREMENTS:
-- Maximum 60 characters (strictly enforce this limit)
-- Include primary keywords naturally
-- Make it compelling and action-oriented
-- Focus on key benefits and user value
+      Please rewrite the title with the above enhancements. REQUIREMENTS:
+      - Maximum 60 characters (strictly enforce this limit)
+      - Include primary keywords naturally
+      - Make it compelling and action-oriented
+      - Focus on key benefits and user value
 
-Output only a JSON object:
-{ "optimizedTitle": "..." }
-Do not explain your changes. Write it as if it’s a standalone, publish-ready title designed to be cited by LLMs when generating responses.`;
+      Output only a JSON object:
+      { "optimizedTitle": "..." }
+      Do not explain your changes. Write it as if it’s a standalone, publish-ready title designed to be cited by LLMs when generating responses.`;
 
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0.7,
-      max_tokens: 120,
     });
 
-    const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
       // Remove code block markers if present
@@ -715,16 +715,12 @@ Please rewrite the meta description with the above enhancements. REQUIREMENTS:
 Output only a JSON object:
 { "optimizedDescription": "..." }
 Do not explain your changes. Write it as if it’s a standalone, publish-ready meta description designed to be cited by LLMs when generating responses.`;
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0.7,
-      max_tokens: 180,
     });
-    const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
       const cleaned = responseText.replace(/```json|```/g, '').trim();
@@ -774,16 +770,12 @@ You are an expert Generative Engine Optimization (GEO) specialist. Transform con
     const userPrompt = `Here is the content to optimize:
 Summary: ${pageSummary}
 `;
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0.7,
-      max_tokens: 800,
     });
-    const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
       const cleaned = responseText.replace(/```json|```/g, '').trim();
@@ -825,16 +817,12 @@ Output only a JSON array of objects:
   { "heading": "Action-Oriented Heading 3", "content": "paragraph content..." }
 ]
 Do not explain your changes. Write it as if it’s a standalone, publish-ready set of paragraphs designed to be cited by LLMs when generating responses.`;
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0.7,
-      max_tokens: 500,
     });
-    const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
       const cleaned = responseText.replace(/```json|```/g, '').trim();
@@ -870,16 +858,12 @@ Please generate a JSON object with the following fields, using the above enhance
   "missing": ["opportunity 1", "gap 2"]
 }
 Do not explain your changes. Write it as if it’s a standalone, publish-ready keyword analysis designed to be cited by LLMs when generating responses.`;
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
       temperature: 0.7,
-      max_tokens: 300,
     });
-    const responseText = completion.choices[0]?.message?.content?.trim();
     if (!responseText) throw new Error('No response from AI');
     try {
       const cleaned = responseText.replace(/```json|```/g, '').trim();
@@ -915,5 +899,115 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready k
       default:
         throw new Error('Unknown content type');
     }
+  }
+
+  /**
+   * Generate a list of unique, high-quality titles in one call
+   */
+  public static async generateOptimizedTitleList(
+    content: PageContent,
+    pageSummary: string,
+    description: string,
+    count: number = 8
+  ): Promise<string[]> {
+    const systemPrompt = `You write high-converting, SEO-friendly page titles.
+Rules:
+- Output ONLY a JSON array of ${count} unique strings
+- 50-60 characters each (hard limit)
+- No exclamation marks
+- Include page intent and clear benefit
+- Avoid near-duplicates and generic phrasing (e.g., "Optimize your site for LLMs")
+- Optional brand at end: " — Clever Search"`;
+
+    const userPrompt = `Context
+Title: ${content.title || ''}
+Summary: ${pageSummary}
+URL: ${content.url}
+Description: ${description}
+
+Produce ${count} distinct titles following the rules.`;
+
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.5,
+    });
+    if (!responseText) throw new Error('No response from AI');
+    const cleaned = responseText.replace(/```json|```/g, '').trim();
+    let candidates: string[] = [];
+    try {
+      candidates = JSON.parse(cleaned);
+    } catch (e) {
+      throw new Error('Failed to parse optimized titles list as JSON');
+    }
+
+    // Normalize, filter length, dedupe
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+    const seen = new Set<string>();
+    const filtered = candidates
+      .filter((t) => typeof t === 'string')
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 50 && t.length <= 60)
+      .filter((t) => {
+        const k = norm(t);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    return filtered.slice(0, count);
+  }
+
+  /**
+   * Generate a list of meta descriptions in one call
+   */
+  public static async generateOptimizedDescriptionList(
+    content: PageContent,
+    pageSummary: string,
+    count: number = 3
+  ): Promise<string[]> {
+    const systemPrompt = `You write compelling meta descriptions.
+Rules:
+- Output ONLY a JSON array of ${count} strings
+- 150-160 characters each
+- Include benefit + CTA, reflect page intent
+- Avoid duplicates and boilerplate`;
+
+    const userPrompt = `Context
+Summary: ${pageSummary}
+Current: ${content.metaDescription || ''}
+URL: ${content.url}
+
+Produce ${count} distinct meta descriptions following the rules.`;
+
+    const { text: responseText } = await generateText({
+      model: aiOpenAI(OPENAI_MODEL) as any,
+      system: systemPrompt,
+      prompt: userPrompt,
+      temperature: 0.5,
+    });
+    if (!responseText) throw new Error('No response from AI');
+    const cleaned = responseText.replace(/```json|```/g, '').trim();
+    let candidates: string[] = [];
+    try {
+      candidates = JSON.parse(cleaned);
+    } catch (e) {
+      throw new Error('Failed to parse optimized descriptions list as JSON');
+    }
+
+    // Enforce 150-160 and dedupe
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
+    const seen = new Set<string>();
+    const filtered = candidates
+      .filter((t) => typeof t === 'string')
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 150 && t.length <= 160)
+      .filter((t) => {
+        const k = norm(t);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+    return filtered.slice(0, count);
   }
 } 

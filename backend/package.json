@@ -25,10 +25,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.7",
     "@clerk/backend": "^2.3.1",
     "@neondatabase/serverless": "^1.0.1",
     "@sentry/node": "^9.32.0",
     "@types/axios": "^0.14.4",
+    "ai": "^5.0.8",
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",
     "bullmq": "^5.56.0",

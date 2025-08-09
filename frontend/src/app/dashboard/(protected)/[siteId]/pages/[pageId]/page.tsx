@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import {
@@ -25,6 +25,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   ArrowLeft,
   Globe,
@@ -90,7 +96,7 @@ export default function PageAnalysisPage() {
   } | null>(null);
 
   // Content state (this would normally be persisted in a database)
-  const [contentData, setContentData] = useState({
+  const [contentData] = useState({
     title: "",
     description: "",
     faqs: [] as string[],
@@ -126,7 +132,7 @@ export default function PageAnalysisPage() {
   const [undeploying, setUndeploying] = useState(false);
 
   // Move fetchData to top-level scope so it can be called from handleUndeploy
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -179,7 +185,7 @@ export default function PageAnalysisPage() {
       setError(err instanceof Error ? err.message : "Failed to load page data");
       setLoading(false);
     }
-  }
+  }, [getToken, pageId]);
 
   useEffect(() => {
     // Don't do anything until Clerk has finished loading
@@ -198,7 +204,7 @@ export default function PageAnalysisPage() {
     }
 
     fetchData();
-  }, [isLoaded, isSignedIn, getToken, pageId, router]);
+  }, [isLoaded, isSignedIn, router, fetchData]);
 
   async function handleTriggerAnalysis() {
     setTriggering(true);
@@ -223,7 +229,7 @@ export default function PageAnalysisPage() {
           const data = await getPageAnalysis(token, pageId);
           setAnalysis(data);
           setToast({ message: "Analysis completed!", type: "success" });
-        } catch (err) {
+        } catch {
           // Analysis might still be processing
           console.log("Analysis still processing...");
         }
@@ -322,23 +328,13 @@ export default function PageAnalysisPage() {
         } successfully!`,
         type: "success",
       });
-    } catch (error: any) {
-      setToast({
-        message:
-          error.message ||
-          `Failed to save${
-            deployImmediately ? " and deploy" : ""
-          } ${contentType}`,
-        type: "error",
-      });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : `Failed to save${deployImmediately ? " and deploy" : ""} ${contentType}`;
+      setToast({ message, type: "error" });
     }
-  };
-
-  const removeParagraph = (index: number) => {
-    setContentData((prev) => ({
-      ...prev,
-      paragraphs: prev.paragraphs.filter((_, i) => i !== index),
-    }));
   };
 
   // 2. Add undeploy handler
@@ -357,11 +353,9 @@ export default function PageAnalysisPage() {
         } undeployed successfully!`,
         type: "success",
       });
-    } catch (error: any) {
-      setToast({
-        message: error.message || "Failed to undeploy content",
-        type: "error",
-      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to undeploy content";
+      setToast({ message, type: "error" });
     } finally {
       setUndeploying(false);
       setUndeployDialog({ open: false, contentType: null });
@@ -427,6 +421,9 @@ export default function PageAnalysisPage() {
   // Find deployed paragraph
   const deployedParagraph = (contentVersions.paragraph || []).find((c) => c.isActive === 1);
   console.log(contentVersions);
+  const hasAnyDeployed = Boolean(
+    deployedTitle || deployedDescription || deployedFAQ || deployedParagraph
+  );
   return (
  <SidebarProvider
       style={
@@ -452,114 +449,171 @@ export default function PageAnalysisPage() {
 
               <div className="px-4 lg:px-6">
                 <div className="space-y-6">
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  {/* Sticky Header */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
+                    <div className="flex items-start gap-3">
                       <Link href={`/dashboard/${siteId}`}>
-                      <Button
-                        variant="ghost"
-                        className="p-2"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </Button>
+                        <Button variant="ghost" className="p-2">
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
                       </Link>
                       <div>
-                        <h1 className="text-2xl font-bold">
-                          Page Content Editor
-                        </h1>
-                        <p className="text-muted-foreground">
-                          AI-powered content optimization and editing
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <h1 className="text-xl md:text-2xl font-semibold">Page Details</h1>
+                          {hasAnyDeployed ? (
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Deployed</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-muted-foreground">Draft</Badge>
+                          )}
+                        </div>
+                        <div className="text-muted-foreground text-sm flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          <a
+                            href={pageData.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:underline overflow-hidden text-ellipsis whitespace-nowrap max-w-[220px] md:max-w-[420px] lg:max-w-none"
+                          >
+                            {pageData.url}
+                          </a>
+                        </div>
                       </div>
                     </div>
-                    <Button
-                      onClick={handleTriggerAnalysis}
-                      disabled={triggering}
-                      className="bg-primary text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
-                    >
-                      {triggering ? (
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4 mr-2" />
-                      )}
-                      {analysis ? "Run Analysis Again" : "Run First Analysis"}
-                    </Button>
+                    <div className="flex w-full md:w-auto flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full sm:w-auto">
+                            <Button onClick={handleTriggerAnalysis} disabled={triggering} className="w-full sm:w-auto whitespace-nowrap">
+                              {triggering ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4 mr-2" />
+                              )}
+                              <span className="sm:hidden">Analyze</span>
+                              <span className="hidden sm:inline">
+                                {analysis ? "Run Analysis Again" : "Run First Analysis"}
+                              </span>
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>Analyze the page and refresh insights</TooltipContent>
+                      </Tooltip>
+                      <a href={pageData.url} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                        <Button variant="outline" className="gap-2 w-full sm:w-auto whitespace-nowrap">
+                          <ExternalLink className="h-4 w-4" /> View Live
+                        </Button>
+                      </a>
+                    </div>
                   </div>
 
-                  {/* Page Information */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center space-x-2">
-                        <Globe className="h-5 w-5" />
-                        <span>Page Information</span>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">
-                            URL
-                          </label>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <p className="break-all">
-                              {pageData.url}
-                            </p>
-                            <a
-                              href={pageData.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="ghost" size="sm">
-                                <ExternalLink className="h-4 w-4" />
-                              </Button>
-                            </a>
+                  {/* Onboarding / Next-step helper */}
+                  <Card className="mt-2">
+                    <CardContent className="py-4">
+                      {!analysis ? (
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div>
+                            <div className="font-medium">Getting started</div>
+                            <div className="text-sm text-muted-foreground">1) Run an analysis → 2) Review suggestions → 3) Edit and deploy content</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button aria-label="Run analysis" onClick={handleTriggerAnalysis} disabled={triggering}>
+                              {triggering ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4 mr-2" />
+                              )}
+                              Run Analysis
+                            </Button>
+                            <Button aria-label="Skip to content" variant="outline" onClick={() => document.querySelector('[data-value=content]')?.dispatchEvent(new Event('click', { bubbles: true }))}>
+                              Edit Content
+                            </Button>
                           </div>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">
-                            Original Title
-                          </label>
-                          <p className="mt-1">
-                            {pageData.title || "No title"}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">
-                            LLM Readiness Score
-                          </label>
-                          <div className="mt-1">
-                            {pageData.llmReadinessScore &&
-                            pageData.llmReadinessScore > 0 ? (
-                              getScoreBadge(
-                                Math.round(pageData.llmReadinessScore)
-                              )
-                            ) : (
-                              <Badge variant="outline">Not analyzed</Badge>
-                            )}
+                      ) : (
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div>
+                            <div className="font-medium">Next step</div>
+                            <div className="text-sm text-muted-foreground">Use the Content tab to apply AI suggestions, then review details in Analysis</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button aria-label="Go to content" variant="outline" onClick={() => document.querySelector('[data-value=content]')?.dispatchEvent(new Event('click', { bubbles: true }))}>Content</Button>
+                            <Button aria-label="Go to analysis" variant="outline" onClick={() => document.querySelector('[data-value=analysis]')?.dispatchEvent(new Event('click', { bubbles: true }))}>Analysis</Button>
                           </div>
                         </div>
-                        <div>
-                          <label className="text-sm font-medium text-muted-foreground">
-                            Last Scanned
-                          </label>
-                          <p className="mt-1">
-                            {pageData.lastScannedAt
-                              ? new Date(
-                                  pageData.lastScannedAt
-                                ).toLocaleDateString()
-                              : "Never"}
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </CardContent>
                   </Card>
 
-                  {/* Content Editing Section */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Left Column - Content Editors */}
-                    <div className="space-y-6">
-                      {/* Title Editor */}
+                  {/* Tabs */}
+                  <Tabs defaultValue="content" className="w-full">
+                    <TabsList className="mt-2">
+                      <TabsTrigger value="content">Content</TabsTrigger>
+                      <TabsTrigger value="overview">Overview</TabsTrigger>
+                      <TabsTrigger value="analysis">Analysis</TabsTrigger>
+                    </TabsList>
+
+                    {/* Overview Tab */}
+                    <TabsContent value="overview" className="mt-4 space-y-6">
                       <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center space-x-2">
+                            <Globe className="h-5 w-5" />
+                            <span>Page Information</span>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">URL</label>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <p className="break-all">{pageData.url}</p>
+                                <a href={pageData.url} target="_blank" rel="noopener noreferrer">
+                                  <Button variant="ghost" size="sm">
+                                    <ExternalLink className="h-4 w-4" />
+                                  </Button>
+                                </a>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Original Title</label>
+                              <p className="mt-1">{pageData.title || "No title"}</p>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">LLM Readiness Score</label>
+                              <div className="mt-1 flex items-center gap-2">
+                                {pageData.llmReadinessScore && pageData.llmReadinessScore > 0 ? (
+                                  getScoreBadge(Math.round(pageData.llmReadinessScore))
+                                ) : (
+                                  <Badge variant="outline">Not analyzed</Badge>
+                                )}
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="text-xs text-muted-foreground underline decoration-dotted cursor-help">What is this?</span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    An estimate of how well the page content is structured for AI assistants.
+                                  </TooltipContent>
+                                </Tooltip>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Last Scanned</label>
+                              <p className="mt-1">
+                                {pageData.lastScannedAt ? new Date(pageData.lastScannedAt).toLocaleDateString() : "Never"}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Content Tab */}
+                    <TabsContent value="content" className="mt-4 space-y-6">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Left Column - Content Editors */}
+                        <div className="space-y-6">
+                          {/* Title Editor */}
+                          <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
@@ -688,7 +742,7 @@ export default function PageAnalysisPage() {
                                   openEditor(
                                     "description",
                                     contentData.description ||
-                                      pageData.description ||
+                                      originalMetaDescription ||
                                       "",
                                     "Edit Meta Description",
                                     "Generate compelling meta descriptions that improve search result click-through rates"
@@ -869,7 +923,7 @@ export default function PageAnalysisPage() {
                             <div className="text-center py-8 text-muted-foreground">
                               <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
                               <p>
-                                No FAQs added yet - click "Add FAQ" to generate
+                                No FAQs added yet - click &quot;Add FAQ&quot; to generate
                                 suggestions
                               </p>
                             </div>
@@ -913,7 +967,7 @@ export default function PageAnalysisPage() {
                         <CardContent>
                           {deployedParagraph ? (
                             (() => {
-                              let paragraphs = [];
+                              let paragraphs: Array<string | { heading?: string; content: string }> = [];
                               try {
                                 paragraphs = JSON.parse(deployedParagraph.optimizedContent);
                               } catch {
@@ -921,11 +975,11 @@ export default function PageAnalysisPage() {
                               }
                               return (
                                 <div className="space-y-4">
-                                  {paragraphs.map((para, idx) =>
+                                  {paragraphs.map((para: string | { heading?: string; content: string }, idx: number) =>
                                     typeof para === "object" && para !== null ? (
                                       <div key={idx} className="p-4 bg-muted rounded-lg">
                                         {para.heading && <div className="font-semibold mb-1">{para.heading}</div>}
-                                        <div className="whitespace-pre-line">{para.content}</div>
+                                        <div className="whitespace-pre-line">{(para as { content: string }).content}</div>
                                       </div>
                                     ) : (
                                       <div key={idx} className="p-4 bg-muted rounded-lg whitespace-pre-line">{para}</div>
@@ -937,14 +991,14 @@ export default function PageAnalysisPage() {
                           ) : (
                             <div className="text-center py-8 text-muted-foreground">
                               <PenTool className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                              <p>No paragraphs deployed yet - click "Add Paragraph" to generate suggestions</p>
+                              <p>No paragraphs deployed yet - click &quot;Add Paragraph&quot; to generate suggestions</p>
                             </div>
                           )}
                         </CardContent>
                       </Card>
                     </div>
 
-                    {/* Right Column - Keywords & Analysis */}
+                    {/* Right Column - Keywords */}
                     <div className="space-y-6">
                       {/* Keywords Section */}
                       <Card>
@@ -1082,7 +1136,13 @@ export default function PageAnalysisPage() {
                         </CardContent>
                       </Card>
 
-                      {/* Analysis Results */}
+                    </div>
+                    {/* Close grid wrapper */}
+                    </div>
+                    </TabsContent>
+
+                    {/* Analysis Tab */}
+                    <TabsContent value="analysis" className="mt-4 space-y-6">
                       <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center space-x-2">
@@ -1090,8 +1150,7 @@ export default function PageAnalysisPage() {
                             <span>Analysis Results</span>
                           </CardTitle>
                           <CardDescription>
-                            Latest AI-powered analysis and optimization
-                            recommendations
+                            Latest AI-powered analysis and optimization recommendations
                           </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -1104,9 +1163,7 @@ export default function PageAnalysisPage() {
                                   Summary
                                 </h3>
                                 <div className="bg-muted rounded-lg p-4">
-                                  <p className="text-foreground">
-                                    {analysisJson?.summary}
-                                  </p>
+                                  <p className="text-foreground">{analysisJson?.summary}</p>
                                 </div>
                               </div>
 
@@ -1121,14 +1178,9 @@ export default function PageAnalysisPage() {
                                 {analysis.issues.length > 0 ? (
                                   <ul className="space-y-2">
                                     {analysis.issues.map((issue, i) => (
-                                      <li
-                                        key={i}
-                                        className="flex items-start space-x-3"
-                                      >
+                                      <li key={i} className="flex items-start space-x-3">
                                         <div className="w-2 h-2 bg-destructive rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-foreground">
-                                          {issue}
-                                        </span>
+                                        <span className="text-foreground">{issue}</span>
                                       </li>
                                     ))}
                                   </ul>
@@ -1151,21 +1203,14 @@ export default function PageAnalysisPage() {
                                 {analysis.recommendations.length > 0 ? (
                                   <ul className="space-y-2">
                                     {analysis.recommendations.map((rec, i) => (
-                                      <li
-                                        key={i}
-                                        className="flex items-start space-x-3"
-                                      >
+                                      <li key={i} className="flex items-start space-x-3">
                                         <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-foreground">
-                                          {rec}
-                                        </span>
+                                        <span className="text-foreground">{rec}</span>
                                       </li>
                                     ))}
                                   </ul>
                                 ) : (
-                                  <p className="text-muted-foreground">
-                                    No specific recommendations at this time.
-                                  </p>
+                                  <p className="text-muted-foreground">No specific recommendations at this time.</p>
                                 )}
                               </div>
 
@@ -1173,27 +1218,18 @@ export default function PageAnalysisPage() {
                               <div className="pt-4 border-t border-border">
                                 <p className="text-xs text-muted-foreground flex items-center">
                                   <Clock className="h-4 w-4 mr-1" />
-                                  Analysis generated:{" "}
-                                  {new Date(
-                                    analysis.createdAt
-                                  ).toLocaleString()}
+                                  Analysis generated: {new Date(analysis.createdAt).toLocaleString()}
                                 </p>
                               </div>
                             </div>
                           ) : (
                             <div className="text-center py-8">
                               <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                              <h3 className="text-lg font-semibold mb-2">
-                                No Analysis Yet
-                              </h3>
+                              <h3 className="text-lg font-semibold mb-2">No Analysis Yet</h3>
                               <p className="text-muted-foreground mb-4">
-                                Run an analysis to get AI-powered insights and
-                                optimization recommendations for this page.
+                                Run an analysis to get AI-powered insights and optimization recommendations for this page.
                               </p>
-                              <Button
-                                onClick={handleTriggerAnalysis}
-                                disabled={triggering}
-                              >
+                              <Button onClick={handleTriggerAnalysis} disabled={triggering}>
                                 {triggering ? (
                                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                                 ) : (
@@ -1205,8 +1241,9 @@ export default function PageAnalysisPage() {
                           )}
                         </CardContent>
                       </Card>
-                    </div>
-                  </div>
+                    </TabsContent>
+
+                  </Tabs>
                 </div>
 
                 {/* Content Editor Modal */}
@@ -1226,34 +1263,26 @@ export default function PageAnalysisPage() {
                 {/* Undeploy Confirmation Dialog */}
                 <Dialog
                   open={undeployDialog.open}
-                  onOpenChange={(open) =>
-                    setUndeployDialog((d) => ({ ...d, open }))
-                  }
+                  onOpenChange={(open) => setUndeployDialog((d) => ({ ...d, open }))}
                 >
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Confirm Undeploy</DialogTitle>
                       <DialogDescription>
-                        Are you sure you want to undeploy this{" "}
-                        {undeployDialog.contentType}? This will revert to the
-                        original version.
+                        Are you sure you want to undeploy this {undeployDialog.contentType}? This will revert to the original version.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                       <Button
                         variant="outline"
-                        onClick={() =>
-                          setUndeployDialog({ open: false, contentType: null })
-                        }
+                        onClick={() => setUndeployDialog({ open: false, contentType: null })}
                         disabled={undeploying}
                       >
                         Cancel
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() =>
-                          handleUndeploy(undeployDialog.contentType!)
-                        }
+                        onClick={() => handleUndeploy(undeployDialog.contentType!)}
                         disabled={undeploying}
                       >
                         {undeploying ? "Undeploying..." : "Confirm Undeploy"}
