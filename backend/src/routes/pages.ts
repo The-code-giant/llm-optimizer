@@ -518,13 +518,13 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
              pageContentObj,
              pageSummary,
              pageContentObj.metaDescription || '',
-             10
+             3
            );
          } else if (contentType === 'description') {
            suggestions = await AnalysisService.generateOptimizedDescriptionList(
              pageContentObj,
              pageSummary,
-             4
+             3
            );
          } else if (contentType === 'paragraph') {
            suggestions = await AnalysisService.generateSpecificContentType('paragraph', pageContentObj, analysisResult, 1000, pageSummary);
