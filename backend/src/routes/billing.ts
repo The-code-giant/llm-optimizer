@@ -152,14 +152,24 @@ router.post(
       // Resolve stripeCustomerId from current subscription or users table, or create if missing
       let stripeCustomerId: string | undefined = currentActiveSubscription?.stripeCustomerId as string | undefined;
       if (!stripeCustomerId) {
-        const userRecord = await db.query.users.findFirst({ where: eq(users.id, userId) });
+        const userRecordArr = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1);
+        const userRecord = userRecordArr[0];
         stripeCustomerId = userRecord?.stripeCustomerId || undefined;
       }
       if (!stripeCustomerId) {
         // Ensure the user exists and has a Stripe customer
         try {
           await userService.ensureUserExists(userId, userEmail);
-          const refreshedUser = await db.query.users.findFirst({ where: eq(users.id, userId) });
+          const refreshedUserArr = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          const refreshedUser = refreshedUserArr[0];
           stripeCustomerId = refreshedUser?.stripeCustomerId || undefined;
         } catch (err) {
           console.error("Error ensuring user and stripe customer existence:", err);
