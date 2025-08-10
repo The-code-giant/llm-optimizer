@@ -84,9 +84,12 @@ const handleSubscriptionUpdated = async (event: Stripe.Event) => {
 
   console.log( "subscription updated", subscriptionID)
 
-  const findSub = await db.query.userSubscriptions.findFirst({
-    where : eq(userSubscriptions.stripeSubscriptionId, subscriptionID)
-  })
+  const findSubArr = await db
+    .select()
+    .from(userSubscriptions)
+    .where(eq(userSubscriptions.stripeSubscriptionId, subscriptionID))
+    .limit(1);
+  const findSub = findSubArr[0];
 
   if(findSub){
     await cache.invalidateUserSub(findSub.userId);

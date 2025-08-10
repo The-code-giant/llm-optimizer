@@ -19,6 +19,7 @@ import winston from "winston";
 import expressWinston from "express-winston";
 import * as Sentry from "@sentry/node";
 import client from "prom-client";
+import helmet from "helmet";
 import {
   metricsMiddleware,
   errorMetricsMiddleware,
@@ -59,6 +60,18 @@ if (
 }
 
 const app = express();
+
+// Basic hardening
+app.disable("x-powered-by");
+// If running behind a reverse proxy/load balancer (Heroku/Vercel/Nginx), trust the proxy
+app.set("trust proxy", 1);
+// Security headers
+app.use(
+  helmet({
+    // Allow tracker assets to be loaded cross-origin (served from this API and embedded on customer sites)
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, "../public")));
@@ -170,19 +183,48 @@ app.use("/api/v1/webhooks", dashboardRateLimit, express.json({
   },
 }), webhooksRouter);
 
-app.use(express.json());
+// Tighten body size limits (leave Stripe/webhooks raw-body handling above intact)
+app.use(express.json({ limit: "200kb" }));
+app.use(express.urlencoded({ extended: false, limit: "200kb" }));
 //!Notes new route must add after webhooks router.
 
-// Serve the Swagger JSON specification
-app.get("/api-docs/swagger.json", (req, res) => {
+// Minimal root endpoint to reduce noisy 404 scans
+app.get("/", (_req, res) => {
+  res.status(200).send("Clever Search backend is running");
+});
+
+// Serve robots.txt to reduce crawler 404 noise
+app.get("/robots.txt", (_req, res) => {
+  res.type("text/plain").send("User-agent: *\nDisallow: /");
+});
+
+// Avoid favicon 404 noise
+app.get("/favicon.ico", (_req, res) => {
+  res.sendStatus(204);
+});
+
+// Internal access guard (only enforced in production)
+const requireInternalApiKey: express.RequestHandler = (req, res, next) => {
+  if (isDevelopment) {
+    return next();
+  }
+  const provided = req.header("x-api-key");
+  const expected = process.env.INTERNAL_API_KEY;
+  if (expected && provided === expected) {
+    return next();
+  }
+  res.status(403).json({ message: "Forbidden" });
+};
+
+// Serve the Swagger JSON specification (protected in production)
+app.get("/api-docs/swagger.json", requireInternalApiKey, (req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(swaggerSpec);
 });
+app.use("/api-docs", requireInternalApiKey, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Prometheus metrics endpoint
-app.get("/metrics", metricsEndpoint);
+// Prometheus metrics endpoint (protected in production)
+app.get("/metrics", requireInternalApiKey, metricsEndpoint);
 
 // Health check endpoint with Redis status
 app.get("/healthz", async (req, res) => {
@@ -215,6 +257,11 @@ app.use("/api/v1/users", dashboardRateLimit, usersRouter);
 app.use("/api/v1/billing", dashboardRateLimit, billingRouter);
 app.use("/api/v1", trackerRouter);
 app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
+
+// Standard 404 for unknown routes
+app.use((req, res) => {
+  res.status(404).json({ message: "Not Found" });
+});
 // Error logging middleware - only for actual errors
 app.use(
   expressWinston.errorLogger({

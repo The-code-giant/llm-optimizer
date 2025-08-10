@@ -89,11 +89,14 @@ export class UserService {
   }
 
   async isUserSubIsActive(userId: string) {
-    const userSub = await db.query.userSubscriptions.findFirst({
-      where :
-       and(eq(userSubscriptions.userId, userId),
-       eq(userSubscriptions.isActive, 1))
-    });
+    const userSubArr = await db
+      .select()
+      .from(userSubscriptions)
+      .where(
+        and(eq(userSubscriptions.userId, userId), eq(userSubscriptions.isActive, 1))
+      )
+      .limit(1);
+    const userSub = userSubArr[0];
     
     if(!userSub){
       return false;
