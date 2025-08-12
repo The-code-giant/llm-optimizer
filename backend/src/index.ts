@@ -13,6 +13,8 @@ import analysisRouter from "./routes/analysis";
 import injectedContentRouter from "./routes/injectedContent";
 import trackerRouter from "./routes/tracker";
 import usersRouter from "./routes/users";
+import toolsRouter from "./routes/tools";
+import leadsRouter from "./routes/leads";
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
 import winston from "winston";
@@ -255,6 +257,8 @@ app.use("/api/v1/analysis", dashboardRateLimit, analysisRouter);
 app.use("/api/v1/injected-content", dashboardRateLimit, injectedContentRouter);
 app.use("/api/v1/users", dashboardRateLimit, usersRouter);
 app.use("/api/v1/billing", dashboardRateLimit, billingRouter);
+app.use("/api/v1/tools", generalRateLimit, toolsRouter);
+app.use("/api/v1/leads", generalRateLimit, leadsRouter);
 app.use("/api/v1", trackerRouter);
 app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
 

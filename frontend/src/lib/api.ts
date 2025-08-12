@@ -789,3 +789,36 @@ export async function checkSubStatus(token: string): Promise<{
   });
   return handleResponse(res);
 }
+
+// Public tools: check bot accessibility for a URL
+export interface BotAccessResult {
+  agent: string;
+  userAgent: string;
+  robotsAllowed: boolean | 'unknown';
+  httpStatus: number | null;
+  ok: boolean;
+  error?: string;
+}
+
+export async function checkBotAccessibility(url: string): Promise<{
+  url: string;
+  robotsTxtUrl: string;
+  robotsTxtFound: boolean;
+  results: BotAccessResult[];
+}> {
+  const res = await fetch(`${API_BASE}/tools/bot-access-check`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  return handleResponse(res);
+}
+
+export async function submitToolLead(params: { email: string; phone?: string; website: string; source?: string }): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_BASE}/leads`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  return handleResponse(res);
+}
