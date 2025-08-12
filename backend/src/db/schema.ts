@@ -187,3 +187,16 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Leads captured from public tools/forms
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 64 }),
+  website: varchar("website", { length: 1024 }).notNull(),
+  source: varchar("source", { length: 64 }).default("tools"),
+  userAgent: varchar("user_agent", { length: 500 }),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  meta: jsonb("meta").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
