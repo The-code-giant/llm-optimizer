@@ -21,8 +21,14 @@ const logger = winston.createLogger({
 class EventProcessor {
   private intervalId: NodeJS.Timeout | null = null;
   private isProcessing: boolean = false;
+  private readonly intervalMs: number;
   
   constructor() {
+    // Default to 5 hours; configurable via EVENT_PROCESSOR_INTERVAL_MS
+    const defaultInterval = 1000 * 60 * 60 * 5; // 5 hours
+    const envInterval = Number(process.env.EVENT_PROCESSOR_INTERVAL_MS || defaultInterval);
+    this.intervalMs = Number.isFinite(envInterval) && envInterval > 0 ? envInterval : defaultInterval;
+    logger.info(`⏱️  Event processor interval set to ${Math.round(this.intervalMs / (1000 * 60))} minutes`);
     this.startProcessor();
   }
 
@@ -35,12 +41,12 @@ class EventProcessor {
     // Process immediately on startup
     setImmediate(() => this.processAllSites());
     
-    // Then process every 30 seconds
+    // Then process on a fixed interval (configurable)
     this.intervalId = setInterval(() => {
       if (!this.isProcessing) {
         this.processAllSites();
       }
-    }, 30000); // 30 seconds
+    }, this.intervalMs);
   }
 
   /**
