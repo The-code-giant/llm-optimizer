@@ -54,7 +54,7 @@ export default function Home() {
               className="text-center mb-16"
             >
               <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-                Why an AI search and discovery strategy is critical.
+                Why do you need Cleversearch?
               </h2>
             </AnimatedDiv>
           </div>
