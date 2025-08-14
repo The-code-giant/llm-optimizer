@@ -72,6 +72,60 @@ type UrlFormData = z.infer<typeof urlSchema>;
 
 export default function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const AI_LOGOS = [
+    {
+        src: '/ai-logos/openai.svg',
+        alt: 'ChatGPT',
+        width: 40,
+        height: 40
+    },
+    {
+        src: '/ai-logos/claude.svg',
+        alt: 'Claude',
+        width: 40,
+        height: 40
+    },
+    {
+        src: '/ai-logos/gemini.svg',
+        alt: 'Gemini',
+        width: 40,
+        height: 40
+    },
+    {
+        src: '/ai-logos/perplexity.svg',
+        alt: 'Perplexity',
+        width: 40,
+        height: 40
+    },
+    {
+        src: '/ai-logos/deepseek.svg',
+        alt: 'DeepSeek',
+        width: 40,
+        height: 40
+    },
+    {
+        src: '/ai-logos/grok.svg',
+        alt: 'Grok',
+        width: 40,
+        height: 40
+    },
+    {
+        src: '/ai-logos/metaai.svg',
+        alt: 'Meta AI',
+        width: 40,
+        height: 40
+    },
+    {
+      src: '/ai-logos/copilot.svg',
+      alt: 'Copilot',
+      width: 40,
+      height: 40
+    },
+
+    
+]
+
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const words = [
@@ -360,7 +414,13 @@ export default function HeroSection() {
               </Link>
             </div>
             <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 gap-y-8 transition-all duration-500 group-hover:opacity-50 sm:gap-x-16 sm:gap-y-14">
-              <div className="flex">
+              {AI_LOGOS.map((logo) => (
+                <div className="flex flex-col items-center justify-center">
+                  <Image src={logo.src} alt={logo.alt} height={logo.height} width={logo.width} />
+                  <span className="text-sm mt-1">{logo.alt}</span>
+                </div>
+              ))}
+              {/* <div className="flex">
                 <img
                   className="mx-auto h-5 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/nvidia.svg"
@@ -433,7 +493,7 @@ export default function HeroSection() {
                   height="24"
                   width="auto"
                 />
-              </div>
+              </div> */}
             </div>
           </div>
         </section>
