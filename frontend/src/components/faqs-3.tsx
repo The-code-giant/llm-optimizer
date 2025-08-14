@@ -16,7 +16,7 @@ interface FAQsThreeProps {
 export default function FAQsThree({
     title = "Frequently Asked Questions",
     subtitle = "Can’t find what you’re looking for? Contact our",
-    supportLink = "#",
+    supportLink = "/demo",
     supportText = "customer support team",
     items = FAQ_ITEMS
 }: FAQsThreeProps) {

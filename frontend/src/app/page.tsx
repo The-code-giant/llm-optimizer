@@ -54,7 +54,7 @@ export default function Home() {
               className="text-center mb-16"
             >
               <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
-                Why an AI search and discovery strategy is critical.
+                Why do you need Cleversearch?
               </h2>
             </AnimatedDiv>
           </div>
@@ -303,7 +303,9 @@ export default function Home() {
                       <h3 className="text-xl font-bold text-gray-900">
                         Success Stories
                       </h3>
-                      <p className="text-gray-600">LLM Optimization Results</p>
+                      <p className="text-gray-600">
+                      Cleversearch Results
+                      </p>
                     </div>
                   </div>
 
