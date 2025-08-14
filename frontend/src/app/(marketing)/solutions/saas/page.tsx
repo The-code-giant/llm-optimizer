@@ -14,6 +14,7 @@ import {
   ArrowRightIcon,
   StarIcon
 } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 export default function ForSaaS() {
   const benefits = [
@@ -113,20 +114,19 @@ export default function ForSaaS() {
               recommend to prospects researching software solutions.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4 text-lg"
+              <Link 
+                href="/login"
+                className="bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-100 rounded-full px-8 py-4 text-lg font-medium transition-colors duration-200 inline-flex items-center justify-center"
               >
                 Start Free Trial
                 <ArrowRightIcon className="w-5 h-5 ml-2" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-4 text-lg"
+              </Link>
+              <Link 
+                href="/demo"
+                className="border-2 border-white text-white hover:bg-white hover:text-black dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black rounded-full px-8 py-4 text-lg font-medium transition-colors duration-200 inline-flex items-center justify-center"
               >
                 View Demo
-              </Button>
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -440,20 +440,19 @@ export default function ForSaaS() {
               Join leading SaaS companies using LLM optimization to drive qualified leads and accelerate growth.
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4 text-lg"
+              <Link 
+                href="/login"
+                className="bg-white text-black hover:bg-gray-100 dark:bg-white dark:text-black dark:hover:bg-gray-100 rounded-full px-8 py-4 text-lg font-medium transition-colors duration-200 inline-flex items-center justify-center"
               >
                 Start Free Trial
                 <ArrowRightIcon className="w-5 h-5 ml-2" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-4 text-lg"
+              </Link>
+              <Link 
+                href="/demo"
+                className="border-2 border-white text-white hover:bg-white hover:text-black dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-black rounded-full px-8 py-4 text-lg font-medium transition-colors duration-200 inline-flex items-center justify-center"
               >
                 Schedule Demo
-              </Button>
+              </Link>
             </div>
           </motion.div>
         </div>
