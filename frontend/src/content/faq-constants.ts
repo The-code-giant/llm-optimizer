@@ -52,8 +52,8 @@ export const FAQ_ITEMS: FAQItem[] = [
   {
     id: 'clever-search-help',
     icon: 'zap',
-    question: 'How does Clever Search help optimize my content for large language models?',
-    answer: 'Clever Search uses advanced AI analysis to evaluate your website content from the perspective of large language models like ChatGPT, Claude, and Gemini. Our platform identifies specific areas where your content can be improved to increase citation probability and visibility in AI-generated responses.',
+    question: 'How does Cleversearch help optimize my content for large language models?',
+    answer: 'Cleversearch uses advanced AI analysis to evaluate your website content from the perspective of large language models like ChatGPT, Claude, and Gemini. Our platform identifies specific areas where your content can be improved to increase citation probability and visibility in AI-generated responses.',
     details: [
       'Our AI analyzes your content structure, clarity, and authority signals that LLMs look for when selecting sources',
       'We provide specific recommendations for improving content formatting, adding structured data, and enhancing readability',

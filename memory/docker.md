@@ -1,4 +1,4 @@
-# Clever Search Infrastructure Update (July 2025)
+# Cleversearch Infrastructure Update (July 2025)
 
 **Docker is no longer used for local development or deployment.**
 

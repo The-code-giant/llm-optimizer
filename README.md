@@ -1,4 +1,4 @@
-# Clever Search
+# Cleversearch
 
 A SaaS platform to optimize website content for Large Language Models (LLMs) like ChatGPT, Claude, and others.
 

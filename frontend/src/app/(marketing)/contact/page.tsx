@@ -17,7 +17,7 @@ export default function Contact() {
     {
       icon: EnvelopeIcon,
       title: "Email",
-      details: "hi@cleversearch.com",
+      details: "hi@cleversearch.ai",
       description: "Send us an email anytime"
     },
     {

@@ -1,4 +1,4 @@
-# Clever Search Backend Implementation Guide
+# Cleversearch Backend Implementation Guide
 
 **Version:** 1.0
 **Date:** June 25, 2025

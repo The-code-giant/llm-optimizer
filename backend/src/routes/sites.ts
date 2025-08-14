@@ -829,7 +829,7 @@ router.get(
         },
         instructions: {
           installation: installInstructions[platform] || installInstructions.other,
-          verification: "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
+          verification: "After installation, visit your website and check the browser console for 'Cleversearch' messages to verify the script is working.",
           support: "If you need help, contact our support team.",
         },
       });

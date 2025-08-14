@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# First-time Setup Script for Clever Search Development Environment (No Docker)
+# First-time Setup Script for Cleversearch Development Environment (No Docker)
 
-echo "🚀 Clever Search - First Time Setup"
+echo "🚀 Cleversearch - First Time Setup"
 echo "======================================"
 
 # Create .env file if it doesn't exist

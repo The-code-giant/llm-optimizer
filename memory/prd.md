@@ -1,15 +1,15 @@
 ```markdown
-# Clever Search Product Requirements Document (PRD)
+# Cleversearch Product Requirements Document (PRD)
 
 ## 1. Document Header
-*   **Product Name:** Clever Search
+*   **Product Name:** Cleversearch
 *   **Version:** 1.0
 *   **Date:** June 25, 2025
 *   **Author:** [Your Name/Team Name]
 
 ## 2. Executive Summary
 
-The Clever Search is a SaaS product designed to help website owners, particularly non-technical marketing managers and founders, improve their website's visibility and citation frequency by large language models (LLMs) such as ChatGPT, Claude, and Gemini. As LLMs become increasingly prevalent as information sources, websites need to be structured and contain content that is easily discoverable, understandable, and trustworthy for these models to reference. The Clever Search provides tools to analyze website content from an LLM's perspective, generate actionable recommendations, and facilitate the direct injection of optimized content (like structured FAQs or definitions) onto the website without requiring developer intervention. This MVP focuses on core capabilities: a tracker script for basic data collection, sitemap import for page discovery, AI-powered analysis with recommendations and scoring, in-dashboard content injection, and a central user dashboard to manage these functions.
+The Cleversearch is a SaaS product designed to help website owners, particularly non-technical marketing managers and founders, improve their website's visibility and citation frequency by large language models (LLMs) such as ChatGPT, Claude, and Gemini. As LLMs become increasingly prevalent as information sources, websites need to be structured and contain content that is easily discoverable, understandable, and trustworthy for these models to reference. The Cleversearch provides tools to analyze website content from an LLM's perspective, generate actionable recommendations, and facilitate the direct injection of optimized content (like structured FAQs or definitions) onto the website without requiring developer intervention. This MVP focuses on core capabilities: a tracker script for basic data collection, sitemap import for page discovery, AI-powered analysis with recommendations and scoring, in-dashboard content injection, and a central user dashboard to manage these functions.
 
 ## 3. Product Vision
 
@@ -32,7 +32,7 @@ The Clever Search is a SaaS product designed to help website owners, particularl
     *   Overwhelmed by rapid changes in the AI/digital landscape.
     *   Needs clear, actionable steps she can implement herself.
     *   Needs to justify marketing spend with measurable results.
-*   **Needs from Clever Search:** Easy setup, clear analysis results, simple content recommendations, a straightforward way to add content to pages, a score or metric to track progress.
+*   **Needs from Cleversearch:** Easy setup, clear analysis results, simple content recommendations, a straightforward way to add content to pages, a score or metric to track progress.
 
 ## 5. Feature Specifications (MVP)
 
@@ -46,9 +46,9 @@ The script now requires only a single configuration value: `SITE_ID`. All other 
 - Universal HTML `<script>` format for all other platforms (WordPress, Shopify, Wix, Squarespace, etc.)
 
 #### User Stories
-*   As a user, I want a simple JavaScript snippet I can easily add to my website header or via a tag manager so the Clever Search can collect necessary data.
+*   As a user, I want a simple JavaScript snippet I can easily add to my website header or via a tag manager so the Cleversearch can collect necessary data.
 *   As a user, I want the script to be very lightweight and not impact my website's loading speed or user experience.
-*   As a user, I want the script to securely send anonymized page data and basic traffic metrics to the Clever Search backend.
+*   As a user, I want the script to securely send anonymized page data and basic traffic metrics to the Cleversearch backend.
 *   As a user, I want the script to dynamically display content I configure in the dashboard on my website pages.
 
 #### Acceptance Criteria
@@ -84,7 +84,7 @@ The script now requires only a single configuration value: `SITE_ID`. All other 
 **Description:** Functionality allowing users to provide their website's `sitemap.xml` URL, which the system then parses to discover and list all pages within the user's dashboard for analysis.
 
 #### User Stories
-*   As a user, I want to easily add my website's sitemap URL so the Clever Search knows which pages to analyze.
+*   As a user, I want to easily add my website's sitemap URL so the Cleversearch knows which pages to analyze.
 *   As a user, I want the system to automatically find and list all the URLs from my sitemap in the dashboard.
 *   As a user, I want the system to periodically check my sitemap for new or removed pages.
 *   As a user, I want to see confirmation that my sitemap was successfully imported.

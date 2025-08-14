@@ -1,6 +1,6 @@
-# Clever Search - Scripts Guide
+# Cleversearch - Scripts Guide
 
-This guide covers all available npm scripts for the Clever Search project.
+This guide covers all available npm scripts for the Cleversearch project.
 
 ## 🚀 First-Time Setup
 

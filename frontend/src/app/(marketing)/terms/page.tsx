@@ -122,7 +122,7 @@ export default function Terms() {
               Terms of Service
             </h1>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
-              These terms govern your use of Clever Search and outline the rights 
+              These terms govern your use of Cleversearch and outline the rights 
               and responsibilities of all parties.
             </p>
             <p className="text-gray-400">
@@ -145,8 +145,8 @@ export default function Terms() {
             <h2 className="text-3xl font-bold text-gray-900 mb-8">Introduction</h2>
             <div className="prose prose-lg text-gray-600 leading-relaxed">
               <p className="mb-6">
-                                      Welcome to Clever Search. These Terms of Service (&quot;Terms&quot;) govern your use of our
-        website, platform, and services (collectively, the &quot;Service&quot;) operated by Clever Search 
+                                      Welcome to Cleversearch. These Terms of Service (&quot;Terms&quot;) govern your use of our
+        website, platform, and services (collectively, the &quot;Service&quot;) operated by Cleversearch 
                 (&quot;us&quot;, &quot;we&quot;, or &quot;our&quot;).
               </p>
               <p className="mb-6">
