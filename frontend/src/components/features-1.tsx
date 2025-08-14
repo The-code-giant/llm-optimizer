@@ -8,71 +8,98 @@ export default function Features() {
             <div className="@container mx-auto max-w-7xl px-6">
                 <div className="text-center">
                     <h2 className="text-balance text-4xl font-semibold lg:text-5xl">Search Engine Optimization for AI</h2>
-                    <p className="mt-4">Optimize your content structure and metadata to reach new customers who are using AI for search.</p>
+                    <p className="mt-6 text-lg text-muted-foreground">Optimize your content structure and metadata to reach new customers who are using AI for search.</p>
                 </div>
-                <div className="@min-4xl:max-w-full @min-4xl:grid-cols-3 mx-auto mt-8 grid max-w-sm gap-6 *:text-center md:mt-16">
+                <div className="@min-4xl:max-w-full @min-4xl:grid-cols-3 mx-auto mt-12 grid max-w-sm gap-8 *:text-center md:mt-20">
                     <Card className="group shadow-zinc-950/5">
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-4">
                             <CardDecorator>
                                 <Search
-                                    className="size-6"
+                                    className="size-7"
                                     aria-hidden
                                 />
                             </CardDecorator>
 
-                            <h3 className="mt-6 font-medium">Evaluate Your LLM Score</h3>
+                            <h3 className="mt-6 text-xl font-semibold">Evaluate Your LLM Score</h3>
                         </CardHeader>
 
-                        <CardContent>
-                            <p className="text-sm">Find out how your site performs in AI-powered search. We scan your content the way large language models see it—and show you what they're missing.</p>
-                            <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
-                                <li>• Get a simple LLM visibility score out of 100</li>
-                                <li>• Understand how AI sees your pages, not just Google</li>
-                                <li>• Instant analysis—no setup required</li>
+                        <CardContent className="space-y-4">
+                            <p className="text-base leading-relaxed">Find out how your site performs in AI-powered search. We scan your content the way large language models see it—and show you what they're missing.</p>
+                            <ul className="space-y-3 text-sm text-muted-foreground">
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Get a simple LLM visibility score out of 100</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Understand how AI sees your pages, not just Google</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Instant analysis—no setup required</span>
+                                </li>
                             </ul>
                         </CardContent>
                     </Card>
 
                     <Card className="group shadow-zinc-950/5">
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-4">
                             <CardDecorator>
                                 <Target
-                                    className="size-6"
+                                    className="size-7"
                                     aria-hidden
                                 />
                             </CardDecorator>
 
-                            <h3 className="mt-6 font-medium">Personalized Optimization Tasks</h3>
+                            <h3 className="mt-6 text-xl font-semibold">Personalized Optimization Tasks</h3>
                         </CardHeader>
 
-                        <CardContent>
-                            <p className="text-sm">We turn your LLM score into easy, actionable tasks that will boost your AI visibility and conversions.</p>
-                            <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
-                                <li>• Personalized recommendations based on your content</li>
-                                <li>• Task list auto-updates as you improve and add more content</li>
-                                <li>• One-click schema and copy injections without touching your code base</li>
+                        <CardContent className="space-y-4">
+                            <p className="text-base leading-relaxed">We turn your LLM score into easy, actionable tasks that will boost your AI visibility and conversions.</p>
+                            <ul className="space-y-3 text-sm text-muted-foreground">
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Personalized recommendations based on your content</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Task list auto-updates as you improve and add more content</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>One-click schema and copy injections without touching your code base</span>
+                                </li>
                             </ul>
                         </CardContent>
                     </Card>
 
                     <Card className="group shadow-zinc-950/5">
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-4">
                             <CardDecorator>
                                 <Bot
-                                    className="size-6"
+                                    className="size-7"
                                     aria-hidden
                                 />
                             </CardDecorator>
 
-                            <h3 className="mt-6 font-medium">Detect AI Traffic</h3>
+                            <h3 className="mt-6 text-xl font-semibold">Detect AI Traffic</h3>
                         </CardHeader>
 
-                        <CardContent>
-                            <p className="text-sm">See every time an AI assistant lands on your site. Our server logs spot ChatGPT, Perplexity, Gemini, etc., in real time.</p>
-                            <ul className="mt-4 space-y-2 text-xs text-muted-foreground">
-                                <li>• Real-time AI crawler detection across 25+ platforms</li>
-                                <li>• Server-side logging captures all AI bot visits</li>
-                                <li>• Zero false positives with smart pattern matching</li>
+                        <CardContent className="space-y-4">
+                            <p className="text-base leading-relaxed">See every time an AI assistant lands on your site. Our server logs spot ChatGPT, Perplexity, Gemini, etc., in real time.</p>
+                            <ul className="space-y-3 text-sm text-muted-foreground">
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Real-time AI crawler detection across 25+ platforms</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Server-side logging captures all AI bot visits</span>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary"></span>
+                                    <span>Zero false positives with smart pattern matching</span>
+                                </li>
                             </ul>
                         </CardContent>
                     </Card>
@@ -83,7 +110,7 @@ export default function Features() {
 }
 
 const CardDecorator = ({ children }: { children: ReactNode }) => (
-    <div className="relative mx-auto size-36 duration-200 [--color-border:color-mix(in_oklab,var(--color-zinc-950)10%,transparent)] group-hover:[--color-border:color-mix(in_oklab,var(--color-zinc-950)20%,transparent)] dark:[--color-border:color-mix(in_oklab,var(--color-white)15%,transparent)] dark:group-hover:bg-white/5 dark:group-hover:[--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)]">
+    <div className="relative mx-auto size-40 duration-200 [--color-border:color-mix(in_oklab,var(--color-zinc-950)10%,transparent)] group-hover:[--color-border:color-mix(in_oklab,var(--color-zinc-950)20%,transparent)] dark:[--color-border:color-mix(in_oklab,var(--color-white)15%,transparent)] dark:group-hover:bg-white/5 dark:group-hover:[--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)]">
         <div
             aria-hidden
             className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] bg-[size:24px_24px]"
@@ -92,6 +119,6 @@ const CardDecorator = ({ children }: { children: ReactNode }) => (
             aria-hidden
             className="bg-radial to-background absolute inset-0 from-transparent to-75%"
         />
-        <div className="bg-background absolute inset-0 m-auto flex size-12 items-center justify-center border-l border-t">{children}</div>
+        <div className="bg-background absolute inset-0 m-auto flex size-14 items-center justify-center border-l border-t">{children}</div>
     </div>
 )
