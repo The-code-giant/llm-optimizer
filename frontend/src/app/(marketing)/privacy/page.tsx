@@ -120,7 +120,7 @@ export default function Privacy() {
             </h1>
             <p className="text-xl text-gray-300 mb-8 leading-relaxed">
               Your privacy is important to us. This policy explains how we collect, 
-              use, and protect your information when you use Clever Search.
+              use, and protect your information when you use Cleversearch.
             </p>
             <p className="text-gray-400">
               Last updated: December 15, 2024
@@ -142,7 +142,7 @@ export default function Privacy() {
             <h2 className="text-3xl font-bold text-gray-900 mb-8">Introduction</h2>
             <div className="prose prose-lg text-gray-600 leading-relaxed">
               <p className="mb-6">
-                Clever Search (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. 
+                Cleversearch (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. 
                 This Privacy Policy explains how we collect, use, disclose, and safeguard your information 
                 when you visit our website and use our LLM optimization platform.
               </p>

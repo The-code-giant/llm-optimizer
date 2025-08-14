@@ -1,4 +1,4 @@
-Okay, here is a frontend implementation guide for the Clever Search, formatted in Markdown as requested.
+Okay, here is a frontend implementation guide for the Cleversearch, formatted in Markdown as requested.
 
 - The frontend will be implemented in **Next.js (TypeScript)** as of July 2024, per updated requirements.
 
@@ -11,16 +11,16 @@ Okay, here is a frontend implementation guide for the Clever Search, formatted i
 - User session and access control are managed via Clerk hooks and middleware.
 
 ```markdown
-# Frontend Implementation Guide: Clever Search Dashboard
+# Frontend Implementation Guide: Cleversearch Dashboard
 
 **Version: 1.0**
 **Date: June 25, 2025**
 
 ## 1. Document Header
 
-This document provides a technical guide for the frontend implementation of the Clever Search User Dashboard. It outlines the architecture, state management, UI design considerations, API integration patterns, testing strategy, and provides code examples for key components. The target audience is frontend developers responsible for building and maintaining the dashboard application.
+This document provides a technical guide for the frontend implementation of the Cleversearch User Dashboard. It outlines the architecture, state management, UI design considerations, API integration patterns, testing strategy, and provides code examples for key components. The target audience is frontend developers responsible for building and maintaining the dashboard application.
 
-The goal of Clever Search is to empower non-technical users (Marketing Managers, Founders) to improve their website's visibility and influence on Large Language Models (LLMs) by providing analysis, recommendations, and direct content injection capabilities via a user-friendly dashboard.
+The goal of Cleversearch is to empower non-technical users (Marketing Managers, Founders) to improve their website's visibility and influence on Large Language Models (LLMs) by providing analysis, recommendations, and direct content injection capabilities via a user-friendly dashboard.
 
 ## 2. Component Architecture
 

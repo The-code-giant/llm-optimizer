@@ -1,4 +1,4 @@
--- Clever Search Database Initialization Script
+-- Cleversearch Database Initialization Script
 -- This script sets up the development database with proper configurations
 
 -- Enable UUID extension

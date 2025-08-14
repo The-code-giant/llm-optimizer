@@ -26,7 +26,7 @@ export default function Home() {
       suffix: "x",
       label:
         "more likely to be cited when content follows LLM-optimized structure and formatting.",
-      source: "Clever Search Research",
+      source: "Cleversearch Research",
     },
     {
       number: 85,
@@ -198,7 +198,7 @@ export default function Home() {
             className="order-1 lg:order-2"
           >
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900 leading-tight">
-              The CleverSearch Optimization Loop
+              The Cleversearch Optimization Loop
             </h2>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
               From crawl to clarity — in 3 steps.
@@ -405,14 +405,14 @@ export default function Home() {
             transition={{ duration: 0.8 }}
           >
             <span className="text-sm text-gray-400 uppercase tracking-wider mb-4 block">
-              CLEVER SEARCH: AVAILABLE NOW
+              CLEVERSEARCH: AVAILABLE NOW
             </span>
             <h2 className="text-4xl lg:text-5xl font-normal mb-8 leading-tight">
               Get cited by ChatGPT, Claude, and Gemini.
             </h2>
             <p className="text-lg text-gray-300 mb-8 leading-relaxed">
               Customers and prospects increasingly turn to LLMs for information
-              and recommendations. Clever Search helps optimize your content
+              and recommendations. Cleversearch helps optimize your content
               structure so these AI systems understand and cite your website,
               driving qualified traffic and influence at every stage of the
               customer journey.

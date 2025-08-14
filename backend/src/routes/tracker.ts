@@ -494,7 +494,7 @@ router.get('/script/:trackerId',
 />`;
 
       // Also provide legacy inline script for non-Next.js users
-      const legacyScriptHtml = `<!-- Clever Search Tracking Script -->
+      const legacyScriptHtml = `<!-- Cleversearch Tracking Script -->
 <script
   id="clever-search-tracker"
   src="${apiBase}/tracker/v1/tracker.js"
@@ -515,7 +515,7 @@ router.get('/script/:trackerId',
         instructions: {
           nextJs: "For Next.js projects, copy the 'nextJsScript' code and paste it in your component. Make sure to import Script from 'next/script'.",
           legacy: "For other frameworks, copy the 'scriptHtml' code and paste it in your website's <head> section.",
-          verification: "After installation, visit your website and check the browser console for 'Clever Search' messages to verify the script is working.",
+          verification: "After installation, visit your website and check the browser console for 'Cleversearch' messages to verify the script is working.",
           support: "If you need help, contact our support team."
         }
       };

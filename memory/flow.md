@@ -1,5 +1,5 @@
 ```markdown
-# Clever Search System Flow Documentation
+# Cleversearch System Flow Documentation
 
 **Version:** 1.0
 **Date:** June 25, 2025
@@ -15,7 +15,7 @@
 
 ## 2. System Overview
 
-Clever Search is a web-based platform designed to enhance a website's visibility and citation probability by Large Language Models (LLMs). It operates through three primary components:
+Cleversearch is a web-based platform designed to enhance a website's visibility and citation probability by Large Language Models (LLMs). It operates through three primary components:
 
 1.  **Tracker Script (Client-Side):** A small JavaScript snippet embedded on the user's website pages. It passively collects basic, non-sensitive data such as page URLs, load times, and potentially basic page content/metadata (like title, description, headings, visible text snippets - *configurable for privacy*), sending this data to the Backend.
 2.  **Backend:** The central processing unit. It receives data from Tracker Scripts, manages sitemap imports, orchestrates communication with LLM APIs for analysis, stores data (raw and analyzed), and serves data/handles actions requested by the User Dashboard. It contains sub-components for data ingestion, storage, AI integration, and API serving. Snippet generation for the tracker provides minimal configuration (only `SITE_ID`), relying on defaults embedded in the tracker script.

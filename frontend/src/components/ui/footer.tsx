@@ -172,7 +172,7 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             {/* Copyright */}
             <div className="text-gray-400">
-              <p>&copy; 2024 Clever Search. All rights reserved.</p>
+              <p>&copy; 2024 Cleversearch. All rights reserved.</p>
             </div>
 
             {/* Legal Links */}

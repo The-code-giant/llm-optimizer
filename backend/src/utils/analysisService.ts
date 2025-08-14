@@ -170,7 +170,7 @@ FOCUS ON:
       const response = await axios.get(fetchUrl, {
         timeout: 10000,
         headers: {
-          'User-Agent': 'Clever-Search-Bot/1.0 (+https://cleversearch.ai)',
+          'User-Agent': 'Cleversearch-Bot/1.0 (+https://cleversearch.ai)',
         },
       });
 
@@ -908,7 +908,7 @@ Rules:
 - No exclamation marks
 - Include page intent and clear benefit
 - Avoid near-duplicates and generic phrasing (e.g., "Optimize your site for LLMs")
-- Optional brand at end: " — Clever Search"`;
+- Optional brand at end: " — Cleversearch"`;
 
     const userPrompt = `Context
 Title: ${content.title || ''}

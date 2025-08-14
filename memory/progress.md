@@ -1,4 +1,4 @@
-# Clever Search - Project Progress
+# Cleversearch - Project Progress
 
 ## Completed Work
 ✅ Backend and frontend scaffolding complete (TypeScript, Drizzle, PostgreSQL, Next.js)

@@ -169,9 +169,9 @@ const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Clever Search API",
+      title: "Cleversearch API",
       version: "1.0.0",
-      description: "API documentation for the Clever Search backend",
+      description: "API documentation for the Cleversearch backend",
     },
   },
   apis: apiFiles,
@@ -192,7 +192,7 @@ app.use(express.urlencoded({ extended: false, limit: "200kb" }));
 
 // Minimal root endpoint to reduce noisy 404 scans
 app.get("/", (_req, res) => {
-  res.status(200).send("Clever Search backend is running");
+  res.status(200).send("Cleversearch backend is running");
 });
 
 // Serve robots.txt to reduce crawler 404 noise
