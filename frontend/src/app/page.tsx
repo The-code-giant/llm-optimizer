@@ -304,7 +304,7 @@ export default function Home() {
                         Success Stories
                       </h3>
                       <p className="text-gray-600">
-                      Cleversearch Results
+                      Real results after cleversearch
                       </p>
                     </div>
                   </div>
