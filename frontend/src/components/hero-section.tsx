@@ -73,59 +73,6 @@ type UrlFormData = z.infer<typeof urlSchema>;
 export default function HeroSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const AI_LOGOS = [
-    {
-        src: '/ai-logos/openai.svg',
-        alt: 'ChatGPT',
-        width: 40,
-        height: 40
-    },
-    {
-        src: '/ai-logos/claude.svg',
-        alt: 'Claude',
-        width: 40,
-        height: 40
-    },
-    {
-        src: '/ai-logos/gemini.svg',
-        alt: 'Gemini',
-        width: 40,
-        height: 40
-    },
-    {
-        src: '/ai-logos/perplexity.svg',
-        alt: 'Perplexity',
-        width: 40,
-        height: 40
-    },
-    {
-        src: '/ai-logos/deepseek.svg',
-        alt: 'DeepSeek',
-        width: 40,
-        height: 40
-    },
-    {
-        src: '/ai-logos/grok.svg',
-        alt: 'Grok',
-        width: 40,
-        height: 40
-    },
-    {
-        src: '/ai-logos/metaai.svg',
-        alt: 'Meta AI',
-        width: 40,
-        height: 40
-    },
-    {
-      src: '/ai-logos/copilot.svg',
-      alt: 'Copilot',
-      width: 40,
-      height: 40
-    },
-
-    
-]
-
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const words = [
@@ -365,7 +312,7 @@ export default function HeroSection() {
                   aria-hidden
                   className="bg-linear-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
                 />
-                <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+                <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-7xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
                   {/* <Image
                     className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
                     src="/mail2.png"
@@ -401,100 +348,11 @@ export default function HeroSection() {
             </AnimatedGroup>
           </div>
         </section>
-        <section className="bg-background pb-16 pt-16 md:pb-32">
-          <div className="group relative m-auto max-w-5xl px-6">
-            <div className="absolute inset-0 z-10 flex scale-95 items-center justify-center opacity-0 duration-500 group-hover:scale-100 group-hover:opacity-100">
-              <Link
-                href="/"
-                className="block text-sm duration-150 hover:opacity-75"
-              >
-                <span> Meet Our Customers</span>
+        <section className="bg-background">
+          <div className="group relative m-auto max-w-7xl px-6">
 
-                <ChevronRight className="ml-1 inline-block size-3" />
-              </Link>
-            </div>
-            <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 gap-y-8 transition-all duration-500 group-hover:opacity-50 sm:gap-x-16 sm:gap-y-14">
-              {AI_LOGOS.map((logo) => (
-                <div className="flex flex-col items-center justify-center">
-                  <Image src={logo.src} alt={logo.alt} height={logo.height} width={logo.width} />
-                  <span className="text-sm mt-1">{logo.alt}</span>
-                </div>
-              ))}
-              {/* <div className="flex">
-                <img
-                  className="mx-auto h-5 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/nvidia.svg"
-                  alt="Nvidia Logo"
-                  height="20"
-                  width="auto"
-                />
-              </div>
+            <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 gap-y-8 transition-all duration-500 group-hover:opacity-50" />
 
-              <div className="flex">
-                <img
-                  className="mx-auto h-4 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/column.svg"
-                  alt="Column Logo"
-                  height="16"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-4 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/github.svg"
-                  alt="GitHub Logo"
-                  height="16"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-5 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/nike.svg"
-                  alt="Nike Logo"
-                  height="20"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-5 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/lemonsqueezy.svg"
-                  alt="Lemon Squeezy Logo"
-                  height="20"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-4 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/laravel.svg"
-                  alt="Laravel Logo"
-                  height="16"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-7 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/lilly.svg"
-                  alt="Lilly Logo"
-                  height="28"
-                  width="auto"
-                />
-              </div>
-
-              <div className="flex">
-                <img
-                  className="mx-auto h-6 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/openai.svg"
-                  alt="OpenAI Logo"
-                  height="24"
-                  width="auto"
-                />
-              </div> */}
-            </div>
           </div>
         </section>
       </main>
