@@ -98,7 +98,7 @@ export default function Demo() {
               transition={{ duration: 0.8 }}
             >
               <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-                See Clever Search in action
+              See Cleversearch
               </h1>
               <p className="text-xl text-gray-300 mb-8 leading-relaxed">
                 Book a personalized demo to discover how AI optimization can
