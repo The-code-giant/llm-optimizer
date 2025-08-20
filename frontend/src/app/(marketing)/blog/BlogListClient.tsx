@@ -38,11 +38,10 @@ export default function BlogListClient({ posts, featuredPost, categories }: Blog
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              LLM Optimization Insights
+            Cleversearch Insights
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Stay ahead of the AI revolution with expert insights, case studies, and actionable strategies 
-              for optimizing your content for large language models.
+            Stay ahead with Cleversearch insights. Subscribe to our newsletter and get the latest AI search trends, strategies, and updates straight to your inbox.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
