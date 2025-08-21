@@ -242,7 +242,7 @@ router.get('/tracker/:trackerId/content',
 
 // Content retrieval endpoint for JavaScript tracker - Enhanced with Redis caching
 // POST /tracker/content
-router.post('/content', 
+router.post('/tracker/content', 
   trackerRateLimit,
   async (req: Request, res: Response) => {
     try {
@@ -351,7 +351,7 @@ router.post('/content',
 
 // Event tracking endpoint for JavaScript tracker - Enhanced with event buffering
 // POST /tracker/event
-router.post('/event', 
+router.post('/tracker/event', 
   trackerRateLimit,
   async (req, res) => {
     try {
