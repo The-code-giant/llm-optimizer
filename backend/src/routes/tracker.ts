@@ -479,7 +479,7 @@ router.get('/script/:trackerId',
 
       // Generate the API base URL
       const apiBase = process.env.NODE_ENV === 'production' 
-        ? process.env.API_URL || 'https://api.llmoptimizer.com'
+        ? process.env.API_URL || 'https://backend.cleversearch.ai'
         : 'http://localhost:3001';
 
       // Generate Next.js Script component with simplified configuration
