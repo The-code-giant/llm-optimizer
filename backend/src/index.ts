@@ -92,6 +92,7 @@ const corsOptions = {
     "http://127.0.0.1:5500",
     "https://www.cleversearch.ai/",
     "https://www.cleversearch.ai",
+    "https://backend.cleversearch.ai",
   ],
   credentials: true,
   optionsSuccessStatus: 200,
@@ -114,6 +115,16 @@ app.use("/tracker", (req, res, next) => {
 
 // Serve static files for tracker script (MUST be after CORS middleware)
 app.use("/tracker", express.static("public/tracker"));
+
+// Tracker API CORS: reflect any Origin just for /api/v1/tracker
+const trackerCors = cors({
+  origin: true, // reflect request Origin header
+  methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+  credentials: false,
+  optionsSuccessStatus: 200,
+});
+app.use("/api/v1/tracker", trackerCors);
 
 app.use(cors(corsOptions));
 
