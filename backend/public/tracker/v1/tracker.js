@@ -20,9 +20,23 @@
   // Initialize URL params early - needed for CONFIG object
   const urlParams = new URLSearchParams(window.location.search);
 
+  // Determine origin of the script to infer API base in any environment
+  let inferredApiOrigin = null;
+  try {
+    const currentScriptForOrigin = document.currentScript || (function() {
+      const scripts = document.getElementsByTagName('script');
+      return scripts[scripts.length - 1];
+    })();
+    if (currentScriptForOrigin && currentScriptForOrigin.src) {
+      inferredApiOrigin = new URL(currentScriptForOrigin.src).origin;
+    }
+  } catch (_) {}
+
   // Configuration - merge with provided config or use defaults
   const CONFIG = {
-    API_BASE: configData.API_BASE || 'http://localhost:3001',
+    // Prefer explicitly provided API_BASE; otherwise infer from script src origin;
+    // finally fall back to production backend hostname.
+    API_BASE: configData.API_BASE || inferredApiOrigin || 'https://backend.cleversearch.ai',
     SITE_ID: configData.SITE_ID || '{{SITE_ID}}',
     VERSION: configData.VERSION || '1.0.0',
     RETRY_ATTEMPTS: configData.RETRY_ATTEMPTS || 3,
@@ -31,7 +45,11 @@
     MAX_INTERVAL_DURATION: configData.MAX_INTERVAL_DURATION || 60000, // Increased to 60 seconds
     FAST_MODE: configData.FAST_MODE !== false, // Enable fast mode by default
     DEBUG_MODE: configData.DEBUG_MODE || urlParams.has('clever-search-debug'),
-    OVERRIDE_URL: configData.OVERRIDE_URL || window.LLM_OVERRIDE_URL || null // URL override for testing
+    OVERRIDE_URL: configData.OVERRIDE_URL || window.LLM_OVERRIDE_URL || null, // URL override for testing
+    API_ENDPOINTS: {
+      CONTENT: '/api/v1/tracker/content',
+      EVENT: '/api/v1/tracker/event'
+    }
   };
 
   // Detect Next.js environment
@@ -202,7 +220,7 @@
         consolePrint('Early content loading for SEO...');
         
         // Make API call and cache the result
-        const response = await this.apiCall('/tracker/content', {
+        const response = await this.apiCall(CONFIG.API_ENDPOINTS.CONTENT, {
           url: url,
           siteId: CONFIG.SITE_ID,
           userAgent: navigator.userAgent,
@@ -266,7 +284,7 @@
           consolePrint('No cached content - fetching from server');
           const url = this.currentUrl;
           
-          const response = await this.apiCall('/tracker/content', {
+          const response = await this.apiCall(CONFIG.API_ENDPOINTS.CONTENT, {
             url: url,
             siteId: CONFIG.SITE_ID,
             userAgent: navigator.userAgent,
@@ -749,7 +767,7 @@
 
     async trackEvent(eventType, data = {}) {
       try {
-        await this.apiCall('/tracker/event', {
+        await this.apiCall(CONFIG.API_ENDPOINTS.EVENT, {
           siteId: CONFIG.SITE_ID,
           eventType,
           eventData: data,
