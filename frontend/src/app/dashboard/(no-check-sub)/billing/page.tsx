@@ -146,6 +146,12 @@ export default function BillingPage() {
   }
 
   const handlePlanChange = async (planId: string) => {
+    // If Enterprise plan is selected, redirect to contact form
+    if (planId === "enterprise") {
+      window.location.href = "/contact";
+      return;
+    }
+
     const token = await getToken();
     if (!token) {
       setError("Failed to get authentication token");
@@ -359,6 +365,8 @@ export default function BillingPage() {
                                   >
                                     {plan.current
                                       ? "Current Plan"
+                                      : plan.id === "enterprise"
+                                      ? "Contact Sales"
                                       : "Choose Plan"}
                                   </Button>
                                 </div>
