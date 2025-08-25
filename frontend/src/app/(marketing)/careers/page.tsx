@@ -344,8 +344,8 @@ export default function Careers() {
               <Link href="/contact">
                 <Button 
                   size="lg" 
-                  variant="outline"
-                  className="border-white text-white hover:bg-white hover:text-black rounded-full px-8 py-3"
+                  variant="solid"
+                  className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
                 >
                   Get in touch
                 </Button>
