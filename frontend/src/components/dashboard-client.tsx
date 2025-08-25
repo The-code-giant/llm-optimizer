@@ -187,7 +187,6 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
   const avgLLMReadiness = sites.length > 0 
     ? Math.round(sites.reduce((sum, site) => sum + (site.llmReadiness || 0), 0) / sites.length)
     : 0;
-  const totalActiveScans = sites.filter(site => site.status === 'scanning').length;
 
   if (!isLoaded) {
     return (
@@ -242,13 +241,13 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
           />
           <StatCard
             icon={Zap}
-            title="Active Scans"
-            value={totalActiveScans}
-            badge={totalActiveScans > 0 ? "Scans in progress" : "All scans complete"}
-            trend={totalActiveScans > 0 ? "Active" : "Idle"}
-            trendIcon={totalActiveScans > 0 ? TrendingUp : undefined}
-            trendColor={totalActiveScans > 0 ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}
-            description="Sites currently being scanned"
+            title="Recommendations"
+            value="Coming Soon"
+            badge="New feature"
+            trend="In development"
+            trendIcon={TrendingUp}
+            trendColor="text-blue-600 dark:text-blue-400"
+            description="AI-powered optimization suggestions"
           />
         </div>
 

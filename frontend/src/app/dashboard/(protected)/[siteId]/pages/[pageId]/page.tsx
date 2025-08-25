@@ -642,7 +642,7 @@ export default function PageAnalysisPage() {
                                 <Edit3 className="h-4 w-4 mr-2" />
                                 Edit
                               </Button>
-                              {deployedTitle ? (
+                              {deployedTitle && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -653,23 +653,7 @@ export default function PageAnalysisPage() {
                                     })
                                   }
                                   disabled={undeploying}
-                                  className="text-red-600 border-red-300 hover:text-red-800"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Undeploy
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setUndeployDialog({
-                                      open: true,
-                                      contentType: "title",
-                                    })
-                                  }
-                                  disabled={true}
-                                  className="text-red-600 border-red-300 hover:text-red-800 cursor-not-allowed opacity-50"
+                                  className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Undeploy
@@ -758,7 +742,7 @@ export default function PageAnalysisPage() {
                                 <Edit3 className="h-4 w-4 mr-2" />
                                 Edit
                               </Button>
-                              {deployedDescription ? (
+                              {deployedDescription && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -769,23 +753,7 @@ export default function PageAnalysisPage() {
                                     })
                                   }
                                   disabled={undeploying}
-                                  className="text-red-600 border-red-300 hover:text-red-800"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Undeploy
-                                </Button>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setUndeployDialog({
-                                      open: true,
-                                      contentType: "description",
-                                    })
-                                  }
-                                  disabled={true}
-                                  className="text-red-600 border-red-300 hover:text-red-800 cursor-not-allowed opacity-50"
+                                  className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Undeploy
@@ -868,7 +836,7 @@ export default function PageAnalysisPage() {
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add FAQ
                               </Button>
-                              {contentData.faqs.length > 0 && (
+                              {deployedFAQ && (
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -879,7 +847,7 @@ export default function PageAnalysisPage() {
                                     })
                                   }
                                   disabled={undeploying}
-                                  className="text-red-600 border-red-300 hover:text-red-800"
+                                  className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Undeploy
