@@ -95,6 +95,7 @@ export default function SiteDetailsPage() {
   const [showTrackerScript, setShowTrackerScript] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPageManagement, setShowPageManagement] = useState(false);
+  const [showAddPageModal, setShowAddPageModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [selectedPageForDeployment, setSelectedPageForDeployment] =
     useState<Page | null>(null);
@@ -632,8 +633,8 @@ export default function SiteDetailsPage() {
                                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                     {/* Add New Page Button */}
                                     <Dialog
-                                      open={showPageManagement}
-                                      onOpenChange={setShowPageManagement}
+                                      open={showAddPageModal}
+                                      onOpenChange={setShowAddPageModal}
                                     >
                                       <DialogTrigger asChild>
                                         <Button
@@ -646,6 +647,24 @@ export default function SiteDetailsPage() {
                                           Add New Page
                                         </Button>
                                       </DialogTrigger>
+                                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                          <DialogTitle>Add New Page</DialogTitle>
+                                          <DialogDescription>
+                                            Add a new page to your site for analysis and optimization
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        {site && (
+                                          <AddSinglePageForm
+                                            siteId={siteId}
+                                            siteUrl={site.url}
+                                            onCompleted={() => {
+                                              setShowAddPageModal(false);
+                                              refreshData();
+                                            }}
+                                          />
+                                        )}
+                                      </DialogContent>
                                     </Dialog>
 
                                     {/* Bulk Actions */}
