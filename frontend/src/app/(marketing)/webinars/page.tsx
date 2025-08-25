@@ -516,10 +516,7 @@ export default function Webinars() {
                 placeholder="Enter your email"
                 className="px-6 py-4 bg-gray-800 border border-gray-700 rounded-full text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1 max-w-md"
               />
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4"
-              >
+              <Button className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-4">
                 Subscribe
               </Button>
             </div>
