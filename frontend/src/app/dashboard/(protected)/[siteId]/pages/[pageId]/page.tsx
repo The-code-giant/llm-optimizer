@@ -529,13 +529,25 @@ export default function PageAnalysisPage() {
                             <div className="text-sm text-muted-foreground">1) Run an analysis → 2) Review suggestions → 3) Edit and deploy content</div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button aria-label="Run analysis" onClick={handleTriggerAnalysis} disabled={triggering}>
+                            <Button 
+                              aria-label="Run analysis" 
+                              onClick={handleTriggerAnalysis} 
+                              disabled={triggering || Boolean(analysis?.recommendations?.length > 0 || analysis?.issues?.length > 0)}
+                              className={
+                                analysis?.recommendations?.length > 0 || analysis?.issues?.length > 0
+                                  ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
+                                  : ""
+                              }
+                            >
                               {triggering ? (
                                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
                                 <Play className="h-4 w-4 mr-2" />
                               )}
-                              Run Analysis
+                              {analysis?.recommendations?.length > 0 || analysis?.issues?.length > 0
+                                ? "Already Analyzed" 
+                                : "Run Analysis"
+                              }
                             </Button>
                             <Button aria-label="Skip to content" variant="outline" onClick={() => document.querySelector('[data-value=content]')?.dispatchEvent(new Event('click', { bubbles: true }))}>
                               Edit Content
