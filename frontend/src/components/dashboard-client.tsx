@@ -195,7 +195,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       </div>
     );
   }
-
+  
   return (
     <>
       {toast && (
@@ -212,7 +212,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
         <div data-tour="welcome">
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground mt-2">
-            Welcome back, {user?.emailAddresses[0]?.emailAddress?.split('@')[0]}! 
+            Welcome back, {user?.fullName ? user.fullName : user?.emailAddresses[0]?.emailAddress?.split('@')[0]}! 
             Here&apos;s an overview of your SEO optimization progress.
           </p>
         </div>

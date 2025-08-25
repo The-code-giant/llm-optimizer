@@ -12,6 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { submitWebsiteUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react"
+
 
 const transitionVariants = {
   item: {
@@ -165,14 +167,14 @@ export default function HeroSection() {
               className="absolute inset-0 -z-20"
             >
               <Image
-                  src="/dashboard/clever-search-site-page-dark.png"
-                  alt="background"
+                src="/dashboard/clever-search-site-page-dark.png"
+                alt="background"
                 className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
                 width={2796}
                 height={2008}
               />
 
-{/* <Image
+              {/* <Image
                   className="dark:hidden"
                   src="/dashboard/clever-search-site-page-dark.png"
                   alt="app illustration"
@@ -215,23 +217,88 @@ export default function HeroSection() {
                           />
                         </Button>
                       </div>
-            
                     </div>
                     {errors.url && (
-                        <p className="mt-2 text-sm text-red-600 text-left">
-                          {errors.url.message}
-                        </p>
-                      )}
-                      {error && (
-                        <p className="mt-2 text-sm text-red-600 text-left">
-                          {error}
-                        </p>
-                      )}
+                      <p className="mt-2 text-sm text-red-600 text-left">
+                        {errors.url.message}
+                      </p>
+                    )}
+                    {error && (
+                      <p className="mt-2 text-sm text-red-600 text-left">
+                        {error}
+                      </p>
+                    )}
                   </form>
-    
                 </AnimatedGroup>
 
-                <TextEffect
+                <h1 className="relative z-20 mx-auto max-w-4xl text-center text-xl font-bold text-black dark:text-white sm:text-2xl md:text-4xl lg:text-6xl xl:text-7xl tracking-tight">
+                  {"Boost Your Site's AI & SEO "
+                    .split(" ")
+                    .map((word, index) => (
+                      <motion.span
+                        key={index}
+                        initial={{ opacity: 0, filter: "blur(4px)", y: 10 }}
+                        animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: index * 0.1,
+                          ease: "easeInOut",
+                        }}
+                        className="mr-2 inline-block"
+                      >
+                        {word}
+                      </motion.span>
+                    ))}
+                  <div className="relative mx-auto inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">
+                    <div className="absolute left-0 top-[1px] bg-clip-text bg-no-repeat text-transparent bg-gradient-to-r py-4 from-[#30B4CA] to-blue-500 [text-shadow:0_0_rgba(0,0,0,0.1)]">
+                      <span className="">Visibility in Minutes.</span>
+                    </div>
+                    <div className="relative bg-clip-text text-transparent bg-no-repeat bg-gradient-to-r from-[#30B4CA] to-blue-500 py-4">
+                      <span className="">Visibility in Minutes.</span>
+                    </div>
+                  </div>
+                </h1>
+
+                <motion.p
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            transition={{
+              duration: 0.3,
+              delay: 0.8,
+            }}
+            className="relative z-20 mx-auto max-w-xl px-4 py-4 text-center text-base font-normal text-neutral-600 dark:text-neutral-300 sm:px-0 sm:text-lg"
+          >
+            {
+              "Our AI-powered platform helps you optimize your website for Large Language Models (LLMs) and search engines, ensuring better visibility and citations."
+            }
+          </motion.p>
+
+          <motion.div
+            initial={{
+              opacity: 0,
+            }}
+            animate={{
+              opacity: 1,
+            }}
+            transition={{
+              duration: 0.3,
+              delay: 1,
+            }}
+            className="relative z-20 mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row sm:gap-4"
+          >
+            <Link href={"/register"} className="w-full transform rounded-2xl bg-gradient-to-r from-[#30B4CA] via-[#2ABBD3] to-[#24A8B8] px-6 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:w-60 sm:py-2">
+              {"Get started"}
+            </Link>
+            <Link href="/demo" className="w-full transform rounded-2xl border border-gray-300 bg-transparent px-6 py-3 font-medium text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800 sm:w-60 sm:py-2">
+              {"Request a demo"}
+            </Link>
+          </motion.div>
+
+                {/* <TextEffect
                   preset="fade-in-blur"
                   speedSegment={0.3}
                   as="h1"
@@ -239,8 +306,8 @@ export default function HeroSection() {
                 >
             
             Boost Your Site's AI&SEO Visibility in Minutes 
-                </TextEffect>
-                <TextEffect
+                </TextEffect> */}
+                {/* <TextEffect
                   per="line"
                   preset="fade-in-blur"
                   speedSegment={0.3}
@@ -248,10 +315,12 @@ export default function HeroSection() {
                   as="p"
                   className="mx-auto mt-8 max-w-2xl text-balance text-lg"
                 >
-                 Our AI-powered platform helps you optimize your website for Large Language Models (LLMs) and search engines, ensuring better visibility and citations.
-                </TextEffect>
+                  Our AI-powered platform helps you optimize your website for
+                  Large Language Models (LLMs) and search engines, ensuring
+                  better visibility and citations.
+                </TextEffect> */}
 
-                <AnimatedGroup
+                {/* <AnimatedGroup
                   variants={{
                     container: {
                       visible: {
@@ -290,7 +359,7 @@ export default function HeroSection() {
                       <span className="text-nowrap">Request a demo</span>
                     </Link>
                   </Button>
-                </AnimatedGroup>
+                </AnimatedGroup> */}
               </div>
             </div>
 
@@ -321,13 +390,13 @@ export default function HeroSection() {
                     height="1440"
                   /> */}
 
-<Image
-                  src="/dashboard/clever-search-site-page-dark.png"
-                  alt="background"
-                  className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                  width={2700}
-                height={1440}
-              />
+                  <Image
+                    src="/dashboard/clever-search-site-page-dark.png"
+                    alt="background"
+                    className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
+                    width={2700}
+                    height={1440}
+                  />
                   {/* <Image
                     className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
                     src="/mail2-light.png"
@@ -336,13 +405,13 @@ export default function HeroSection() {
                     height="1440"
                   /> */}
 
-<Image
-                  src="/dashboard/clever-search-site-page-dark.png"
-                  alt="background"
-                  className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
-                  width={2700}
-                height={1440}
-              />
+                  <Image
+                    src="/dashboard/clever-search-site-page-dark.png"
+                    alt="background"
+                    className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
+                    width={2700}
+                    height={1440}
+                  />
                 </div>
               </div>
             </AnimatedGroup>
@@ -350,9 +419,7 @@ export default function HeroSection() {
         </section>
         <section className="bg-background">
           <div className="group relative m-auto max-w-7xl px-6">
-
             <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 gap-y-8 transition-all duration-500 group-hover:opacity-50" />
-
           </div>
         </section>
       </main>

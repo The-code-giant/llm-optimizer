@@ -300,7 +300,7 @@ export default function BillingPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {plans.map((plan) => {
                           const Icon = plan.icon;
                           return (

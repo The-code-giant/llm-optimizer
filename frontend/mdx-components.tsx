@@ -17,31 +17,39 @@ export function HighlightedText({ children }: { children: React.ReactNode }) {
 }
 
 export function CustomH1({ children }: { children: React.ReactNode }) {
-  return <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mt-10 mb-6 leading-tight">{children}</h1>;
+  return <h1 className="font-heading text-5xl font-bold leading-tight text-gray-900 mt-10 mb-6">{children}</h1>;
 }
+
 export function CustomH2({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-3xl font-bold text-blue-700 mt-10 mb-4">{children}</h2>;
+  return <h2 className="font-heading text-3xl font-semibold leading-tight text-blue-700 mt-10 mb-4">{children}</h2>;
 }
+
 export function CustomH3({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-2xl font-semibold text-gray-800 mt-8 mb-3">{children}</h3>;
+  return <h3 className="font-heading text-2xl font-semibold leading-tight text-gray-800 mt-8 mb-3">{children}</h3>;
 }
+
 export function CustomP({ children }: { children: React.ReactNode }) {
-  return <p className="text-lg text-gray-700 leading-relaxed mb-5">{children}</p>;
+  return <p className="font-sans text-body-large leading-relaxed mb-5 text-gray-700">{children}</p>;
 }
+
 export function CustomUL({ children }: { children: React.ReactNode }) {
-  return <ul className="list-disc pl-6 mb-5 space-y-2 text-gray-700">{children}</ul>;
+  return <ul className="list-disc pl-6 mb-5 space-y-2 text-gray-700 font-sans text-body">{children}</ul>;
 }
+
 export function CustomOL({ children }: { children: React.ReactNode }) {
-  return <ol className="list-decimal pl-6 mb-5 space-y-2 text-gray-700">{children}</ol>;
+  return <ol className="list-decimal pl-6 mb-5 space-y-2 text-gray-700 font-sans text-body">{children}</ol>;
 }
+
 export function CustomLI({ children }: { children: React.ReactNode }) {
-  return <li className="ml-2">{children}</li>;
+  return <li className="ml-2 font-sans text-body">{children}</li>;
 }
+
 export function CustomBlockquote({ children }: { children: React.ReactNode }) {
-  return <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-6">{children}</blockquote>;
+  return <blockquote className="border-l-4 border-blue-400 pl-4 italic text-gray-600 my-6 font-sans text-body">{children}</blockquote>;
 }
+
 export function CustomCode({ children }: { children: React.ReactNode }) {
-  return <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-base font-mono">{children}</code>;
+  return <code className="bg-gray-100 text-pink-600 px-1.5 py-0.5 rounded text-small font-mono">{children}</code>;
 }
 // Custom table components
 export function CustomTable({ children }: { children: React.ReactNode }) {

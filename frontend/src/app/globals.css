@@ -7,8 +7,9 @@
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-poppins);
+  --font-mono: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -118,7 +119,54 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans text-base;
+  }
+  
+  /* Typography System */
+  h1 {
+    @apply font-heading text-5xl font-bold leading-tight;
+    font-size: 48px;
+  }
+  
+  h2 {
+    @apply font-heading text-3xl font-semibold leading-tight;
+    font-size: 32px;
+  }
+  
+  h3 {
+    @apply font-heading text-2xl font-semibold leading-tight;
+  }
+  
+  h4 {
+    @apply font-heading text-xl font-semibold leading-tight;
+  }
+  
+  h5 {
+    @apply font-heading text-lg font-semibold leading-tight;
+  }
+  
+  h6 {
+    @apply font-heading text-base font-semibold leading-tight;
+  }
+  
+  p {
+    @apply font-sans text-base font-normal leading-relaxed;
+    font-size: 16px;
+  }
+  
+  .text-small {
+    @apply font-sans text-sm font-normal;
+    font-size: 14px;
+  }
+  
+  .text-body {
+    @apply font-sans text-base font-normal;
+    font-size: 16px;
+  }
+  
+  .text-body-large {
+    @apply font-sans text-lg font-normal;
+    font-size: 18px;
   }
 }
 
