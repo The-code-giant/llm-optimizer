@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Check, Zap, Crown, Star } from "lucide-react";
+import { CreditCard, Check, Zap, Crown } from "lucide-react";
 import Toast from "@/components/Toast";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -33,30 +33,18 @@ interface BillingInfo {
 
 const plans = [
   {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Perfect for trying out our LLM optimization tools",
-    features: [
-      "Up to 2 sites",
-      "10 pages per month",
-      "Basic SEO analysis",
-      "Email support",
-    ],
-    icon: Star,
-    current: true,
-  },
-  {
     id: "pro",
     name: "Pro",
-    price: "$29",
+    price: "$79",
     period: "per month",
-    description: "Ideal for small to medium websites",
+    description: "Ideal for growing websites and businesses",
     features: [
-      "Up to 10 sites",
-      "500 pages per month",
+      "Up to 5 sites",
+      "10,000 pages per month",
+      "Up to 100,000 monthly page views",
       "Advanced LLM optimization",
+      "Advanced traffic analytics & AEO metrics",
+      "Real-time performance monitoring",
       "Priority support",
       "Custom reports",
     ],
@@ -67,12 +55,16 @@ const plans = [
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "$99",
-    period: "per month",
-    description: "For large websites and agencies",
+    price: "Custom",
+    period: "pricing",
+    description: "For large websites, agencies, and enterprises",
     features: [
       "Unlimited sites",
-      "5,000 pages per month",
+      "Unlimited pages per month",
+      "Unlimited monthly page views",
+      "Custom LLM workflows",
+      "Traffic forecasting & predictive analytics",
+      "Advanced A/B testing & optimization",
       "White-label solution",
       "24/7 phone support",
       "API access",
@@ -85,7 +77,7 @@ const plans = [
 
 export default function BillingPage() {
   const router = useRouter();
-  const { isSignedIn, isLoaded, user } = useUser();
+  const { isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [billing, setBilling] = useState<BillingInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -105,7 +97,6 @@ export default function BillingPage() {
 
     async function fetchBilling() {
       setLoading(true);
-      setError(null);
 
       try {
         const token = await getToken();
