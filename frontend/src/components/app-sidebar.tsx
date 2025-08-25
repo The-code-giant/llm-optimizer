@@ -33,11 +33,11 @@ export const NAV_DATA = {
       url: "/dashboard",
       icon: IconDashboard,
     },
-    {
-      title: "sites",
-      url: "/dashboard",
-      icon: IconGlobe,
-    },
+    // {
+    //   title: "sites",
+    //   url: "/dashboard",
+    //   icon: IconGlobe,
+    // },
     {
       title: "Analytics",
       url: "/dashboard/analytics",
