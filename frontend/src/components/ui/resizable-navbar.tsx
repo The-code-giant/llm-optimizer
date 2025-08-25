@@ -28,7 +28,7 @@ interface NavItemsProps {
     link: string;
   }[];
   className?: string;
-  onItemClick?: () => void;
+  onItemClick?: (link: string) => void;
 }
 
 interface MobileNavProps {
@@ -124,12 +124,11 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
       )}
     >
       {items.map((item, idx) => (
-        <a
+        <button
           onMouseEnter={() => setHovered(idx)}
-          onClick={onItemClick}
+          onClick={() => onItemClick?.(item.link)}
           className="relative px-4 py-2 text-gray-900 dark:text-white hover:text-gray-700 dark:hover:text-gray-200"
           key={`link-${idx}`}
-          href={item.link}
         >
           {hovered === idx && (
             <motion.div
@@ -138,7 +137,7 @@ export const NavItems = ({ items, className, onItemClick }: NavItemsProps) => {
             />
           )}
           <span className="relative z-20">{item.name}</span>
-        </a>
+        </button>
       ))}
     </motion.div>
   );

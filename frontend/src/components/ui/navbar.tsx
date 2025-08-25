@@ -31,12 +31,22 @@ export function NavbarComponent() {
   const navItems = [
     { name: 'Features', link: '#features' },
     { name: 'How it Works', link: '#how-it-works' },
+    { name: 'Pricing', link: '/pricing' },
     { name: 'Resources', link: '#resources' },
   ];
 
   const handleNavClick = useCallback((link: string) => {
+    // If it's an external link (starts with /), navigate directly
+    if (link.startsWith('/')) {
+      router.push(link);
+      setIsMobileMenuOpen(false);
+      return;
+    }
+    
+    // Handle anchor links (starts with #)
     const anchor = link.substring(1); // Remove the # from the link
     if (pathname === '/') {
+      // We're already on home page, scroll to section
       const el = document.getElementById(anchor)
       if (el) {
         el.scrollIntoView({ behavior: 'smooth' })
@@ -45,7 +55,9 @@ export function NavbarComponent() {
         router.push('/#' + anchor);
       }
     } else {
-      router.push('/#' + anchor)
+      // We're on another page, navigate to home page with hash
+      // This will trigger the useEffect that handles hash scrolling
+      router.push('/#' + anchor);
     }
     setIsMobileMenuOpen(false)
   }, [pathname, router])
@@ -61,27 +73,32 @@ export function NavbarComponent() {
       const hash = window.location.hash
       if (hash && hash.length > 1) {
         const anchor = hash.substring(1)
-        const el = document.getElementById(anchor)
-        if (el) {
-          // Wait for page to fully render and animations to complete
-          const maxTimeout = 5000; // Maximum wait time in milliseconds
-          const interval = 100; // Polling interval in milliseconds
-          let elapsedTime = 0;
+        
+        // Function to scroll to element
+        const scrollToElement = () => {
+          const el = document.getElementById(anchor)
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        };
 
-          const checkElementVisibility = setInterval(() => {
-            const rect = el.getBoundingClientRect();
-            const isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+        // Wait for page to fully render and animations to complete
+        const maxTimeout = 5000; // Maximum wait time in milliseconds
+        const interval = 100; // Polling interval in milliseconds
+        let elapsedTime = 0;
 
-            if (isInViewport || elapsedTime >= maxTimeout) {
-              clearInterval(checkElementVisibility);
-              if (!isInViewport) {
-                el.scrollIntoView({ behavior: 'smooth' });
-              }
-            }
-
-            elapsedTime += interval;
-          }, interval);
-        }
+        const checkElementVisibility = setInterval(() => {
+          const el = document.getElementById(anchor)
+          if (el) {
+            clearInterval(checkElementVisibility);
+            // Small delay to ensure page is fully rendered
+            setTimeout(scrollToElement, 100);
+          } else if (elapsedTime >= maxTimeout) {
+            clearInterval(checkElementVisibility);
+            console.warn(`Element with ID '${anchor}' not found after timeout.`);
+          }
+          elapsedTime += interval;
+        }, interval);
       }
     }
   }, [pathname])
@@ -94,7 +111,7 @@ export function NavbarComponent() {
           <CustomNavbarLogo />
           <NavItems 
             items={navItems} 
-            onItemClick={() => setIsMobileMenuOpen(false)}
+            onItemClick={handleNavClick}
           />
           <div className="flex items-start gap-4">
             {isSignedIn ? (
