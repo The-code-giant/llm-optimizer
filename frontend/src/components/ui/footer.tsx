@@ -11,17 +11,17 @@ import Image from 'next/image';
 import { Button } from './button';
 export function Footer() {
   const footerSections = [
-    // {
-    //   title: "Product",
-    //   links: [
-    //     { name: "Features", href: "#features" },
-    //     { name: "How it Works", href: "#how-it-works" },
-    //     // { name: "Pricing", href: "#pricing" },
-    //     { name: "API Documentation", href: "/docs" },
-    //     // { name: "Integrations", href: "/integrations" },
-    //     // { name: "Changelog", href: "/changelog" }
-    //   ]
-    // },
+    {
+      title: "Product",
+      links: [
+        { name: "Features", href: "#features" },
+        { name: "How it Works", href: "#how-it-works" },
+        { name: "Pricing", href: "/pricing" },
+        { name: "API Documentation", href: "/docs" },
+        // { name: "Integrations", href: "/integrations" },
+        // { name: "Changelog", href: "/changelog" }
+      ]
+    },
     {
       title: "Solutions",
       links: [
