@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-      title: "Clever Search – Boost Your Site for LLMs & Search",
+      title: "Cleversearch – Boost Your Site for LLMs & Search",
   description:
     "AI-powered SEO platform to optimize your website for search engines and large language models. Import sitemaps, analyze pages, inject content, and track LLM readiness.",
   keywords:
