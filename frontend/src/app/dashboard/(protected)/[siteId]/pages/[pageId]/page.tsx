@@ -483,7 +483,15 @@ export default function PageAnalysisPage() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="w-full sm:w-auto">
-                            <Button onClick={handleTriggerAnalysis} disabled={triggering} className="w-full sm:w-auto whitespace-nowrap">
+                            <Button 
+                              onClick={handleTriggerAnalysis} 
+                              disabled={triggering || Boolean(analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0))} 
+                              className={`w-full sm:w-auto whitespace-nowrap ${
+                                analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0)
+                                  ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
                               {triggering ? (
                                 <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                               ) : (
@@ -491,7 +499,12 @@ export default function PageAnalysisPage() {
                               )}
                               <span className="sm:hidden">Analyze</span>
                               <span className="hidden sm:inline">
-                                {analysis ? "Run Analysis Again" : "Run First Analysis"}
+                                {analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0) 
+                                  ? "Already Analyzed" 
+                                  : analysis 
+                                    ? "Run Analysis Again" 
+                                    : "Run First Analysis"
+                                }
                               </span>
                             </Button>
                           </div>
@@ -992,9 +1005,15 @@ export default function PageAnalysisPage() {
                                     "Generate comprehensive keyword analysis including primary, long-tail, semantic, and missing keywords"
                                   )
                                 }
+                                disabled={Boolean(analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0))}
+                                className={
+                                  analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0)
+                                    ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
+                                    : ""
+                                }
                               >
                                 <RefreshCw className="h-4 w-4 mr-2" />
-                                Analyze
+                                {analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0) ? "Already Analyzed" : "Analyze"}
                               </Button>
                             </div>
                           </CardTitle>
