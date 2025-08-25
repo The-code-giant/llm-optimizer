@@ -12,6 +12,7 @@ import Link from "next/link";
 import AnimatedDiv from "@/components/ui/animated-div";
 import FAQsThree from "@/components/faqs-3";
 import { Network, Sparkles, TrendingUp } from "lucide-react";
+import { BackgroundBeamsWithCollision } from "@/components/background-beams";
 export default function Home() {
   const stats = [
     {
@@ -41,7 +42,9 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Navbar />
       {/* Hero Section - Dark */}
-      <HeroSection />
+      <BackgroundBeamsWithCollision className="min-h-screen">
+        <HeroSection />
+      </BackgroundBeamsWithCollision>
       <LogoCloud />
       <Features />
       <section id="pricing" className="py-20 bg-white">

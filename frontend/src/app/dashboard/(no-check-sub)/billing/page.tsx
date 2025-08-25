@@ -32,27 +32,27 @@ interface BillingInfo {
 }
 
 const plans = [
-  {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Perfect for trying out our LLM optimization tools",
-    features: [
-      "Up to 2 sites",
-      "10 pages per month",
-      "Basic SEO analysis",
-      "Email support",
-    ],
-    icon: Star,
-    current: true,
-  },
+  // {
+  //   id: "free",
+  //   name: "Free",
+  //   price: "$0",
+  //   period: "forever",
+  //   description: "Perfect for trying out our LLM optimization tools",
+  //   features: [
+  //     "Up to 2 sites",
+  //     "10 pages per month",
+  //     "Basic SEO analysis",
+  //     "Email support",
+  //   ],
+  //   icon: Star,
+  //   current: true,
+  // },
   {
     id: "pro",
     name: "Pro",
     price: "$29",
     period: "per month",
-    description: "Ideal for small to medium websites",
+    description: "Start free trial",
     features: [
       "Up to 10 sites",
       "500 pages per month",
@@ -69,7 +69,7 @@ const plans = [
     name: "Enterprise",
     price: "$99",
     period: "per month",
-    description: "For large websites and agencies",
+    description: "Contact sales",
     features: [
       "Unlimited sites",
       "5,000 pages per month",
@@ -309,7 +309,7 @@ export default function BillingPage() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {plans.map((plan) => {
                           const Icon = plan.icon;
                           return (
