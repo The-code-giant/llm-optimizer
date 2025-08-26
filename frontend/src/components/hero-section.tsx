@@ -12,8 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { submitWebsiteUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
-import { motion } from "motion/react"
-
+import { motion } from "motion/react";
 
 const transitionVariants = {
   item: {
@@ -231,7 +230,7 @@ export default function HeroSection() {
                   </form>
                 </AnimatedGroup>
 
-                <h1 className="relative z-20 mx-auto max-w-4xl text-center text-xl font-bold text-black dark:text-white sm:text-2xl md:text-4xl lg:text-6xl xl:text-7xl tracking-tight">
+                <h1 className="relative z-20 mx-auto max-w-4xl text-center text-xl font-normal text-black dark:text-white sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl 2xl:text-7xl tracking-tight leading-tight sm:leading-tight md:leading-tight lg:leading-tight xl:leading-tight">
                   {"Boost Your Site's AI & SEO "
                     .split(" ")
                     .map((word, index) => (
@@ -250,116 +249,59 @@ export default function HeroSection() {
                       </motion.span>
                     ))}
                   <div className="relative mx-auto inline-block w-max [filter:drop-shadow(0px_1px_3px_rgba(27,_37,_80,_0.14))]">
-                    <div className="absolute left-0 top-[1px] bg-clip-text bg-no-repeat text-transparent bg-gradient-to-r py-4 from-[#30B4CA] to-blue-500 [text-shadow:0_0_rgba(0,0,0,0.1)]">
+                    <div className="absolute left-0 top-[1px] bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent bg-no-repeat py-2 sm:py-3 md:py-4 [text-shadow:0_0_rgba(0,0,0,0.1)] text-xl sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl 2xl:text-7xl">
                       <span className="">Visibility in Minutes.</span>
                     </div>
-                    <div className="relative bg-clip-text text-transparent bg-no-repeat bg-gradient-to-r from-[#30B4CA] to-blue-500 py-4">
+                    <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent bg-no-repeat py-2 sm:py-3 md:py-4 text-xl sm:text-2xl md:text-3xl lg:text-5xl xl:text-6xl 2xl:text-7xl">
                       <span className="">Visibility in Minutes.</span>
                     </div>
                   </div>
                 </h1>
 
                 <motion.p
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.3,
-              delay: 0.8,
-            }}
-            className="relative z-20 mx-auto max-w-xl px-4 py-4 text-center text-base font-normal text-neutral-600 dark:text-neutral-300 sm:px-0 sm:text-lg"
-          >
-            {
-              "Our AI-powered platform helps you optimize your website for Large Language Models (LLMs) and search engines, ensuring better visibility and citations."
-            }
-          </motion.p>
-
-          <motion.div
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            transition={{
-              duration: 0.3,
-              delay: 1,
-            }}
-            className="relative z-20 mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row sm:gap-4"
-          >
-            <Link href={"/register"} className="w-full transform rounded-2xl bg-gradient-to-r from-[#30B4CA] via-[#2ABBD3] to-[#24A8B8] px-6 py-3 font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:w-60 sm:py-2">
-              {"Get started"}
-            </Link>
-            <Link href="/demo" className="w-full transform rounded-2xl border border-gray-300 bg-transparent px-6 py-3 font-medium text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800 sm:w-60 sm:py-2">
-              {"Request a demo"}
-            </Link>
-          </motion.div>
-
-                {/* <TextEffect
-                  preset="fade-in-blur"
-                  speedSegment={0.3}
-                  as="h1"
-                  className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]"
-                >
-            
-            Boost Your Site's AI&SEO Visibility in Minutes 
-                </TextEffect> */}
-                {/* <TextEffect
-                  per="line"
-                  preset="fade-in-blur"
-                  speedSegment={0.3}
-                  delay={0.5}
-                  as="p"
-                  className="mx-auto mt-8 max-w-2xl text-balance text-lg"
-                >
-                  Our AI-powered platform helps you optimize your website for
-                  Large Language Models (LLMs) and search engines, ensuring
-                  better visibility and citations.
-                </TextEffect> */}
-
-                {/* <AnimatedGroup
-                  variants={{
-                    container: {
-                      visible: {
-                        transition: {
-                          staggerChildren: 0.05,
-                          delayChildren: 0.75,
-                        },
-                      },
-                    },
-                    ...transitionVariants,
+                  initial={{
+                    opacity: 0,
                   }}
-                  className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row"
+                  animate={{
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    delay: 0.8,
+                  }}
+                  className="relative z-20 mx-auto max-w-xl px-4 py-4 text-center text-base font-normal text-neutral-600 dark:text-neutral-300 sm:px-0 sm:text-lg"
                 >
-                  <div
-                    key={1}
-                    className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5"
+                  {
+                    "Our AI-powered platform helps you optimize your website for Large Language Models (LLMs) and search engines, ensuring better visibility and citations."
+                  }
+                </motion.p>
+
+                <motion.div
+                  initial={{
+                    opacity: 0,
+                  }}
+                  animate={{
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 0.3,
+                    delay: 1,
+                  }}
+                  className="relative z-20 mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row sm:gap-4"
+                >
+                  <Link
+                    href={"/register"}
+                    className="w-full transform rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:w-60 sm:py-2 sm:text-base md:text-lg"
                   >
-                    <Button
-                      asChild
-                      size="lg"
-                      className="rounded-xl px-5 text-base"
-                    >
-                      <Link href="/register">
-                        <span className="text-nowrap">Start Building</span>
-                      </Link>
-                    </Button>
-                  </div>
-                  <Button
-                    key={2}
-                    asChild
-                    size="lg"
-                    variant="ghost"
-                    className="h-10.5 rounded-xl px-5"
+                    {"Get started"}
+                  </Link>
+                  <Link
+                    href="/demo"
+                    className="w-full transform rounded-2xl border border-gray-300 bg-transparent px-6 py-3 text-sm font-medium text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800 sm:w-60 sm:py-2 sm:text-base md:text-lg"
                   >
-                    <Link href="/demo">
-                      <span className="text-nowrap">Request a demo</span>
-                    </Link>
-                  </Button>
-                </AnimatedGroup> */}
+                    {"Request a demo"}
+                  </Link>
+                </motion.div>
               </div>
             </div>
 

@@ -8,12 +8,12 @@ import { Footer } from "@/components/ui/footer";
 import { Check, ArrowRight, Sparkles, Shield, Globe, Zap, MessageSquare } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Pricing | Clever Search",
+  title: "Pricing | Cleversearch",
   description:
-    "Transparent pricing for Clever Search. Choose Starter or Pro to optimize your site for Answer Engines (AEO) and local GEO presence. Enterprise? Contact us for a tailored plan.",
+    "Transparent pricing for Cleversearch. Choose Starter or Pro to optimize your site for Answer Engines (AEO) and local GEO presence. Enterprise? Contact us for a tailored plan.",
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Clever Search Pricing",
+    title: "Cleversearch Pricing",
     description:
       "Plans designed for AEO and GEO optimization. Get started with Starter, grow with Pro, or contact us for Enterprise.",
     url: "/pricing",

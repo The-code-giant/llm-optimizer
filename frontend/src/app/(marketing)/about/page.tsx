@@ -87,7 +87,7 @@ export default function About() {
               We&apos;re building the future of AI visibility.
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Clever Search was founded to help businesses adapt to the AI-first world where 
+              Cleversearch was founded to help businesses adapt to the AI-first world where 
               ChatGPT, Claude, and Gemini are becoming primary sources of information discovery.
             </p>
             <Link href="/contact">
@@ -140,7 +140,7 @@ export default function About() {
                 traditional SEO isn&apos;t enough.
               </p>
               <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                Clever Search bridges this gap by providing the tools and insights needed 
+                Cleversearch bridges this gap by providing the tools and insights needed 
                 to optimize content specifically for AI understanding and citation, ensuring 
                 businesses remain visible in the AI-driven future.
               </p>
