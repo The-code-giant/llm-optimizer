@@ -103,6 +103,8 @@ export function NavbarComponent() {
     }
   }, [pathname])
 
+  const userName= user?.fullName ? user.fullName : user?.firstName ? user?.firstName : user?.emailAddresses[0]?.emailAddress;
+
   return (
     <div className="relative w-full ">
       <Navbar>
@@ -118,11 +120,11 @@ export function NavbarComponent() {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                  className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors duration-200 cursor-pointer"
                 >
                   {/* <UserCircleIcon className="w-5 h-5" /> */}
                   <span className="font-medium text-sm">
-                    {user?.emailAddresses[0]?.emailAddress}
+                    {userName}
                   </span>
                 </button>
 
@@ -187,10 +189,10 @@ export function NavbarComponent() {
             <div className="flex w-full flex-col gap-4 justify-start items-start">
               {isSignedIn ? (
                 <>
-                  <div className="flex items-start space-x-2 py-2">
+                  <div className="flex items-start space-x-2 py-2 cursor-pointer">
                     <UserCircleIcon className="w-5 h-5 text-gray-600" />
                     <span className="text-gray-700 font-medium text-sm">
-                      {user?.emailAddresses[0]?.emailAddress}
+                      {userName}
                     </span>
                   </div>
                   <NavbarButton
