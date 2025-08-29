@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import {
@@ -105,6 +105,9 @@ export default function PageAnalysisPage() {
     recommendations: string[];
     currentScore: number;
   } | null>(null);
+
+  // Ref for scrolling to improvement section
+  const improvementSectionRef = useRef<HTMLDivElement>(null);
 
   // Content state (this would normally be persisted in a database)
   const [contentData] = useState({
@@ -412,19 +415,7 @@ export default function PageAnalysisPage() {
       </DashboardLayout>
     );
   }
-  let analysisJson = null;
-  if (analysis?.summary && typeof analysis.summary === "string") {
-    try {
-      analysisJson = JSON.parse(analysis.summary);
-    } catch (e) {
-      console.error(
-        "Failed to parse analysis.summary as JSON:",
-        analysis.summary,
-        e
-      );
-      analysisJson = null;
-    }
-  }
+
 
   // In the render logic for each content type (e.g., title, description):
   const deployedTitle = (contentVersions.title || []).find(
@@ -654,7 +645,13 @@ export default function PageAnalysisPage() {
                                 LLM Readiness Score
                               </label>
                               <div className="mt-1 flex items-center gap-2">
-                                {JSON.parse(analysis?.summary).score}
+                                {analysis?.summary ? (() => {
+                                  try {
+                                    return JSON.parse(analysis.summary).score || 0;
+                                  } catch {
+                                    return analysis?.score || 0;
+                                  }
+                                })() : (analysis?.score || 0)}
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <span className="text-xs text-muted-foreground underline decoration-dotted cursor-help">
@@ -1283,6 +1280,14 @@ export default function PageAnalysisPage() {
                                           sectionType as keyof typeof analysis.sectionRatings
                                         ] || 0,
                                     });
+                                    
+                                    // Scroll to improvement section after state update
+                                    setTimeout(() => {
+                                      improvementSectionRef.current?.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start"
+                                      });
+                                    }, 100);
                                   }}
                                 />
                               </CardContent>
@@ -1291,7 +1296,7 @@ export default function PageAnalysisPage() {
 
                           {/* Section Improvement Form */}
                           {improvingSection && (
-                            <Card>
+                            <Card ref={improvementSectionRef}>
                               <CardContent className="pt-6">
                                 <SectionImprovementForm
                                   pageId={pageId}

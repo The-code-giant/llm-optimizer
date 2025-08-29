@@ -141,9 +141,14 @@ export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToas
       
       // Extract title from analysis if available
       if (analysisResult.summary) {
-        const summary = JSON.parse(analysisResult.summary);
-        if (summary.title) {
-          setPageContent(prev => ({ ...prev, title: summary.title }));
+        try {
+          const summary = JSON.parse(analysisResult.summary);
+          if (summary.title) {
+            setPageContent(prev => ({ ...prev, title: summary.title }));
+          }
+        } catch {
+          // If parsing fails, use the summary as is
+          console.warn('Failed to parse analysis summary as JSON');
         }
       }
       
@@ -278,7 +283,13 @@ export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToas
   console.log({analysis});
   
   const renderStepContent = () => {
-    const summary = JSON.parse(analysis?.summary || '{}');
+    const summary = (() => {
+      try {
+        return JSON.parse(analysis?.summary || '{}');
+      } catch {
+        return { recommendations: {} };
+      }
+    })();
     switch (currentStep) {
       case "url-input":
         return (

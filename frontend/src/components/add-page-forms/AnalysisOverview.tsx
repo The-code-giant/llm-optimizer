@@ -50,7 +50,13 @@ interface AnalysisOverviewProps {
 export default function AnalysisOverview({ analysis, onSkip, onContinue }: AnalysisOverviewProps) {
   if (!analysis) return null;
 
-  const summary = JSON.parse(analysis?.summary || '{}');
+  const summary = (() => {
+    try {
+      return JSON.parse(analysis?.summary || '{}');
+    } catch {
+      return { summary: analysis?.summary || 'No summary available' };
+    }
+  })();
 
   return (
     <div className="space-y-6">
