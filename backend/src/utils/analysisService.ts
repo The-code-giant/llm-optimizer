@@ -1,16 +1,18 @@
 import axios from 'axios';
 import { JSDOM } from 'jsdom';
 import { db } from '../db/client';
-import { contentSuggestions } from '../db/schema';
+import { contentSuggestions, contentRatings, contentRecommendations, contentAnalysis } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generateText, generateObject } from 'ai';
 import { z } from 'zod';
 import { createOpenAI } from '@ai-sdk/openai';
+import { AIRecommendationAgent, PageAnalysisResult } from './aiRecommendationAgent';
+import { UnifiedContentService } from '../services/unifiedContentService';
 
 // Initialize Vercel AI SDK OpenAI provider
 const aiOpenAI = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
 // Centralize the model selection; default to GPT‑5 Mini as requested
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-nano';
 
 // Shared guardrails for all generations
 const SHARED_SYSTEM = `You are a senior GEO (Generative Engine Optimization) strategist and copywriter.
@@ -52,6 +54,26 @@ export interface AnalysisResult {
     citationFriendly: boolean;
     topicCoverage: number;
     answerableQuestions: number;
+  };
+  // New section-based ratings
+  sectionRatings: {
+    title: number;        // 0-10 score
+    description: number;  // 0-10 score
+    headings: number;     // 0-10 score
+    content: number;      // 0-10 score
+    schema: number;       // 0-10 score
+    images: number;       // 0-10 score
+    links: number;        // 0-10 score
+  };
+  // New content-specific recommendations
+  contentRecommendations: {
+    title: string[];
+    description: string[];
+    headings: string[];
+    content: string[];
+    schema: string[];
+    images: string[];
+    links: string[];
   };
 }
 
@@ -372,6 +394,24 @@ ${content.bodyText || 'No content found'}
         technicalSEO: parsed.technicalSEO,
         keywordAnalysis: parsed.keywordAnalysis,
         llmOptimization: parsed.llmOptimization,
+        sectionRatings: {
+          title: Math.round((parsed.technicalSEO?.titleOptimization ?? 0) / 10),
+          description: Math.round((parsed.technicalSEO?.metaDescription ?? 0) / 10),
+          headings: Math.round((parsed.technicalSEO?.headingStructure ?? 0) / 10),
+          content: Math.round((parsed.contentQuality?.completeness ?? 0) / 10),
+          schema: Math.round((parsed.technicalSEO?.schemaMarkup ?? 0) / 10),
+          images: Math.round((parsed.contentQuality?.structure ?? 0) / 10),
+          links: Math.round((parsed.contentQuality?.structure ?? 0) / 10)
+        },
+        contentRecommendations: {
+          title: [],
+          description: [],
+          headings: [],
+          content: [],
+          schema: [],
+          images: [],
+          links: []
+        }
       };
 
       return result;
@@ -443,9 +483,66 @@ ${content.bodyText || 'No content found'}
   }
 
   /**
-   * Generate content suggestions based on analysis
+   * Generate AI-powered recommendations for all page sections
+   */
+  static async generateAIRecommendations(
+    content: PageContent, 
+    analysisResult: AnalysisResult, 
+    pageSummary: string
+  ): Promise<PageAnalysisResult> {
+    console.log('🤖 Generating AI-powered recommendations...');
+    
+    try {
+      const aiAnalysis = await AIRecommendationAgent.generatePageRecommendations(
+        content,
+        analysisResult,
+        pageSummary
+      );
+
+      console.log(`✅ Generated AI recommendations for ${aiAnalysis.sections.length} sections`);
+      return aiAnalysis;
+    } catch (error) {
+      console.error('❌ Failed to generate AI recommendations:', error);
+      // Fallback to basic recommendations if AI fails
+      return this.generateFallbackRecommendations(content, analysisResult);
+    }
+  }
+
+  /**
+   * Fallback recommendations if AI generation fails
+   */
+  private static generateFallbackRecommendations(content: PageContent, analysisResult: AnalysisResult): PageAnalysisResult {
+    return {
+      sections: [
+        {
+          sectionType: 'title',
+          currentScore: Math.round((analysisResult.technicalSEO?.titleOptimization ?? 0) / 10),
+          issues: ['Title optimization needed'],
+          recommendations: [{
+            priority: 'high' as const,
+            category: 'SEO',
+            title: 'Optimize page title',
+            description: 'Improve title for better SEO and click-through rates',
+            expectedImpact: 2,
+            implementation: 'Include primary keywords and keep length 50-60 characters'
+          }],
+          overallAssessment: 'Title needs optimization',
+          estimatedImprovement: 2
+        }
+      ],
+      overallPageAssessment: 'Page needs optimization',
+      criticalIssues: ['Content optimization required'],
+      quickWins: ['Improve title and meta description'],
+      longTermStrategy: ['Comprehensive content strategy needed']
+    };
+  }
+
+  /**
+   * Generate content suggestions based on analysis (DEPRECATED - use AI recommendations instead)
    */
   static async generateContentSuggestions(content: PageContent, analysisResult: AnalysisResult): Promise<string[]> {
+    console.warn('⚠️ generateContentSuggestions is deprecated. Use generateAIRecommendations instead.');
+    
     const suggestions: string[] = [];
 
     // Content Quality Suggestions
@@ -508,10 +605,56 @@ ${content.bodyText || 'No content found'}
   }
 
   /**
-   * Auto-generate all content types after analysis and save to database
+   * Save AI recommendations to database using unified content service
+   */
+  static async saveAIRecommendations(
+    pageId: string,
+    analysisResultId: string,
+    aiAnalysis: PageAnalysisResult
+  ): Promise<void> {
+    console.log(`💾 Saving AI recommendations to database for page: ${pageId}`);
+
+    try {
+      // Save section analysis using unified service
+      for (const section of aiAnalysis.sections) {
+        await UnifiedContentService.saveSectionAnalysis({
+          pageId,
+          analysisResultId,
+          sectionType: section.sectionType,
+          currentScore: section.currentScore,
+          issues: section.issues,
+          recommendations: section.recommendations,
+          priority: this.calculateOverallPriority(section.recommendations) as 'low' | 'medium' | 'high' | 'critical',
+          estimatedImpact: section.estimatedImprovement,
+          aiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+          analysisContext: 'AI-powered section analysis',
+          confidence: 0.8 // Default confidence for AI analysis
+        });
+      }
+
+      console.log(`✅ Saved AI recommendations for ${aiAnalysis.sections.length} sections using unified service`);
+    } catch (error) {
+      console.error('❌ Failed to save AI recommendations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Calculate overall priority from recommendations
+   */
+  private static calculateOverallPriority(recommendations: any[]): string {
+    const priorities = recommendations.map(r => r.priority);
+    if (priorities.includes('critical')) return 'critical';
+    if (priorities.includes('high')) return 'high';
+    if (priorities.includes('medium')) return 'medium';
+    return 'low';
+  }
+
+  /**
+   * Auto-generate all content types after analysis using unified content service
    */
   static async autoGenerateContentSuggestions(pageId: string, content: PageContent, analysisResult: AnalysisResult & { pageSummary?: string }): Promise<void> {
-    console.log(`🤖 Auto-generating content suggestions for page: ${pageId}`);
+    console.log(`🤖 Auto-generating content suggestions for page: ${pageId} using unified service`);
 
     if (!process.env.OPENAI_API_KEY) {
       console.log('⚠️ OpenAI API key not configured, skipping auto-generation');
@@ -530,51 +673,64 @@ ${content.bodyText || 'No content found'}
 
     for (const { type, count } of contentTypes) {
       try {
-        let suggestions;
-
-        // Use the same generation strategy as the API endpoint
-        if (type === 'title') {
-          suggestions = await this.generateOptimizedTitleList(
-            content,
-            pageSummary,
-            content.metaDescription || '',
-            3
-          );
-        } else if (type === 'description') {
-          suggestions = await this.generateOptimizedDescriptionList(
-            content,
-            pageSummary,
-            3
-          );
-        } else if (type === 'paragraph') {
-          suggestions = await this.generateSpecificContentType('paragraph', content, analysisResult, 500, pageSummary);
-        } else if (type === 'faq') {
-          suggestions = await this.generateSpecificContentType('faq', content, analysisResult, 800, pageSummary);
-        } else if (type === 'keywords') {
-          suggestions = await this.generateSpecificContentType('keywords', content, analysisResult, 300, pageSummary);
-        }
-
-        // Replace existing suggestions for this content type
-        await db.delete(contentSuggestions)
-          .where(and(
-            eq(contentSuggestions.pageId, pageId),
-            eq(contentSuggestions.contentType, type)
-          ));
-
-        // Save new suggestions
-        await db.insert(contentSuggestions).values({
+        // Use unified content service to generate AI content
+        const result = await UnifiedContentService.generateAIContent(
           pageId,
-          contentType: type,
-          suggestions,
-          requestContext: 'Auto-generated during analysis',
-          aiModel: process.env.OPENAI_MODEL || 'gpt-5-mini',
-          generatedAt: new Date(),
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-        });
+          type, // content type
+          content, // context
+          count
+        );
 
-        console.log(`✅ Generated ${Array.isArray(suggestions) ? suggestions.length : 1} ${type} suggestions for page ${pageId}`);
+        console.log(`✅ Generated ${Array.isArray(result) ? result.length : 1} ${type} suggestions for page ${pageId} using unified service`);
       } catch (error) {
-        console.error(`❌ Failed to generate ${type} suggestions:`, error);
+        console.error(`❌ Failed to generate ${type} suggestions using unified service:`, error);
+        
+        // Fallback to old method if unified service fails
+        try {
+          let suggestions;
+
+          if (type === 'title') {
+            suggestions = await this.generateOptimizedTitleList(
+              content,
+              pageSummary,
+              content.metaDescription || '',
+              3
+            );
+          } else if (type === 'description') {
+            suggestions = await this.generateOptimizedDescriptionList(
+              content,
+              pageSummary,
+              3
+            );
+          } else if (type === 'paragraph') {
+            suggestions = await this.generateSpecificContentType('paragraph', content, analysisResult, 500, pageSummary);
+          } else if (type === 'faq') {
+            suggestions = await this.generateSpecificContentType('faq', content, analysisResult, 800, pageSummary);
+          } else if (type === 'keywords') {
+            suggestions = await this.generateSpecificContentType('keywords', content, analysisResult, 300, pageSummary);
+          }
+
+          // Save using old method as fallback
+          await db.delete(contentSuggestions)
+            .where(and(
+              eq(contentSuggestions.pageId, pageId),
+              eq(contentSuggestions.contentType, type)
+            ));
+
+          await db.insert(contentSuggestions).values({
+            pageId,
+            contentType: type,
+            suggestions,
+            requestContext: 'Auto-generated during analysis (fallback)',
+            aiModel: process.env.OPENAI_MODEL || 'gpt-5-mini',
+            generatedAt: new Date(),
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          });
+
+          console.log(`✅ Generated ${Array.isArray(suggestions) ? suggestions.length : 1} ${type} suggestions for page ${pageId} using fallback method`);
+        } catch (fallbackError) {
+          console.error(`❌ Failed to generate ${type} suggestions with fallback method:`, fallbackError);
+        }
       }
     }
   }
@@ -1000,5 +1156,392 @@ Produce ${count} distinct meta descriptions following the rules.`;
         return true;
       });
     return filtered.slice(0, count);
+  }
+
+  /**
+   * Generate optimized schema markup based on page content and recommendations
+   */
+  public static async generateOptimizedSchema(
+    pageContent: PageContent,
+    analysisData: AnalysisResult,
+    selectedRecommendations: string[]
+  ): Promise<string> {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+
+    console.log({pageContent})
+    const systemPrompt = `${SHARED_SYSTEM} and You are an expert in structured data and schema markup optimization.
+Your task is to generate valid, accurate JSON-LD schema markup that matches the actual page content.
+
+CRITICAL REQUIREMENTS:
+- Use ONLY the exact URL provided in the page details - DO NOT create or modify URLs
+- Use ONLY the exact title and content provided - DO NOT create fictional content
+- Do NOT use placeholder URLs like "yourdomain.com", "example.com", or "Your Company Name"
+- Do NOT create fictional organization names, contact information, or social media links
+- Match the schema content exactly to the page content provided
+- Include only relevant schema types for the content
+- Use proper schema.org vocabulary
+- Generate appropriate schema type based on content analysis`;
+
+    const userPrompt = `Generate optimized schema markup for this page:
+
+PAGE DETAILS (USE THESE EXACT VALUES):
+- URL: ${pageContent.url}
+- Title: ${pageContent.title || 'No title'}
+- Meta Description: ${pageContent.metaDescription || 'No description'}
+- Main Content: ${pageContent.bodyText?.substring(0, 1000) || 'No content'}
+
+SELECTED RECOMMENDATIONS TO ADDRESS:
+${selectedRecommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
+
+ANALYSIS INSIGHTS:
+- Primary Keywords: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
+- Content Type: ${this.determineContentType(pageContent)}
+
+CRITICAL INSTRUCTIONS:
+- The URL in your schema MUST be exactly: ${pageContent.url}
+- The title in your schema MUST be exactly: ${pageContent.title || 'No title'}
+- Do NOT create fictional organization names, contact details, or social media links
+- Do NOT use placeholder domains or made-up URLs
+- Generate schema that matches the actual page content provided above
+- Include appropriate schema types based on content
+- Address the selected recommendations in the schema structure
+
+Return structured schema data with the appropriate type and content using ONLY the provided page details.`;
+
+    try {
+      // Use structured object generation to guarantee valid JSON
+      const SchemaAny = z.any();
+      const { object: schemaObject } = await generateObject<any>({
+        model: aiOpenAI(OPENAI_MODEL),
+        system: systemPrompt,
+        schema: SchemaAny,
+        prompt:
+          userPrompt +
+          '\n\nIMPORTANT: Return ONLY a single JSON object (or an object with @graph) that represents JSON-LD schema markup. Do not include explanations or markdown.',
+        temperature: 0.3,
+      });
+
+      if (!schemaObject) {
+        return this.generateBasicSchema(pageContent);
+      }
+
+      // Post-process to ensure correct URL usage
+      const correctedSchema = this.correctSchemaUrls(schemaObject, pageContent);
+
+      return `<script type="application/ld+json">${JSON.stringify(correctedSchema, null, 2)}</script>`;
+    } catch (error) {
+      console.error('Failed to generate optimized schema:', error);
+      return this.generateBasicSchema(pageContent);
+    }
+  }
+
+  /**
+   * Correct URLs in generated schema to match the actual page content
+   */
+  private static correctSchemaUrls(schemaObject: any, pageContent: PageContent): any {
+    if (!schemaObject) return schemaObject;
+
+    const correctUrl = pageContent.url;
+    const correctTitle = pageContent.title || 'Untitled Page';
+    const baseUrl = new URL(correctUrl).origin;
+
+    // Deep clone to avoid modifying original
+    const corrected = JSON.parse(JSON.stringify(schemaObject));
+
+    // Handle @graph structure
+    if (corrected['@graph'] && Array.isArray(corrected['@graph'])) {
+      corrected['@graph'] = corrected['@graph'].map((item: any) => {
+        return this.correctSchemaItemUrls(item, correctUrl, correctTitle, baseUrl);
+      });
+    } else {
+      // Handle single schema object
+      return this.correctSchemaItemUrls(corrected, correctUrl, correctTitle, baseUrl);
+    }
+
+    return corrected;
+  }
+
+  /**
+   * Correct URLs in a single schema item
+   */
+  private static correctSchemaItemUrls(item: any, correctUrl: string, correctTitle: string, baseUrl: string): any {
+    if (!item || typeof item !== 'object') return item;
+
+    const corrected = { ...item };
+
+    // Fix common URL fields
+    if (corrected.url && corrected.url !== correctUrl) {
+      corrected.url = correctUrl;
+    }
+    if (corrected['@id'] && corrected['@id'] !== correctUrl) {
+      corrected['@id'] = correctUrl;
+    }
+    if (corrected.name && corrected.name !== correctTitle) {
+      corrected.name = correctTitle;
+    }
+
+    // Fix organization URLs to use base URL
+    if (corrected['@type'] === 'Organization') {
+      if (corrected.url && !corrected.url.startsWith(baseUrl)) {
+        corrected.url = baseUrl;
+      }
+      // Remove fictional social media links
+      if (corrected.sameAs && Array.isArray(corrected.sameAs)) {
+        corrected.sameAs = corrected.sameAs.filter((url: string) => 
+          url.startsWith(baseUrl) || url.includes('facebook.com') || url.includes('twitter.com') || url.includes('linkedin.com')
+        );
+      }
+      // Remove fictional contact details
+      if (corrected.contactPoint && corrected.contactPoint.telephone && corrected.contactPoint.telephone.includes('555')) {
+        delete corrected.contactPoint;
+      }
+    }
+
+    // Fix website URLs
+    if (corrected['@type'] === 'WebSite' || corrected['@type'] === 'Website') {
+      if (corrected.url && !corrected.url.startsWith(baseUrl)) {
+        corrected.url = baseUrl;
+      }
+    }
+
+    // Fix FAQ page URLs
+    if (corrected['@type'] === 'FAQPage') {
+      if (corrected['@id'] && !corrected['@id'].startsWith(correctUrl)) {
+        corrected['@id'] = `${correctUrl}#faq`;
+      }
+    }
+
+    // Recursively fix nested objects
+    Object.keys(corrected).forEach(key => {
+      if (typeof corrected[key] === 'object' && corrected[key] !== null) {
+        if (Array.isArray(corrected[key])) {
+          corrected[key] = corrected[key].map((nestedItem: any) => 
+            this.correctSchemaItemUrls(nestedItem, correctUrl, correctTitle, baseUrl)
+          );
+        } else {
+          corrected[key] = this.correctSchemaItemUrls(corrected[key], correctUrl, correctTitle, baseUrl);
+        }
+      }
+    });
+
+    return corrected;
+  }
+
+  /**
+   * Generate basic valid schema markup as fallback
+   */
+  private static generateBasicSchema(pageContent: PageContent): string {
+    const baseUrl = new URL(pageContent.url).origin;
+    const pageName = pageContent.title || 'Page';
+    
+    const basicSchema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "url": pageContent.url,
+      "name": pageContent.title || 'Untitled Page',
+      "description": pageContent.metaDescription || '',
+      "isPartOf": {
+        "@type": "WebSite",
+        "url": baseUrl,
+        "name": baseUrl.replace('https://', '').replace('http://', '')
+      }
+    };
+
+    return `<script type="application/ld+json">${JSON.stringify(basicSchema, null, 2)}</script>`;
+  }
+
+  /**
+   * Determine content type for schema generation
+   */
+  private static determineContentType(pageContent: PageContent): string {
+    const title = pageContent.title?.toLowerCase() || '';
+    const content = pageContent.bodyText?.toLowerCase() || '';
+    
+    if (title.includes('blog') || title.includes('article') || content.includes('blog')) {
+      return 'Article';
+    } else if (title.includes('product') || content.includes('buy') || content.includes('price')) {
+      return 'Product';
+    } else if (title.includes('service') || content.includes('service')) {
+      return 'Service';
+    } else if (title.includes('faq') || content.includes('question') || content.includes('answer')) {
+      return 'FAQPage';
+    } else {
+      return 'WebPage';
+    }
+  }
+
+  /**
+   * Generate optimized content for a specific section based on selected recommendations
+   */
+  public static async generateSectionContent(
+    sectionType: string,
+    selectedRecommendations: string[],
+    pageContent: PageContent,
+    analysisData: AnalysisResult,
+    currentContent: string,
+    additionalContext: string
+  ): Promise<{ content: string; keyPoints: string[] }> {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+
+
+    const systemPrompt = `You are an expert in Generative Engine Optimization (GEO) and SEO content optimization.
+Your task is to generate optimized content for a specific section based on selected recommendations.
+
+CORE PRINCIPLES:
+- Address each selected recommendation directly and effectively
+- Create content that is optimized for both search engines and LLM citation
+- Use natural, engaging language that drives user action
+- Include specific, actionable information
+- Optimize for the target section type requirements
+- For schema markup: Generate valid JSON-LD with real URLs and accurate data
+- For schema markup: Do NOT use placeholder URLs like "yourdomain.com" or "Your Company Name"
+- For schema markup: Match schema content exactly to the page content`;
+
+    const userPrompt = `Generate optimized ${sectionType} content based on these selected recommendations:
+
+SELECTED RECOMMENDATIONS:
+${selectedRecommendations.map((rec, i) => `${i + 1}. ${rec}`).join('\n')}
+
+CURRENT CONTENT:
+${currentContent || 'No current content provided'}
+
+PAGE CONTEXT:
+- URL: ${pageContent.url}
+- Current Title: ${pageContent.title || 'No title'}
+- Current Meta Description: ${pageContent.metaDescription || 'No meta description'}
+- Main Content: ${pageContent.bodyText?.substring(0, 1000) || 'No content'}
+
+ANALYSIS INSIGHTS:
+- Primary Keywords: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None identified'}
+- Long-tail Keywords: ${analysisData.keywordAnalysis?.longTailKeywords?.slice(0, 3).join(', ') || 'None identified'}
+- Current ${sectionType} Score: ${this.getCurrentSectionScore(sectionType, analysisData)}/10
+
+ADDITIONAL CONTEXT:
+${additionalContext || 'No additional context provided'}
+
+REQUIREMENTS:
+- Address ALL selected recommendations in the generated content
+- Follow best practices for ${sectionType} optimization
+- Create content that would improve the ${sectionType} score
+- Make it actionable and user-focused
+- Ensure it fits the page's overall context and purpose
+${sectionType === 'schema' ? '- Generate valid JSON-LD schema markup with real URLs and accurate data\n- Do NOT use placeholder URLs like "yourdomain.com" or "Your Company Name"\n- Match schema content exactly to the page content' : ''}
+
+Generate the optimized content now.`;
+
+    try {
+      const { text: responseText } = await generateText({
+        model: aiOpenAI(OPENAI_MODEL) as any,
+        system: systemPrompt,
+        prompt: userPrompt + '\n\nIMPORTANT: Return ONLY a valid JSON object with the following structure:\n{\n  "content": "the optimized content",\n  "keyPoints": ["key point 1", "key point 2", "key point 3"],\n  "recommendationsAddressed": ["rec 1", "rec 2"],\n  "estimatedImpact": "brief impact description"\n}\n\nDo not include any explanations or markdown formatting.',
+        temperature: 0.7,
+      });
+
+      if (!responseText) throw new Error('No response from AI');
+
+      // Clean and parse the response
+      const cleaned = responseText.replace(/```json|```/g, '').trim();
+      const result = JSON.parse(cleaned);
+
+      return {
+        content: result.content || '',
+        keyPoints: Array.isArray(result.keyPoints) ? result.keyPoints : []
+      };
+    } catch (error) {
+      console.error('Failed to generate section content:', error);
+      throw new Error(`Failed to generate ${sectionType} content: ${error}`);
+    }
+  }
+
+  /**
+   * Estimate score improvement based on selected recommendations
+   */
+  public static estimateScoreImprovement(
+    sectionType: string,
+    selectedRecommendations: string[],
+    analysisData: AnalysisResult
+  ): number {
+    const currentScore = this.getCurrentSectionScore(sectionType, analysisData);
+    const maxScore = 10;
+    
+    // Base improvement calculation
+    let improvement = 0;
+    
+    // Calculate improvement based on recommendation types and current score
+    for (const recommendation of selectedRecommendations) {
+      const lowerRec = recommendation.toLowerCase();
+      
+      // High impact recommendations (2-3 points)
+      if (lowerRec.includes('primary keywords') || lowerRec.includes('compelling') || lowerRec.includes('action-oriented')) {
+        improvement += 2.5;
+      }
+      // Medium-high impact recommendations (1.5-2 points)
+      else if (lowerRec.includes('length') || lowerRec.includes('emotional') || lowerRec.includes('power words') || lowerRec.includes('click-worthy')) {
+        improvement += 2;
+      }
+      // Medium impact recommendations (1-1.5 points)
+      else if (lowerRec.includes('brand name') || lowerRec.includes('serp display') || lowerRec.includes('benefit-focused')) {
+        improvement += 1.5;
+      }
+      // Standard recommendations (0.5-1 point)
+      else {
+        improvement += 1;
+      }
+    }
+    
+    // Adjust based on current score (easier to improve low scores)
+    let scoreMultiplier = 1.0;
+    if (currentScore < 3) {
+      scoreMultiplier = 1.3; // Very low scores can improve more
+    } else if (currentScore < 5) {
+      scoreMultiplier = 1.2; // Low scores can improve significantly
+    } else if (currentScore < 7) {
+      scoreMultiplier = 1.0; // Medium scores improve normally
+    } else if (currentScore < 9) {
+      scoreMultiplier = 0.7; // High scores improve less
+    } else {
+      scoreMultiplier = 0.3; // Very high scores improve minimally
+    }
+    
+    improvement *= scoreMultiplier;
+    
+    // Ensure minimum improvement for any selected recommendations
+    if (selectedRecommendations.length > 0 && improvement < 0.5) {
+      improvement = 0.5;
+    }
+    
+    // Cap the improvement to not exceed max score
+    const estimatedNewScore = Math.min(maxScore, currentScore + improvement);
+    return Math.round((estimatedNewScore - currentScore) * 10) / 10;
+  }
+
+  /**
+   * Get current section score from analysis data
+   */
+  private static getCurrentSectionScore(sectionType: string, analysisData: AnalysisResult): number {
+    switch (sectionType) {
+      case 'title':
+        return Math.round((analysisData.technicalSEO?.titleOptimization ?? 0) / 10);
+      case 'description':
+        return Math.round((analysisData.technicalSEO?.metaDescription ?? 0) / 10);
+      case 'headings':
+        return Math.round((analysisData.technicalSEO?.headingStructure ?? 0) / 10);
+      case 'content':
+        return Math.round((analysisData.contentQuality?.completeness ?? 0) / 10);
+      case 'schema':
+        return Math.round((analysisData.technicalSEO?.schemaMarkup ?? 0) / 10);
+      case 'images':
+        return Math.round((analysisData.contentQuality?.structure ?? 0) / 10);
+      case 'links':
+        return Math.round((analysisData.contentQuality?.structure ?? 0) / 10);
+      default:
+        return 0;
+    }
   }
 } 

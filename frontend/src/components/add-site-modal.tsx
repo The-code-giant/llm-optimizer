@@ -95,7 +95,8 @@ const addSiteSchema = z.object({
     .max(100, "Site name must be less than 100 characters")
     .regex(/^[a-zA-Z0-9\s\-_]+$/, "Site name can only contain letters, numbers, spaces, hyphens, and underscores")
     .trim(),
-  url: urlSchema,
+    url: z.string().min(1, "URL is required"),
+  // url: urlSchema,
 });
 
 type AddSiteFormData = z.infer<typeof addSiteSchema>;

@@ -246,6 +246,7 @@ router.post('/tracker/content',
   trackerRateLimit,
   async (req: Request, res: Response) => {
     try {
+      console.log('Tracker content request:', { body: req.body, headers: req.headers });
       const { url, siteId, userAgent, referrer, timestamp } = req.body;
       
       // 1. Validate required fields
@@ -273,7 +274,9 @@ router.post('/tracker/content',
       }
 
       // 3. Authenticate site using tracker_id (with caching)
+      console.log('Looking up site with trackerId:', siteId);
       const site = await getSiteByTrackerId(siteId);
+      console.log('Site lookup result:', site ? { id: site.id, name: site.name, trackerId: site.trackerId } : 'null');
       if (!site) {
         res.status(404).json({ error: 'Site not found' });
         return;
@@ -355,6 +358,7 @@ router.post('/tracker/event',
   trackerRateLimit,
   async (req, res) => {
     try {
+      console.log('Tracker event request:', { body: req.body, headers: req.headers });
       const { siteId, eventType, eventData, sessionId, url, timestamp } = req.body;
       
       // 1. Validate required fields
@@ -364,7 +368,9 @@ router.post('/tracker/event',
       }
 
       // 2. Authenticate site using tracker_id (with caching)
+      console.log('Looking up site with trackerId for event:', siteId);
       const site = await getSiteByTrackerId(siteId);
+      console.log('Site lookup result for event:', site ? { id: site.id, name: site.name, trackerId: site.trackerId } : 'null');
       if (!site) {
         res.status(404).json({ error: 'Site not found' });
         return;

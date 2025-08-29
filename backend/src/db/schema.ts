@@ -14,6 +14,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+
+
 export const users = pgTable("users", {
   id: varchar("id", { length: 255 }).primaryKey(), // Clerk user ID
   email: varchar("email", { length: 255 }).notNull().unique(),
@@ -58,47 +60,108 @@ export const pages = pgTable("pages", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const analysisResults = pgTable("analysis_results", {
+export const contentAnalysis = pgTable("content_analysis", {
   id: uuid("id").primaryKey().defaultRandom(),
   pageId: uuid("page_id")
     .notNull()
     .references(() => pages.id),
+  
+  // Core analysis data
+  overallScore: doublePrecision("overall_score").notNull(), // 0-100 overall page score
   analyzedAt: timestamp("analyzed_at").defaultNow(),
-  llmModelUsed: varchar("llm_model_used", { length: 128 }),
-  score: doublePrecision("score"),
-  recommendations: jsonb("recommendations"),
-  rawLlmOutput: text("raw_llm_output"),
-  createdAt: timestamp("created_at").defaultNow(),
-});
-
-export const injectedContent = pgTable("injected_content", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  siteId: uuid("site_id")
-    .notNull()
-    .references(() => sites.id),
-  name: varchar("name", { length: 255 }).notNull(),
-  type: varchar("type", { length: 64 }).notNull(),
-  content: text("content"),
-  status: varchar("status", { length: 32 }).notNull(),
+  llmModelUsed: varchar("llm_model_used", { length: 128 }).notNull(),
+  
+  // AI-generated summaries
+  pageSummary: text("page_summary"), // AI-generated page summary
+  analysisSummary: text("analysis_summary"), // AI-generated analysis summary
+  
+  // Content quality metrics (normalized from JSON)
+  contentClarity: doublePrecision("content_clarity").default(0), // 0-100
+  contentStructure: doublePrecision("content_structure").default(0), // 0-100
+  contentCompleteness: doublePrecision("content_completeness").default(0), // 0-100
+  
+  // Technical SEO metrics (normalized from JSON)
+  titleOptimization: doublePrecision("title_optimization").default(0), // 0-100
+  metaDescription: doublePrecision("meta_description").default(0), // 0-100
+  headingStructure: doublePrecision("heading_structure").default(0), // 0-100
+  schemaMarkup: doublePrecision("schema_markup").default(0), // 0-100
+  
+  // Keyword analysis (normalized from JSON)
+  primaryKeywords: jsonb("primary_keywords").default([]), // Array of primary keywords
+  longTailKeywords: jsonb("long_tail_keywords").default([]), // Array of long-tail keywords
+  keywordDensity: doublePrecision("keyword_density").default(0), // 0-100
+  semanticKeywords: jsonb("semantic_keywords").default([]), // Array of semantic keywords
+  
+  // LLM optimization metrics (normalized from JSON)
+  definitionsPresent: integer("definitions_present").default(0), // 0 or 1
+  faqsPresent: integer("faqs_present").default(0), // 0 or 1
+  structuredData: integer("structured_data").default(0), // 0 or 1
+  citationFriendly: integer("citation_friendly").default(0), // 0 or 1
+  topicCoverage: doublePrecision("topic_coverage").default(0), // 0-100
+  answerableQuestions: doublePrecision("answerable_questions").default(0), // 0-100
+  
+  // Analysis metadata
+  confidence: doublePrecision("confidence").default(0), // AI confidence score 0-1
+  analysisVersion: varchar("analysis_version", { length: 32 }).default("1.0"),
+  
+  // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const pageInjectedContent = pgTable(
-  "page_injected_content",
-  {
-    pageId: uuid("page_id")
-      .notNull()
-      .references(() => pages.id),
-    injectedContentId: uuid("injected_content_id")
-      .notNull()
-      .references(() => injectedContent.id),
-    createdAt: timestamp("created_at").defaultNow(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.pageId, table.injectedContentId] }),
-  })
-);
+// New table for content-based ratings
+export const contentRatings = pgTable("content_ratings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  pageId: uuid("page_id")
+    .notNull()
+    .references(() => pages.id),
+  analysisResultId: uuid("analysis_result_id")
+    .notNull()
+    .references(() => contentAnalysis.id),
+  sectionType: varchar("section_type", { length: 64 }).notNull(), // 'title', 'description', 'headings', 'content', 'schema', 'images', 'links'
+  currentScore: doublePrecision("current_score").notNull(), // 0-10 score for this section
+  maxScore: doublePrecision("max_score").default(10), // Maximum possible score (default 10)
+  previousScore: doublePrecision("previous_score"), // Previous score before improvement
+  improvementCount: integer("improvement_count").default(0), // How many times this section was improved
+  lastImprovedAt: timestamp("last_improved_at"), // When this section was last improved
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// New table for content-specific recommendations
+export const contentRecommendations = pgTable("content_recommendations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  pageId: uuid("page_id")
+    .notNull()
+    .references(() => pages.id),
+  analysisResultId: uuid("analysis_result_id")
+    .notNull()
+    .references(() => contentAnalysis.id),
+  sectionType: varchar("section_type", { length: 64 }).notNull(), // 'title', 'description', 'headings', 'content', 'schema', 'images', 'links'
+  recommendations: jsonb("recommendations").notNull(), // Array of specific recommendations for this section
+  priority: varchar("priority", { length: 32 }).default('medium'), // 'low', 'medium', 'high', 'critical'
+  estimatedImpact: doublePrecision("estimated_impact").default(0), // Estimated score improvement (0-10)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// New table for tracking content deployments and score improvements
+export const contentDeployments = pgTable("content_deployments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  pageId: uuid("page_id")
+    .notNull()
+    .references(() => pages.id),
+  sectionType: varchar("section_type", { length: 64 }).notNull(), // Which section was improved
+  previousScore: doublePrecision("previous_score").notNull(), // Score before deployment
+  newScore: doublePrecision("new_score").notNull(), // Score after deployment
+  scoreImprovement: doublePrecision("score_improvement").notNull(), // How much the score improved
+  deployedContent: text("deployed_content").notNull(), // The actual content that was deployed
+  aiModel: varchar("ai_model", { length: 128 }), // Which AI model generated the content
+  deployedBy: varchar("deployed_by", { length: 255 }), // User ID who deployed it
+  deployedAt: timestamp("deployed_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+
 
 export const trackerData = pgTable("tracker_data", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -200,3 +263,4 @@ export const leads = pgTable("leads", {
   meta: jsonb("meta").default({}),
   createdAt: timestamp("created_at").defaultNow(),
 });
+

@@ -248,24 +248,15 @@ router.get("/check-sub-status", authenticateJWT, async (req: Request, res: Respo
 
   const authenticatedReq = req as AuthenticatedRequest;
   const userId = authenticatedReq.user?.userId as string;
-
-  const cachedSubStatus = await cache.getUserSubStatus(userId);
-
-  if(cachedSubStatus){
-    res.status(200).json({ isActive : cachedSubStatus?.isActive ? true : false });
-    return
-  }
-
+  
   const {isNewUser} = await userService.ensureUserExists(userId , authenticatedReq.user?.email as string);
-
+  
   if(isNewUser){
     res.status(200).json({ isActive : true });
     return;
   }
-
+  
   const isActive = await userService.isUserSubIsActive(userId);
-
-  await cache.setUserSubStatus(userId, isActive);
 
   res.status(200).json({ isActive });
 });

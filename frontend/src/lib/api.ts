@@ -12,14 +12,14 @@ export interface SiteWithMetrics extends Site {
   pagesScanned?: number;
   totalPages?: number;
   improvements?: number;
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface SiteDetails extends Site {
   trackerId: string;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,7 +42,28 @@ export interface AnalysisResult {
   summary: string;
   issues: string[];
   recommendations: string[];
+  score: number;
   createdAt: string;
+  // New section-based ratings
+  sectionRatings?: {
+    title: number;        // 0-10 score
+    description: number;  // 0-10 score
+    headings: number;     // 0-10 score
+    content: number;      // 0-10 score
+    schema: number;       // 0-10 score
+    images: number;       // 0-10 score
+    links: number;        // 0-10 score
+  };
+  // New section-specific recommendations
+  sectionRecommendations?: {
+    title: string[];
+    description: string[];
+    headings: string[];
+    content: string[];
+    schema: string[];
+    images: string[];
+    links: string[];
+  };
 }
 
 export interface UserProfile {
@@ -468,7 +489,7 @@ export async function updateBillingInfo(
 
 export interface ContentSuggestion {
   contentType: string;
-  suggestions: any;
+  suggestions: unknown;
   pageUrl: string;
   generatedAt: string;
 }
@@ -505,7 +526,7 @@ export interface PageContentData {
   generationContext?: string;
   isActive: number;
   version: number;
-  metadata: any;
+  metadata: unknown;
   createdAt: string;
   updatedAt: string;
 }
@@ -523,7 +544,7 @@ export async function savePageContent(
   optimizedContent: string,
   originalContent?: string,
   generationContext?: string,
-  metadata?: any,
+  metadata?: unknown,
   deployImmediately: boolean = false
 ): Promise<{ message: string; content: PageContentData; deployed: boolean }> {
   const res = await fetch(`${API_BASE}/pages/${pageId}/content`, {
@@ -604,7 +625,7 @@ export interface DeployedContent {
   version: number;
   deployedAt: string | null;
   deployedBy: string | null;
-  metadata: any;
+  metadata: unknown;
 }
 
 // Get all deployed content for a page
@@ -648,7 +669,7 @@ export async function getCachedContentSuggestions(
   token: string,
   pageId: string,
   contentType?: "title" | "description" | "faq" | "paragraph" | "keywords"
-): Promise<{ pageId: string; suggestions: any[] }> {
+): Promise<{ pageId: string; suggestions: unknown[] }> {
   const url = new URL(`${API_BASE}/pages/${pageId}/content-suggestions`);
   if (contentType) {
     url.searchParams.append("contentType", contentType);
@@ -678,7 +699,7 @@ export interface OriginalPageContent {
   analysisContext: {
     score: number;
     summary: string;
-    keywordAnalysis: any;
+    keywordAnalysis: unknown;
     issues: string[];
     recommendations: string[];
     lastAnalyzedAt: string;
@@ -703,7 +724,7 @@ export async function refreshPageContent(
   pageId: string
 ): Promise<{
   message: string;
-  content: any;
+  content: unknown;
   contentSnapshot: string;
   refreshedAt: string;
 }> {
@@ -821,4 +842,142 @@ export async function submitToolLead(params: { email: string; phone?: string; we
     body: JSON.stringify(params),
   });
   return handleResponse(res);
+}
+
+// Section Ratings API
+export async function getSectionRatings(token: string, pageId: string): Promise<{
+  pageId: string;
+  sectionRatings: {
+    title: number;
+    description: number;
+    content: number;
+    schema: number;
+    images: number;
+    links: number;
+  };
+  sectionRecommendations: {
+    title: string[];
+    description: string[];
+    headings: string[];
+    content: string[];
+    schema: string[];
+    images: string[];
+    links: string[];
+  };
+}> {
+  const response = await fetch(`${API_BASE}/pages/${pageId}/section-ratings`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch section ratings');
+  }
+
+  return response.json();
+}
+
+export async function updateSectionRating(
+  token: string, 
+  pageId: string, 
+  sectionType: string, 
+  newScore: number, 
+  deployedContent: string, 
+  aiModel: string = 'gpt-4o-mini'
+): Promise<{
+  message: string;
+  sectionType: string;
+  previousScore: number;
+  newScore: number;
+  scoreImprovement: number;
+}> {
+  const response = await fetch(`${API_BASE}/pages/${pageId}/section-ratings`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sectionType,
+      newScore,
+      deployedContent,
+      aiModel,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update section rating');
+  }
+
+  return response.json();
+}
+
+export async function getSectionImprovements(
+  token: string, 
+  pageId: string, 
+  sectionType: string
+): Promise<{
+  pageId: string;
+  sectionType: string;
+  improvements: Array<{
+    id: string;
+    previousScore: number;
+    newScore: number;
+    scoreImprovement: number;
+    deployedContent: string;
+    deployedAt: string;
+  }>;
+}> {
+  const response = await fetch(`${API_BASE}/pages/${pageId}/section-improvements?sectionType=${sectionType}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch section improvements');
+  }
+
+  return response.json();
+}
+
+export async function generateSectionContent(
+  token: string,
+  pageId: string,
+  sectionType: string,
+  selectedRecommendations: string[],
+  currentContent?: string,
+  additionalContext?: string
+): Promise<{
+  sectionType: string;
+  generatedContent: string;
+  keyPoints: string[];
+  recommendationsAddressed: string[];
+  estimatedScoreImprovement: number;
+  generationContext: string;
+  pageUrl: string;
+  generatedAt: string;
+}> {
+  const response = await fetch(`${API_BASE}/pages/${pageId}/section-content`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      sectionType,
+      selectedRecommendations,
+      currentContent,
+      additionalContext,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to generate section content');
+  }
+
+  return response.json();
 }
