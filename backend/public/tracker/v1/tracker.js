@@ -439,12 +439,12 @@
         }
         
         // Also update H1 tags if specified
-        if (data.updateH1 !== false) {
-          const h1 = document.querySelector('h1');
-          if (h1) {
-            h1.textContent = newTitle;
-          }
-        }
+        // if (data.updateH1 !== false) {
+        //   const h1 = document.querySelector('h1');
+        //   if (h1) {
+        //     h1.textContent = newTitle;
+        //   }
+        // }
         
         consolePrint(`Title updated: ${newTitle}`);
         return true;
