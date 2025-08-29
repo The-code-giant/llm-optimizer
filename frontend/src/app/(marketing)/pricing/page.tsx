@@ -36,7 +36,7 @@ const plans = [
     tagline: "Perfect for small sites getting started with AEO",
     price: "$19",
     period: "/mo",
-    cta: { label: "Start Free Trial", href: "/register" },
+    cta: { label: "Start 7 days for Free", href: "/register" },
     highlight: false,
     includes: [
       "1 website",
