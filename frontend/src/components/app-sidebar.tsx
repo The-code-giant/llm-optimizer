@@ -53,6 +53,11 @@ export const NAV_DATA = {
       url: "/dashboard/auto-agent",
       icon: IconRobot,
     },
+    {
+      title: "Auto Agent Config",
+      url: "/dashboard/auto-agent-config",
+      icon: IconRobot,
+    },
   ],
   navSecondary: [
     {
