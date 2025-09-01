@@ -111,7 +111,7 @@ export default function BotAccessToolPage() {
           <AnimatedDiv initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm text-gray-600 bg-white/60 backdrop-blur">
-                <SparklesIcon className="h-4 w-4 text-blue-600" /> Free tool by Clever Search
+                <SparklesIcon className="h-4 w-4 text-blue-600" /> Free tool by Cleversearch
               </span>
               <h1 className="mt-6 text-4xl font-normal text-gray-900 sm:text-5xl">
                 LLM & Crawler Accessibility Checker
@@ -236,7 +236,7 @@ export default function BotAccessToolPage() {
           <div className="mt-12 rounded-2xl bg-black p-8 text-white">
             <div className="grid gap-8 md:grid-cols-2 md:items-center">
               <div>
-                <span className="text-sm text-gray-400 uppercase tracking-wider mb-2 block">CLEVER SEARCH</span>
+                <span className="text-sm text-gray-400 uppercase tracking-wider mb-2 block">CLEVERSEARCH</span>
                 <h2 className="text-3xl sm:text-4xl font-normal leading-tight">Fix crawlability and get cited by leading AI systems.</h2>
                 <p className="mt-3 text-gray-300">We’ll help you eliminate blockers and structure content for AI understanding.</p>
               </div>
@@ -245,7 +245,7 @@ export default function BotAccessToolPage() {
                   <Button className="bg-white text-black hover:bg-gray-100">Book a demo</Button>
                 </Link>
                 <Link href="/register">
-                  <Button variant="outline" className="border-white text-white hover:bg-white/10">Start free</Button>
+                  <Button variant="outline" className="g-white text-black hover:bg-gray-100">Start free</Button>
                 </Link>
               </div>
             </div>
