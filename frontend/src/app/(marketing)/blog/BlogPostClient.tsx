@@ -41,6 +41,9 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               {meta.title}
             </h1>
+            {meta.featuredImage && (
+              <img src={meta.featuredImage} alt={meta.title}/>
+            )}
             <p className="text-xl text-gray-600 mb-8 leading-relaxed">
               {meta.excerpt}
             </p>

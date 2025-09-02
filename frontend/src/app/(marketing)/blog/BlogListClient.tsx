@@ -12,6 +12,7 @@ export interface BlogMeta {
   excerpt: string;
   author: string;
   avatar: string;
+  featuredImage: string;
   date: string;
   readTime: string;
   category: string;
