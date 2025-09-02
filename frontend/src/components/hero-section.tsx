@@ -166,8 +166,8 @@ export default function HeroSection() {
               className="absolute inset-0 -z-20"
             >
               <Image
-                src="/dashboard/clever-search-site-page-dark.png"
-                alt="background"
+                src="/dashboard/hero-sample.png"
+                alt="Cleversearch admin panel"
                 className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
                 width={2796}
                 height={2008}
@@ -333,8 +333,8 @@ export default function HeroSection() {
                   /> */}
 
                   <Image
-                    src="/dashboard/clever-search-site-page-dark.png"
-                    alt="background"
+                    src="/dashboard/hero-sample.png"
+                    alt="Cleversearch admin panel"
                     className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
                     width={2700}
                     height={1440}
@@ -348,8 +348,8 @@ export default function HeroSection() {
                   /> */}
 
                   <Image
-                    src="/dashboard/clever-search-site-page-dark.png"
-                    alt="background"
+                    src="/dashboard/hero-sample.png"
+                    alt="Cleversearch admin panel"
                     className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
                     width={2700}
                     height={1440}
