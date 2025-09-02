@@ -44,7 +44,7 @@ export default function BlogPostClient({ meta, relatedPosts, children }: BlogPos
             {meta.featuredImage && (
               <img src={meta.featuredImage} alt={meta.title}/>
             )}
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            <p className="text-xl text-gray-600 mb-8 mt-4 leading-relaxed">
               {meta.excerpt}
             </p>
             <div className="flex items-center justify-between pb-8 border-b border-gray-200">
