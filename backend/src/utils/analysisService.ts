@@ -1899,7 +1899,7 @@ Do not include any explanations or markdown formatting.`,
 
     const optimizedBodyText = content.bodyText 
       ? (content.bodyText.length > maxContentLength 
-          ? content.bodyText.substring(0, maxContentLength) + '\n[CONTENT TRUNCATED FOR GPT-5 NANO OPTIMIZATION]'
+          ? content.bodyText.substring(0, maxContentLength)
           : content.bodyText)
       : 'No content found';
 
