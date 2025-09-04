@@ -41,13 +41,15 @@ import {
   Play,
   RefreshCw,
   AlertCircle,
-  // CheckCircle, // Commented out with Content tab
+  CheckCircle,
   // Clock, // Commented out with Content tab
   Target,
   // Edit3, // Commented out with Content tab
   // Plus, // Commented out with Content tab
   // MessageSquare, // Commented out with Content tab
-  // Type, // Commented out with Content tab
+  Type,
+  FileText,
+  Database,
   // Hash, // Commented out with Content tab
   // PenTool, // Commented out with Content tab
   // Trash2, // Commented out with Content tab
@@ -144,6 +146,23 @@ export default function PageAnalysisPage() {
       | null;
   }>({ open: false, contentType: null });
   const [undeploying, setUndeploying] = useState(false);
+
+  // Add scroll functionality
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
+  };
+
+  // Check if content is deployed for a section
+  const isContentDeployed = (contentType: string) => {
+    return contentVersions[contentType]?.some(content => content.isActive === 1) || false;
+  };
 
   // Move fetchData to top-level scope so it can be called from handleUndeploy
   const fetchData = useCallback(async () => {
@@ -607,36 +626,72 @@ export default function PageAnalysisPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3 text-sm">
-                        <p className="text-muted-foreground">
-                          Each section is scored from 0-10. Click &quot;Improve
-                          This Section&quot; to see AI-generated content
-                          suggestions that can boost your scores.
+                      <div className="space-y-2 text-sm">
+                        <p className="text-muted-foreground text-xs">
+                          Click any task to jump to that section.
                         </p>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                          <div className="text-center p-3 bg-green-50 rounded-lg">
-                            <div className="text-green-600 font-semibold">
-                              8-10
+                        <div className="space-y-2">
+                          {/* Title Task */}
+                          <div 
+                            className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => scrollToSection('title-section')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Type className="h-3 w-3 text-blue-500" />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">Optimize Page Title</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {analysis?.sectionRatings?.title || 0}/10
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Excellent
-                            </div>
+                            {isContentDeployed('title') ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                            )}
                           </div>
-                          <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                            <div className="text-yellow-600 font-semibold">
-                              6-7
+
+                          {/* Description Task */}
+                          <div 
+                            className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => scrollToSection('description-section')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-3 w-3 text-green-500" />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">Improve Meta Description</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {analysis?.sectionRatings?.description || 0}/10
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Good
-                            </div>
+                            {isContentDeployed('description') ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                            )}
                           </div>
-                          <div className="text-center p-3 bg-red-50 rounded-lg">
-                            <div className="text-red-600 font-semibold">
-                              0-5
+
+                          {/* Schema Task */}
+                          <div 
+                            className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => scrollToSection('schema-section')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Database className="h-3 w-3 text-red-500" />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">Add Schema Markup</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {analysis?.sectionRatings?.schema || 0}/10
+                                </span>
+                              </div>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              Needs Work
-                            </div>
+                            {isContentDeployed('schema') ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -646,13 +701,12 @@ export default function PageAnalysisPage() {
                   {/* Tabs */}
                   <Tabs defaultValue="Content" className="w-full">
                     <TabsList className="mt-2">
-                      {/* <TabsTrigger value="content">Content</TabsTrigger> */}
                       <TabsTrigger value="Content">Content</TabsTrigger>
-                      <TabsTrigger value="overview">Overview</TabsTrigger>
+                      <TabsTrigger value="Overview">Overview</TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
-                    <TabsContent value="overview" className="mt-4 space-y-6">
+                    <TabsContent value="Overview" className="mt-4 space-y-6">
                       <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center space-x-2">

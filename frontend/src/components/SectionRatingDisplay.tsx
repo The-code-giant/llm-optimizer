@@ -182,7 +182,7 @@ export default function SectionRatingDisplay({
           const hasRecommendations = recommendations.length > 0;
 
           return (
-            <Card key={sectionType} className="hover:shadow-md transition-shadow">
+            <Card key={sectionType} id={`${sectionType}-section`} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
