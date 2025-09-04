@@ -5,7 +5,7 @@ import {
   contentDeployments,
   contentAnalysis 
 } from '../db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 
 export interface SectionRating {
   title: number;        // 0-10 score
@@ -97,23 +97,57 @@ export class EnhancedRatingService {
     pageId: string, 
     sectionType: string
   ): Promise<string[]> {
+    console.log(`🔍 Getting recommendations for ${sectionType} section on page ${pageId}`);
+    
     const result = await db.select()
       .from(contentRecommendations)
       .where(and(
         eq(contentRecommendations.pageId, pageId),
         eq(contentRecommendations.sectionType, sectionType)
       ))
-      .orderBy(contentRecommendations.createdAt)
-      .limit(1);
+      .orderBy(desc(contentRecommendations.createdAt));
+
+    console.log(`📊 Found ${result.length} recommendation records for ${sectionType}`);
 
     if (result.length === 0) return [];
     
-    try {
-      const recommendations = result[0].recommendations as any;
-      return Array.isArray(recommendations) ? recommendations : [];
-    } catch {
-      return [];
+    // Aggregate all recommendations from all records
+    const allRecommendations: string[] = [];
+    
+    for (const record of result) {
+      try {
+        const recommendations = record.recommendations as any;
+        console.log(`📝 Processing record with recommendations:`, recommendations);
+        
+        if (Array.isArray(recommendations)) {
+          // If it's an array of strings, add them directly
+          if (typeof recommendations[0] === 'string') {
+            allRecommendations.push(...recommendations);
+          } else {
+            // If it's an array of objects, extract the title
+            for (const rec of recommendations) {
+              if (rec && typeof rec === 'object') {
+                // Extract the title from the recommendation object
+                if (rec.title) {
+                  allRecommendations.push(rec.title);
+                } else if (rec.description) {
+                  // If no title, use description but truncate it
+                  const desc = rec.description as string;
+                  allRecommendations.push(desc.length > 100 ? desc.substring(0, 100) + '...' : desc);
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing recommendations:', error);
+      }
     }
+    
+    console.log(`✅ Final recommendations for ${sectionType}:`, allRecommendations);
+    
+    // Remove duplicates and return
+    return [...new Set(allRecommendations)];
   }
 
   /**

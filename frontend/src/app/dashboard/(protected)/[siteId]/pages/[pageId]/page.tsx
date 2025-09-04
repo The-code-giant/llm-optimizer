@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
 import {
@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator"; // Commented out with Content tab
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -36,33 +36,34 @@ import {
   ArrowLeft,
   Globe,
   BarChart3,
-  FileText,
+  // FileText, // Commented out with Content tab
   ExternalLink,
   Play,
   RefreshCw,
   AlertCircle,
-  CheckCircle,
-  Clock,
+  // CheckCircle, // Commented out with Content tab
+  // Clock, // Commented out with Content tab
   Target,
-  Edit3,
-  Plus,
-  MessageSquare,
-  Type,
-  Hash,
-  PenTool,
-  Trash2,
+  // Edit3, // Commented out with Content tab
+  // Plus, // Commented out with Content tab
+  // MessageSquare, // Commented out with Content tab
+  // Type, // Commented out with Content tab
+  // Hash, // Commented out with Content tab
+  // PenTool, // Commented out with Content tab
+  // Trash2, // Commented out with Content tab
 } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/components/Toast";
 import ContentEditorModal from "@/components/content-editor-modal";
 import SectionRatingDisplay from "@/components/SectionRatingDisplay";
-import SectionImprovementForm from "@/components/SectionImprovementForm";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import SectionImprovementModal from "@/components/SectionImprovementModal";
+// Commented out with Content tab
+// import {
+//   Accordion,
+//   AccordionItem,
+//   AccordionTrigger,
+//   AccordionContent,
+// } from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -99,29 +100,28 @@ export default function PageAnalysisPage() {
     description: string;
   } | null>(null);
 
-  // New state for section-based ratings
-  const [improvingSection, setImprovingSection] = useState<{
+  // Modal state
+  const [improvementModal, setImprovementModal] = useState<{
+    isOpen: boolean;
     sectionType: string;
     recommendations: string[];
     currentScore: number;
   } | null>(null);
 
-  // Ref for scrolling to improvement section
-  const improvementSectionRef = useRef<HTMLDivElement>(null);
-
   // Content state (this would normally be persisted in a database)
-  const [contentData] = useState({
-    title: "",
-    description: "",
-    faqs: [] as string[],
-    paragraphs: [] as string[],
-    keywords: {
-      primary: [] as string[],
-      longTail: [] as string[],
-      semantic: [] as string[],
-      missing: [] as string[],
-    },
-  });
+  // Commented out with Content tab
+  // const [contentData] = useState({
+  //   title: "",
+  //   description: "",
+  //   faqs: [] as string[],
+  //   paragraphs: [] as string[],
+  //   keywords: {
+  //     primary: [] as string[],
+  //     longTail: [] as string[],
+  //     semantic: [] as string[],
+  //     missing: [] as string[],
+  //   },
+  // });
 
   // Add state for original meta description
   const [originalMetaDescription, setOriginalMetaDescription] =
@@ -223,7 +223,7 @@ export default function PageAnalysisPage() {
     }
 
     fetchData();
-  }, [isLoaded, isSignedIn, router, fetchData]);
+  }, [isLoaded, isSignedIn, router, fetchData, pageId]);
 
   async function handleTriggerAnalysis() {
     setTriggering(true);
@@ -263,36 +263,38 @@ export default function PageAnalysisPage() {
     }
   }
 
-  const getScoreBadge = (score: number) => {
-    if (score >= 80)
-      return (
-        <Badge variant="default" className="bg-green-500">
-          High ({score}%)
-        </Badge>
-      );
-    if (score >= 60)
-      return (
-        <Badge variant="secondary" className="bg-yellow-500">
-          Medium ({score}%)
-        </Badge>
-      );
-    return <Badge variant="destructive">Low ({score}%)</Badge>;
-  };
+  // Commented out with Content tab
+  // const getScoreBadge = (score: number) => {
+  //   if (score >= 80)
+  //     return (
+  //       <Badge variant="default" className="bg-green-500">
+  //         High ({score}%)
+  //       </Badge>
+  //     );
+  //   if (score >= 60)
+  //     return (
+  //       <Badge variant="secondary" className="bg-yellow-500">
+  //         Medium ({score}%)
+  //       </Badge>
+  //     );
+  //   return <Badge variant="destructive">Low ({score}%)</Badge>;
+  // };
 
-  const openEditor = (
-    contentType: "title" | "description" | "faq" | "paragraph" | "keywords",
-    currentContent: string,
-    title: string,
-    description: string
-  ) => {
-    setEditorModal({
-      isOpen: true,
-      contentType,
-      currentContent,
-      title,
-      description,
-    });
-  };
+  // Commented out with Content tab
+  // const openEditor = (
+  //   contentType: "title" | "description" | "faq" | "paragraph" | "keywords",
+  //   currentContent: string,
+  //   title: string,
+  //   description: string
+  // ) => {
+  //   setEditorModal({
+  //     isOpen: true,
+  //     contentType,
+  //     currentContent,
+  //     title,
+  //     description,
+  //   });
+  // };
 
   const handleContentSave = async (
     content: string,
@@ -554,6 +556,8 @@ export default function PageAnalysisPage() {
                   </div>
 
                   {/* Onboarding / Next-step helper */}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg">
@@ -596,12 +600,55 @@ export default function PageAnalysisPage() {
                       </div>
                     </CardContent>
                   </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        Your Tasks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 text-sm">
+                        <p className="text-muted-foreground">
+                          Each section is scored from 0-10. Click &quot;Improve
+                          This Section&quot; to see AI-generated content
+                          suggestions that can boost your scores.
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                          <div className="text-center p-3 bg-green-50 rounded-lg">
+                            <div className="text-green-600 font-semibold">
+                              8-10
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Excellent
+                            </div>
+                          </div>
+                          <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                            <div className="text-yellow-600 font-semibold">
+                              6-7
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Good
+                            </div>
+                          </div>
+                          <div className="text-center p-3 bg-red-50 rounded-lg">
+                            <div className="text-red-600 font-semibold">
+                              0-5
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Needs Work
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  </div>
                   {/* Tabs */}
-                  <Tabs defaultValue="analysis" className="w-full">
+                  <Tabs defaultValue="Content" className="w-full">
                     <TabsList className="mt-2">
                       {/* <TabsTrigger value="content">Content</TabsTrigger> */}
+                      <TabsTrigger value="Content">Content</TabsTrigger>
                       <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="analysis">Content</TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
@@ -685,9 +732,9 @@ export default function PageAnalysisPage() {
                     {/* Content Tab */}
                     {/* <TabsContent value="content" className="mt-4 space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Left Column - Content Editors */}
+                        // Left Column - Content Editors
                         <div className="space-y-6">
-                          {/* Title Editor */}
+                          // Title Editor
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center justify-between">
@@ -787,7 +834,7 @@ export default function PageAnalysisPage() {
                             </CardContent>
                           </Card>
 
-                          {/* Description Editor */}
+                          // Description Editor
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center justify-between">
@@ -883,7 +930,7 @@ export default function PageAnalysisPage() {
                             </CardContent>
                           </Card>
 
-                          {/* FAQ Section */}
+                          // FAQ Section
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center justify-between">
@@ -978,7 +1025,7 @@ export default function PageAnalysisPage() {
                             </CardContent>
                           </Card>
 
-                          {/* Content Paragraphs */}
+                          // Content Paragraphs
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center justify-between">
@@ -1084,9 +1131,9 @@ export default function PageAnalysisPage() {
                           </Card>
                         </div>
 
-                        {/* Right Column - Keywords */}
+                        // Right Column - Keywords
                         <div className="space-y-6">
-                          {/* Keywords Section */}
+                          // Keywords Section
                           <Card>
                             <CardHeader>
                               <CardTitle className="flex items-center justify-between">
@@ -1240,12 +1287,12 @@ export default function PageAnalysisPage() {
                             </CardContent>
                           </Card>
                         </div>
-                        {/* Close grid wrapper */}
+                        // Close grid wrapper
                       </div>
                     </TabsContent> */}
 
                     {/* Analysis Tab */}
-                    <TabsContent value="analysis" className="mt-4 space-y-6">
+                    <TabsContent value="Content" className="mt-4 space-y-6">
                       {analysis ? (
                         <>
                           {/* Section Ratings */}
@@ -1272,7 +1319,8 @@ export default function PageAnalysisPage() {
                                     sectionType,
                                     recommendations
                                   ) => {
-                                    setImprovingSection({
+                                    setImprovementModal({
+                                      isOpen: true,
                                       sectionType,
                                       recommendations,
                                       currentScore:
@@ -1280,111 +1328,62 @@ export default function PageAnalysisPage() {
                                           sectionType as keyof typeof analysis.sectionRatings
                                         ] || 0,
                                     });
-                                    
-                                    // Scroll to improvement section after state update
-                                    setTimeout(() => {
-                                      improvementSectionRef.current?.scrollIntoView({
-                                        behavior: "smooth",
-                                        block: "start"
-                                      });
-                                    }, 100);
                                   }}
                                 />
                               </CardContent>
                             </Card>
                           )}
 
-                          {/* Section Improvement Form */}
-                          {improvingSection && (
-                            <Card ref={improvementSectionRef}>
-                              <CardContent className="pt-6">
-                                <SectionImprovementForm
-                                  pageId={pageId}
-                                  sectionType={improvingSection.sectionType}
-                                  recommendations={
-                                    improvingSection.recommendations
+                          {/* Section Improvement Modal */}
+                          {improvementModal && (
+                            <SectionImprovementModal
+                              isOpen={improvementModal.isOpen}
+                              pageId={pageId}
+                              sectionType={improvementModal.sectionType}
+                              recommendations={improvementModal.recommendations}
+                              currentScore={improvementModal.currentScore}
+                              onClose={() => setImprovementModal(null)}
+                              onContentGenerated={async (
+                                content: string,
+                                newScore: number
+                              ) => {
+                                try {
+                                  const token = await getToken();
+                                  if (!token) {
+                                    setToast({
+                                      message: "Authentication error",
+                                      type: "error",
+                                    });
+                                    return;
                                   }
-                                  currentScore={improvingSection.currentScore}
-                                  onBack={() => setImprovingSection(null)}
-                                  onGenerateContent={async (
+
+                                  // Update section rating in backend
+                                  await updateSectionRating(
+                                    token,
                                     pageId,
-                                    contentType,
-                                    context
-                                  ) => {
-                                    try {
-                                      const token = await getToken();
-                                      if (!token) {
-                                        throw new Error(
-                                          "Authentication token not available"
-                                        );
-                                      }
-
-                                      const response =
-                                        await generateContentSuggestions(
-                                          token,
-                                          pageId,
-                                          contentType as
-                                            | "title"
-                                            | "description"
-                                            | "faq"
-                                            | "paragraph"
-                                            | "keywords",
-                                          "", // currentContent
-                                          context // additionalContext
-                                        );
-
-                                      return response.suggestions || [];
-                                    } catch (error) {
-                                      console.error(
-                                        "Failed to generate content:",
-                                        error
-                                      );
-                                      throw error;
-                                    }
-                                  }}
-                                  onContentGenerated={async (
+                                    improvementModal.sectionType,
+                                    newScore,
                                     content,
-                                    newScore
-                                  ) => {
-                                    try {
-                                      const token = await getToken();
-                                      if (!token) {
-                                        setToast({
-                                          message: "Authentication error",
-                                          type: "error",
-                                        });
-                                        return;
-                                      }
+                                    "gpt-4o-mini"
+                                  );
 
-                                      // Update section rating in backend
-                                      await updateSectionRating(
-                                        token,
-                                        pageId,
-                                        improvingSection.sectionType,
-                                        newScore,
-                                        content,
-                                        "gpt-4o-mini"
-                                      );
+                                  setToast({
+                                    message: `${improvementModal.sectionType} section improved from ${improvementModal.currentScore}/10 to ${newScore}/10!`,
+                                    type: "success",
+                                  });
 
-                                      setToast({
-                                        message: `${improvingSection.sectionType} section improved from ${improvingSection.currentScore}/10 to ${newScore}/10!`,
-                                        type: "success",
-                                      });
-
-                                      // Refresh data to show updated ratings
-                                      await fetchData();
-                                      setImprovingSection(null);
-                                    } catch (error) {
-                                      const message =
-                                        error instanceof Error
-                                          ? error.message
-                                          : "Failed to update section rating";
-                                      setToast({ message, type: "error" });
-                                    }
-                                  }}
-                                />
-                              </CardContent>
-                            </Card>
+                                  // Refresh data to show updated ratings
+                                  await fetchData();
+                                  setImprovementModal(null);
+                                } catch (error) {
+                                  const message =
+                                    error instanceof Error
+                                      ? error.message
+                                      : "Failed to update section rating";
+                                  setToast({ message, type: "error" });
+                                }
+                              }}
+                            />
                           )}
 
                           {/* Analysis Results */}

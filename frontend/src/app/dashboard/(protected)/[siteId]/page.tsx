@@ -35,6 +35,7 @@ import PageContentDeploymentModal from "@/components/content-deployment-modal";
 import Toast from "@/components/Toast";
 import TrackerAnalytics from "@/components/tracker-analytics";
 import TrackerScriptModal from "@/components/tracker-script-modal";
+import GettingStartedChecklist from "@/components/getting-started-checklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -460,6 +461,7 @@ export default function SiteDetailsPage() {
 
                   {/* Top Action Buttons */}
                   {site && activeTab === "overview" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card data-tour="quick-actions">
                       <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
@@ -537,6 +539,7 @@ export default function SiteDetailsPage() {
                                       <AddSinglePageForm
                                         siteId={siteId}
                                         siteUrl={site.url}
+                                        onCompleted={() => setShowPageManagement(false)}
                                         onToast={(t) => setToast(t)}
                                       />
                                     )}
@@ -558,6 +561,18 @@ export default function SiteDetailsPage() {
                         </div>
                       </CardContent>
                     </Card>
+                                        <GettingStartedChecklist
+                      site={site}
+                      pages={pages}
+                      recentlyScanned={recentlyScanned}
+                      pagesAbove80={pagesAbove80}
+                      onShowTrackerScript={() => setShowTrackerScript(true)}
+                      onShowPageManagement={() => setShowPageManagement(true)}
+                      onSetActiveTab={setActiveTab}
+                      onSetScoreFilter={setScoreFilter}
+                    />
+                    </div>
+
                   )}
 
                   {error && (

@@ -282,7 +282,7 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
         url: page.url,
         contentSnapshot: page.contentSnapshot || undefined,
         forceRefresh
-      });
+      }) as any; // Type assertion to avoid TypeScript issues
 
       // Calculate section-based score if section ratings are available
       let finalScore = analysisResult.score; // Default to AI analysis score
@@ -308,8 +308,8 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
         pageId: page.id,
         overallScore: finalScore,
         llmModelUsed: 'gpt-4o-mini',
-        pageSummary: analysisResult.pageSummary,
-        analysisSummary: analysisResult.summary,
+        pageSummary: (analysisResult as any).pageSummary,
+        analysisSummary: (analysisResult as any).summary,
         
         // Content quality metrics
         contentClarity: analysisResult.contentQuality?.clarity || 0,
@@ -351,53 +351,143 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
       await db.delete(contentRecommendations)
         .where(eq(contentRecommendations.pageId, page.id));
 
-      // Generate fresh section ratings and recommendations
-      const sectionRatings = {
-        title: Math.round(analysisResult.technicalSEO.titleOptimization / 10),
-        description: Math.round(analysisResult.technicalSEO.metaDescription / 10),
-        headings: Math.round(analysisResult.technicalSEO.headingStructure / 10),
-        content: Math.round(analysisResult.contentQuality.completeness / 10),
-        schema: Math.round(analysisResult.technicalSEO.schemaMarkup / 10),
-        images: Math.round(analysisResult.contentQuality.structure / 10), // Use structure as proxy for images
-        links: Math.round(analysisResult.contentQuality.structure / 10)  // Use structure as proxy for links
+      // Generate AI-powered recommendations instead of static ones
+      console.log('🤖 Generating AI-powered recommendations...');
+      let aiRecommendations;
+      try {
+                 aiRecommendations = await AnalysisService.generateAIRecommendations(
+           analysisResult.content,
+           analysisResult as any,
+           analysisResult.pageSummary || ''
+         );
+        console.log('✅ AI recommendations generated successfully');
+      } catch (aiError) {
+        console.error('❌ AI recommendation generation failed, falling back to basic recommendations:', aiError);
+        // Fallback to basic recommendations if AI fails
+        aiRecommendations = {
+          sections: [
+            {
+              sectionType: 'title',
+              currentScore: Math.round(analysisResult.technicalSEO.titleOptimization / 10),
+              recommendations: analysisResult.technicalSEO.titleOptimization < 70 ? [{
+                priority: 'high',
+                category: 'SEO',
+                title: 'Optimize page title',
+                description: 'Improve title for better SEO and click-through rates',
+                expectedImpact: 2,
+                implementation: 'Include primary keywords and keep length 50-60 characters'
+              }] : [],
+              overallAssessment: 'Title needs optimization',
+              estimatedImprovement: 2
+            },
+            {
+              sectionType: 'description',
+              currentScore: Math.round(analysisResult.technicalSEO.metaDescription / 10),
+              recommendations: analysisResult.technicalSEO.metaDescription < 70 ? [{
+                priority: 'high',
+                category: 'SEO',
+                title: 'Optimize meta description',
+                description: 'Improve meta description for better click-through rates',
+                expectedImpact: 2,
+                implementation: 'Include primary keywords and keep length 150-160 characters'
+              }] : [],
+              overallAssessment: 'Meta description needs optimization',
+              estimatedImprovement: 2
+            },
+            {
+              sectionType: 'headings',
+              currentScore: Math.round(analysisResult.technicalSEO.headingStructure / 10),
+              recommendations: analysisResult.technicalSEO.headingStructure < 70 ? [{
+                priority: 'medium',
+                category: 'SEO',
+                title: 'Improve heading structure',
+                description: 'Enhance heading hierarchy for better content organization',
+                expectedImpact: 1.5,
+                implementation: 'Use proper H1-H6 hierarchy with descriptive headings'
+              }] : [],
+              overallAssessment: 'Heading structure needs improvement',
+              estimatedImprovement: 1.5
+            },
+            {
+              sectionType: 'content',
+              currentScore: Math.round(analysisResult.contentQuality.completeness / 10),
+              recommendations: analysisResult.contentQuality.completeness < 70 ? [{
+                priority: 'medium',
+                category: 'Content',
+                title: 'Enhance content quality',
+                description: 'Improve content comprehensiveness and structure',
+                expectedImpact: 2,
+                implementation: 'Add more detailed information, examples, and structured content'
+              }] : [],
+              overallAssessment: 'Content quality needs improvement',
+              estimatedImprovement: 2
+            },
+            {
+              sectionType: 'schema',
+              currentScore: Math.round(analysisResult.technicalSEO.schemaMarkup / 10),
+              recommendations: analysisResult.technicalSEO.schemaMarkup < 70 ? [{
+                priority: 'medium',
+                category: 'Technical',
+                title: 'Implement structured data',
+                description: 'Add schema markup for better search engine understanding',
+                expectedImpact: 1.5,
+                implementation: 'Add JSON-LD structured data markup'
+              }] : [],
+              overallAssessment: 'Schema markup needs implementation',
+              estimatedImprovement: 1.5
+            },
+            {
+              sectionType: 'images',
+              currentScore: Math.round(analysisResult.contentQuality.structure / 10),
+              recommendations: analysisResult.contentQuality.structure < 70 ? [{
+                priority: 'low',
+                category: 'UX',
+                title: 'Optimize images',
+                description: 'Improve image optimization and accessibility',
+                expectedImpact: 1,
+                implementation: 'Add alt text and optimize image file sizes'
+              }] : [],
+              overallAssessment: 'Image optimization needed',
+              estimatedImprovement: 1
+            },
+            {
+              sectionType: 'links',
+              currentScore: Math.round(analysisResult.contentQuality.structure / 10),
+              recommendations: analysisResult.contentQuality.structure < 70 ? [{
+                priority: 'low',
+                category: 'SEO',
+                title: 'Improve internal linking',
+                description: 'Enhance internal link structure',
+                expectedImpact: 1,
+                implementation: 'Add relevant internal links with descriptive anchor text'
+              }] : [],
+              overallAssessment: 'Internal linking needs improvement',
+              estimatedImprovement: 1
+            }
+          ]
+        };
+      }
+
+      // Convert AI recommendations to the format expected by EnhancedRatingService
+      const contentRecommendationsData = {
+        title: aiRecommendations.sections.find(s => s.sectionType === 'title')?.recommendations.map(r => r.title) || [],
+        description: aiRecommendations.sections.find(s => s.sectionType === 'description')?.recommendations.map(r => r.title) || [],
+        headings: aiRecommendations.sections.find(s => s.sectionType === 'headings')?.recommendations.map(r => r.title) || [],
+        content: aiRecommendations.sections.find(s => s.sectionType === 'content')?.recommendations.map(r => r.title) || [],
+        schema: aiRecommendations.sections.find(s => s.sectionType === 'schema')?.recommendations.map(r => r.title) || [],
+        images: aiRecommendations.sections.find(s => s.sectionType === 'images')?.recommendations.map(r => r.title) || [],
+        links: aiRecommendations.sections.find(s => s.sectionType === 'links')?.recommendations.map(r => r.title) || []
       };
 
-      const contentRecommendationsData = {
-        title: analysisResult.technicalSEO.titleOptimization < 70 ? [
-          'Include primary keywords in the title',
-          'Keep title length between 50-60 characters',
-          'Make title compelling and click-worthy'
-        ] : [],
-        description: analysisResult.technicalSEO.metaDescription < 70 ? [
-          'Include a clear call-to-action',
-          'Keep description between 150-160 characters',
-          'Include relevant keywords naturally'
-        ] : [],
-        headings: analysisResult.technicalSEO.headingStructure < 70 ? [
-          'Use proper H1-H6 hierarchy',
-          'Include keywords in headings',
-          'Make headings descriptive and scannable'
-        ] : [],
-        content: analysisResult.contentQuality.completeness < 70 ? [
-          'Add more comprehensive content coverage',
-          'Include examples and case studies',
-          'Address common user questions'
-        ] : [],
-        schema: analysisResult.technicalSEO.schemaMarkup < 70 ? [
-          'Implement structured data markup',
-          'Add FAQ schema if applicable',
-          'Include organization schema'
-        ] : [],
-        images: analysisResult.contentQuality.structure < 70 ? [
-          'Add descriptive alt text to images',
-          'Optimize image file sizes',
-          'Use relevant, high-quality images'
-        ] : [],
-        links: analysisResult.contentQuality.structure < 70 ? [
-          'Add internal links to related content',
-          'Use descriptive anchor text',
-          'Create logical site navigation'
-        ] : []
+      // Generate section ratings from AI recommendations
+      const sectionRatings = {
+        title: aiRecommendations.sections.find(s => s.sectionType === 'title')?.currentScore || Math.round(analysisResult.technicalSEO.titleOptimization / 10),
+        description: aiRecommendations.sections.find(s => s.sectionType === 'description')?.currentScore || Math.round(analysisResult.technicalSEO.metaDescription / 10),
+        headings: aiRecommendations.sections.find(s => s.sectionType === 'headings')?.currentScore || Math.round(analysisResult.technicalSEO.headingStructure / 10),
+        content: aiRecommendations.sections.find(s => s.sectionType === 'content')?.currentScore || Math.round(analysisResult.contentQuality.completeness / 10),
+        schema: aiRecommendations.sections.find(s => s.sectionType === 'schema')?.currentScore || Math.round(analysisResult.technicalSEO.schemaMarkup / 10),
+        images: aiRecommendations.sections.find(s => s.sectionType === 'images')?.currentScore || Math.round(analysisResult.contentQuality.structure / 10),
+        links: aiRecommendations.sections.find(s => s.sectionType === 'links')?.currentScore || Math.round(analysisResult.contentQuality.structure / 10)
       };
 
       // Save fresh section ratings and recommendations
@@ -421,9 +511,9 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
         analysis: {
           id: newAnalysis[0].id,
           pageId: page.id,
-          summary: analysisResult.summary,
-          issues: analysisResult.issues,
-          recommendations: analysisResult.recommendations,
+                  summary: (analysisResult as any).summary,
+        issues: (analysisResult as any).issues,
+        recommendations: (analysisResult as any).recommendations,
           score: finalScore,
           sectionRatings,
           contentRecommendations: contentRecommendationsData,

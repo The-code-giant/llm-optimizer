@@ -490,7 +490,15 @@ ${content.bodyText || 'No content found'}
     analysisResult: AnalysisResult, 
     pageSummary: string
   ): Promise<PageAnalysisResult> {
+    console.log('🎯 AnalysisService.generateAIRecommendations called!');
     console.log('🤖 Generating AI-powered recommendations...');
+    console.log('🔑 OpenAI API Key configured:', !!process.env.OPENAI_API_KEY);
+    console.log('📄 Content being analyzed:', {
+      url: content.url,
+      title: content.title,
+      titleLength: content.title?.length || 0,
+      contentLength: content.bodyText?.length || 0
+    });
     
     try {
       const aiAnalysis = await AIRecommendationAgent.generatePageRecommendations(
@@ -500,9 +508,18 @@ ${content.bodyText || 'No content found'}
       );
 
       console.log(`✅ Generated AI recommendations for ${aiAnalysis.sections.length} sections`);
+      console.log('📊 AI Recommendations Preview:', aiAnalysis.sections.map(s => ({
+        section: s.sectionType,
+        score: s.currentScore,
+        recommendationsCount: s.recommendations.length,
+        firstRecommendation: s.recommendations[0]?.title || 'No title'
+      })));
+      
       return aiAnalysis;
     } catch (error) {
       console.error('❌ Failed to generate AI recommendations:', error);
+      console.error('❌ Error details:', error instanceof Error ? error.message : 'Unknown error');
+      console.log('🔄 Falling back to basic recommendations...');
       // Fallback to basic recommendations if AI fails
       return this.generateFallbackRecommendations(content, analysisResult);
     }
@@ -512,25 +529,142 @@ ${content.bodyText || 'No content found'}
    * Fallback recommendations if AI generation fails
    */
   private static generateFallbackRecommendations(content: PageContent, analysisResult: AnalysisResult): PageAnalysisResult {
+    console.log('🔄 Generating fallback recommendations based on analysis data');
+    
+    const sections = [
+      {
+        sectionType: 'title' as const,
+        currentScore: Math.round((analysisResult.technicalSEO?.titleOptimization ?? 0) / 10),
+        issues: content.title ? [
+          content.title.length > 60 ? 'Title too long' : 'Title optimization needed',
+          !analysisResult.keywordAnalysis.primaryKeywords.some(kw => content.title?.toLowerCase().includes(kw.toLowerCase())) ? 'Missing primary keywords' : 'Keyword integration needed'
+        ] : ['No title found'],
+        recommendations: [{
+          priority: 'high' as const,
+          category: 'SEO',
+          title: content.title ? 
+            `Optimize title "${content.title}" for better SEO` : 
+            'Add a compelling page title',
+          description: `Improve title for better SEO and click-through rates. Current length: ${content.title?.length || 0} characters`,
+          expectedImpact: 2,
+          implementation: 'Include primary keywords and keep length 50-60 characters'
+        }],
+        overallAssessment: 'Title needs optimization',
+        estimatedImprovement: 2
+      },
+      {
+        sectionType: 'description' as const,
+        currentScore: Math.round((analysisResult.technicalSEO?.metaDescription ?? 0) / 10),
+        issues: content.metaDescription ? [
+          content.metaDescription.length > 160 ? 'Meta description too long' : 'Meta description optimization needed',
+          !analysisResult.keywordAnalysis.primaryKeywords.some(kw => content.metaDescription?.toLowerCase().includes(kw.toLowerCase())) ? 'Missing primary keywords' : 'Keyword integration needed'
+        ] : ['No meta description found'],
+        recommendations: [{
+          priority: 'high' as const,
+          category: 'SEO',
+          title: content.metaDescription ? 
+            `Optimize meta description for better CTR` : 
+            'Add a compelling meta description',
+          description: `Improve meta description for better click-through rates. Current length: ${content.metaDescription?.length || 0} characters`,
+          expectedImpact: 2,
+          implementation: 'Include primary keywords and keep length 150-160 characters'
+        }],
+        overallAssessment: 'Meta description needs optimization',
+        estimatedImprovement: 2
+      },
+      {
+        sectionType: 'headings' as const,
+        currentScore: Math.round((analysisResult.technicalSEO?.headingStructure ?? 0) / 10),
+        issues: content.headings && content.headings.length > 0 ? [
+          content.headings.length < 3 ? 'Insufficient heading structure' : 'Heading optimization needed',
+          !analysisResult.keywordAnalysis.primaryKeywords.some(kw => content.headings?.some(h => h.toLowerCase().includes(kw.toLowerCase()))) ? 'Missing keywords in headings' : 'Keyword integration needed'
+        ] : ['No headings found'],
+        recommendations: [{
+          priority: 'medium' as const,
+          category: 'SEO',
+          title: 'Improve heading structure',
+          description: `Enhance heading hierarchy for better content organization. Found ${content.headings?.length || 0} headings`,
+          expectedImpact: 1.5,
+          implementation: 'Use proper H1-H6 hierarchy with descriptive headings'
+        }],
+        overallAssessment: 'Heading structure needs improvement',
+        estimatedImprovement: 1.5
+      },
+      {
+        sectionType: 'content' as const,
+        currentScore: Math.round((analysisResult.contentQuality?.completeness ?? 0) / 10),
+        issues: content.bodyText ? [
+          analysisResult.contentQuality.completeness < 70 ? 'Content needs more depth' : 'Content optimization needed',
+          analysisResult.llmOptimization.faqsPresent ? 'FAQs present' : 'Missing FAQ section',
+          analysisResult.llmOptimization.definitionsPresent ? 'Definitions present' : 'Missing key definitions'
+        ] : ['No content found'],
+        recommendations: [{
+          priority: 'medium' as const,
+          category: 'Content',
+          title: 'Enhance content quality',
+          description: `Improve content comprehensiveness and structure. Current content length: ${content.bodyText?.length || 0} characters`,
+          expectedImpact: 2,
+          implementation: 'Add more detailed information, examples, and structured content'
+        }],
+        overallAssessment: 'Content quality needs improvement',
+        estimatedImprovement: 2
+      },
+      {
+        sectionType: 'schema' as const,
+        currentScore: Math.round((analysisResult.technicalSEO?.schemaMarkup ?? 0) / 10),
+        issues: content.schemaMarkup && content.schemaMarkup.length > 0 ? [
+          'Schema markup present but may need optimization'
+        ] : ['No schema markup found'],
+        recommendations: [{
+          priority: 'medium' as const,
+          category: 'Technical',
+          title: 'Add structured data',
+          description: 'Implement schema markup to help search engines understand content',
+          expectedImpact: 1.5,
+          implementation: 'Add JSON-LD schema markup for better search engine understanding'
+        }],
+        overallAssessment: 'Schema markup needs implementation',
+        estimatedImprovement: 1.5
+      },
+      {
+        sectionType: 'images' as const,
+        currentScore: content.images && content.images.length > 0 ? 5 : 0,
+        issues: content.images && content.images.length > 0 ? [
+          content.images.filter(img => !img.alt).length > 0 ? 'Images missing alt text' : 'Image optimization needed'
+        ] : ['No images found'],
+        recommendations: [{
+          priority: 'low' as const,
+          category: 'SEO',
+          title: 'Optimize images',
+          description: `Improve image optimization. Found ${content.images?.length || 0} images`,
+          expectedImpact: 1,
+          implementation: 'Add descriptive alt text and optimize image file sizes'
+        }],
+        overallAssessment: 'Image optimization needed',
+        estimatedImprovement: 1
+      },
+      {
+        sectionType: 'links' as const,
+        currentScore: content.links && content.links.length > 0 ? 5 : 0,
+        issues: content.links && content.links.length > 0 ? [
+          'Internal linking strategy needs improvement'
+        ] : ['No internal links found'],
+        recommendations: [{
+          priority: 'low' as const,
+          category: 'UX',
+          title: 'Improve internal linking',
+          description: `Enhance internal linking strategy. Found ${content.links?.length || 0} internal links`,
+          expectedImpact: 1,
+          implementation: 'Add relevant internal links to improve user navigation'
+        }],
+        overallAssessment: 'Internal linking needs improvement',
+        estimatedImprovement: 1
+      }
+    ];
+
     return {
-      sections: [
-        {
-          sectionType: 'title',
-          currentScore: Math.round((analysisResult.technicalSEO?.titleOptimization ?? 0) / 10),
-          issues: ['Title optimization needed'],
-          recommendations: [{
-            priority: 'high' as const,
-            category: 'SEO',
-            title: 'Optimize page title',
-            description: 'Improve title for better SEO and click-through rates',
-            expectedImpact: 2,
-            implementation: 'Include primary keywords and keep length 50-60 characters'
-          }],
-          overallAssessment: 'Title needs optimization',
-          estimatedImprovement: 2
-        }
-      ],
-      overallPageAssessment: 'Page needs optimization',
+      sections,
+      overallPageAssessment: `Page needs optimization. Overall score: ${analysisResult.score}/100`,
       criticalIssues: ['Content optimization required'],
       quickWins: ['Improve title and meta description'],
       longTermStrategy: ['Comprehensive content strategy needed']
@@ -617,6 +751,8 @@ ${content.bodyText || 'No content found'}
     try {
       // Save section analysis using unified service
       for (const section of aiAnalysis.sections) {
+        console.log(`📝 Saving ${section.sectionType} section with ${section.recommendations.length} recommendations`);
+        
         await UnifiedContentService.saveSectionAnalysis({
           pageId,
           analysisResultId,
@@ -677,7 +813,7 @@ ${content.bodyText || 'No content found'}
         const result = await UnifiedContentService.generateAIContent(
           pageId,
           type, // content type
-          content, // context
+          `Page URL: ${content.url}, Title: ${content.title || 'No title'}, Meta Description: ${content.metaDescription || 'No meta description'}, Content: ${content.bodyText?.substring(0, 1000) || 'No content'}`,
           count
         );
 
@@ -1401,7 +1537,8 @@ CORE PRINCIPLES:
 - Optimize for the target section type requirements
 - For schema markup: Generate valid JSON-LD with real URLs and accurate data
 - For schema markup: Do NOT use placeholder URLs like "yourdomain.com" or "Your Company Name"
-- For schema markup: Match schema content exactly to the page content`;
+- For schema markup: Match schema content exactly to the page content
+${sectionType === 'title' ? '- For titles: Generate ONLY the actual title text (50-60 characters), not guides or explanations\n- For titles: Do NOT include strategy instructions like "A/B test", "test variants", or "run tests" in the title text\n- For titles: Focus on the core message, keywords, and value proposition\n- For titles: Strategy recommendations are for implementation, not for inclusion in the title text' : ''}`;
 
     const userPrompt = `Generate optimized ${sectionType} content based on these selected recommendations:
 
@@ -1432,6 +1569,7 @@ REQUIREMENTS:
 - Make it actionable and user-focused
 - Ensure it fits the page's overall context and purpose
 ${sectionType === 'schema' ? '- Generate valid JSON-LD schema markup with real URLs and accurate data\n- Do NOT use placeholder URLs like "yourdomain.com" or "Your Company Name"\n- Match schema content exactly to the page content' : ''}
+${sectionType === 'title' ? '- Generate ONLY the actual title text (50-60 characters)\n- Do NOT include explanations, guides, or multiple variants\n- Do NOT include strategy instructions like "A/B test" or "test variants" in the title text\n- Focus on the core message and keywords that address the content recommendations\n- Return a single, optimized title that addresses the recommendations' : ''}
 
 Generate the optimized content now.`;
 
@@ -1439,7 +1577,22 @@ Generate the optimized content now.`;
       const { text: responseText } = await generateText({
         model: aiOpenAI(OPENAI_MODEL) as any,
         system: systemPrompt,
-        prompt: userPrompt + '\n\nIMPORTANT: Return ONLY a valid JSON object with the following structure:\n{\n  "content": "the optimized content",\n  "keyPoints": ["key point 1", "key point 2", "key point 3"],\n  "recommendationsAddressed": ["rec 1", "rec 2"],\n  "estimatedImpact": "brief impact description"\n}\n\nDo not include any explanations or markdown formatting.',
+        prompt: userPrompt + `\n\nIMPORTANT: Return ONLY a valid JSON object with the following structure:
+${sectionType === 'title' ? 
+`{
+  "content": "the optimized title (50-60 characters only)",
+  "keyPoints": ["key point 1", "key point 2"],
+  "recommendationsAddressed": ["rec 1", "rec 2"],
+  "estimatedImpact": "brief impact description"
+}` : 
+`{
+  "content": "the optimized content",
+  "keyPoints": ["key point 1", "key point 2", "key point 3"],
+  "recommendationsAddressed": ["rec 1", "rec 2"],
+  "estimatedImpact": "brief impact description"
+}`}
+
+Do not include any explanations or markdown formatting.`,
         temperature: 0.7,
       });
 
