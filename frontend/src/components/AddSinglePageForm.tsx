@@ -1,212 +1,432 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useMemo } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { addPage, triggerAnalysis } from "@/lib/api";
-import { Loader2, Plus, Sparkles, CheckCircle, AlertCircle } from "lucide-react";
+import { addPage, triggerAnalysis, getPageAnalysis, generateContentSuggestions, savePageContent, deployPageContent } from "@/lib/api";
+import {
+  UrlInputForm,
+  AnalysisOverview,
+  TitleOptimizationForm,
+  DescriptionOptimizationForm,
+  ContentOptimizationForm,
+  KeywordsOptimizationForm,
+  OptimizationComplete
+} from "./add-page-forms";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface AddSinglePageFormProps {
   siteId: string;
   siteUrl: string;
-  onCompleted?: () => void; // close parent modal/dialog
+  onCompleted: () => void;
+  onToast?: (toast: { message: string; type: 'success' | 'error' | 'info' }) => void;
 }
 
-export default function AddSinglePageForm({ siteId, siteUrl, onCompleted }: AddSinglePageFormProps) {
-  const router = useRouter();
+interface PageContent {
+  title: string;
+  description: string;
+  keywords: string[];
+  faqs: string[];
+}
+
+interface AnalysisResult {
+  id: string;
+  pageId: string;
+  summary: string;
+  issues: string[];
+  recommendations: string[];
+  createdAt: string;
+  contentQuality?: {
+    clarity: number;
+    structure: number;
+    completeness: number;
+  };
+  technicalSEO?: {
+    headingStructure: number;
+    semanticMarkup: number;
+    contentDepth: number;
+    titleOptimization: number;
+    metaDescription: number;
+    schemaMarkup: number;
+  };
+  keywordAnalysis?: {
+    primaryKeywords: string[];
+    longTailKeywords: string[];
+    keywordDensity: number;
+    semanticKeywords: string[];
+    missingKeywords: string[];
+  };
+  llmOptimization?: {
+    definitionsPresent: boolean;
+    faqsPresent: boolean;
+    structuredData: boolean;
+    citationFriendly: boolean;
+    topicCoverage: number;
+    answerableQuestions: number;
+  };
+}
+
+export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToast }: AddSinglePageFormProps) {
   const { getToken } = useAuth();
+  
+  // Form state
+  const [currentStep, setCurrentStep] = useState<"url-input" | "analysis" | "title-optimization" | "description-optimization" | "content-optimization" | "keywords-optimization" | "complete">("url-input");
+  
+  // Page creation state
   const [adding, setAdding] = useState(false);
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<"validating" | "creating" | "analyzing" | "finalizing" | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [createdPageId, setCreatedPageId] = useState<string | null>(null);
+  
+  // Analysis state
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  
+  // Content editing state
+  const [pageContent, setPageContent] = useState<PageContent>({
+    title: "",
+    description: "",
+    keywords: [],
+    faqs: []
+  });
+
+  // AI generation state
+  const [titleSuggestions, setTitleSuggestions] = useState<string[]>([]);
+  const [descriptionSuggestions, setDescriptionSuggestions] = useState<string[]>([]);
+  const [generatingTitle, setGeneratingTitle] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
+  
+  // Track selected suggestions for deployment
+  const [selectedTitleSuggestion, setSelectedTitleSuggestion] = useState<string | null>(null);
+  const [selectedDescriptionSuggestion, setSelectedDescriptionSuggestion] = useState<string | null>(null);
 
   const siteHostname = useMemo(() => {
     if (!siteUrl) return null;
     try {
-      const normalized = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
-      const u = new URL(normalized);
+      const u = new URL(siteUrl);
       return u.hostname.replace(/^www\./i, "");
     } catch {
       return null;
     }
   }, [siteUrl]);
 
-  const schema = useMemo(
-    () =>
-      z
-        .object({ url: z.string().url("Enter a valid URL") })
-        .refine((data) => {
-          if (!siteHostname) return true;
-          try {
-            const u = new URL(data.url);
-            const host = u.hostname.replace(/^www\./i, "");
-            return host === siteHostname;
-          } catch {
-            return false;
-          }
-        }, {
-          message: siteHostname ? `URL must be on ${siteHostname}` : "Enter a valid URL",
-          path: ["url"],
-        }),
-    [siteHostname]
-  );
-
-  const form = useForm<z.infer<typeof schema>>({
-    resolver: zodResolver(schema),
-    defaultValues: { url: "" },
-  });
-
-  const onSubmit = async (values: z.infer<typeof schema>) => {
+  const handleSubmit = async (values: { url: string }) => {
     setAdding(true);
-    setFormError(null);
+    setProgress(0);
     setPhase("validating");
-    setProgress(12);
+    setFormError(null);
+
     try {
       const token = await getToken();
-      if (!token || !siteId) {
-        setFormError("Failed to get authentication token");
-        return;
-      }
-      // staged progress while awaiting server
-      const ticker = setInterval(() => {
-        setProgress((p) => {
-          const next = Math.min(80, p + 5 + Math.random() * 5);
-          if (next > 30 && phase === "validating") setPhase("creating");
-          return next;
-        });
-      }, 400);
+      if (!token) return;
 
-      // Create page
+      // Simulate progress
+      setProgress(25);
+      setPhase("creating");
+      
       const created = await addPage(token, siteId, values.url);
-      clearInterval(ticker);
-
-      // Ensure phases play out for UX
-      setPhase((ph) => (ph === "validating" ? "creating" : ph));
-      setProgress((p) => (p < 88 ? 88 : p));
-      await new Promise((r) => setTimeout(r, 400));
-
-      // Trigger analysis for the new page
+      setCreatedPageId(created.id);
+      
+      setProgress(50);
       setPhase("analyzing");
-      setProgress(94);
+      
       await triggerAnalysis(token, created.id);
-      await new Promise((r) => setTimeout(r, 500));
-
-      // Finalize
+      
+      setProgress(75);
       setPhase("finalizing");
-      setProgress(98);
-      await new Promise((r) => setTimeout(r, 400));
+      
+      const analysisResult = await getPageAnalysis(token, created.id);
+      setAnalysis(analysisResult);
+      console.log({analysisResult})
+      
+      // Extract title from analysis if available
+      if (analysisResult.summary) {
+        const summary = JSON.parse(analysisResult.summary);
+        if (summary.title) {
+          setPageContent(prev => ({ ...prev, title: summary.title }));
+        }
+      }
+      
       setProgress(100);
-      await new Promise((r) => setTimeout(r, 250));
-
-      // Reset and navigate
-      form.reset();
-      onCompleted?.();
-      router.push(`/dashboard/${siteId}/pages/${created.id}`);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to add page";
-      setFormError(errorMessage);
-    }
-    finally {
-      setAdding(false);
       setPhase(null);
-      setProgress(0);
+      
+      onToast?.({ message: 'Page added and analyzed successfully!', type: 'success' });
+      setCurrentStep("analysis");
+      
+    } catch (error) {
+      console.error('Error adding page:', error);
+      setFormError('Failed to add page. Please try again.');
+      onToast?.({ message: 'Failed to add page', type: 'error' });
+    } finally {
+      setAdding(false);
     }
   };
 
+  const goToStep = (step: typeof currentStep) => {
+    setCurrentStep(step);
+  };
+
+  const handleContentChange = (field: keyof PageContent, value: string | string[]) => {
+    setPageContent(prev => ({ ...prev, [field]: value }));
+  };
+
+  const generateTitleSuggestions = async () => {
+    if (!createdPageId) return;
+    setGeneratingTitle(true);
+    try {
+      const token = await getToken();
+      if (!token) return;
+      
+      const result = await generateContentSuggestions(
+        token, 
+        createdPageId, 
+        'title', 
+        pageContent.title,
+        'Generate compelling page titles between 50-60 characters'
+      );
+      
+      if (result.suggestions && Array.isArray(result.suggestions)) {
+        setTitleSuggestions(result.suggestions);
+        onToast?.({ message: 'Title suggestions generated!', type: 'success' });
+      } else {
+        onToast?.({ message: 'No suggestions generated', type: 'info' });
+      }
+    } catch {
+      onToast?.({ message: 'Failed to generate title suggestions', type: 'error' });
+    } finally {
+      setGeneratingTitle(false);
+    }
+  };
+
+  const generateDescriptionSuggestions = async () => {
+    if (!createdPageId) return;
+    setGeneratingDescription(true);
+    try {
+      const token = await getToken();
+      if (!token) return;
+      
+      const result = await generateContentSuggestions(
+        token, 
+        createdPageId, 
+        'description', 
+        pageContent.description,
+        'Generate compelling meta descriptions between 150-160 characters'
+      );
+      
+      if (result.suggestions && Array.isArray(result.suggestions)) {
+        setDescriptionSuggestions(result.suggestions);
+        onToast?.({ message: 'Description suggestions generated!', type: 'success' });
+      } else {
+        onToast?.({ message: 'No suggestions generated', type: 'info' });
+      }
+    } catch {
+      onToast?.({ message: 'Failed to generate description suggestions', type: 'error' });
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
+  const deploySelectedContent = async (contentType: 'title' | 'description') => {
+    if (!createdPageId) return;
+    
+    try {
+      const token = await getToken();
+      if (!token) return;
+      
+      let contentToDeploy = '';
+      if (contentType === 'title') {
+        contentToDeploy = selectedTitleSuggestion || pageContent.title;
+      } else if (contentType === 'description') {
+        contentToDeploy = selectedDescriptionSuggestion || pageContent.description;
+      }
+      
+      if (contentToDeploy && contentToDeploy.trim()) {
+        // First save the content, then deploy it
+        await savePageContent(token, createdPageId, contentType, contentToDeploy, undefined, undefined, undefined, true);
+        await deployPageContent(token, createdPageId, contentType);
+        
+        onToast?.({ 
+          message: `${contentType === 'title' ? 'Title' : 'Description'} deployed successfully!`, 
+          type: 'success' 
+        });
+      } else {
+        onToast?.({ 
+          message: `No ${contentType} content to deploy`, 
+          type: 'info' 
+        });
+      }
+      
+    } catch (error) {
+      console.error(`Failed to deploy ${contentType}:`, error);
+      onToast?.({ 
+        message: `Failed to deploy ${contentType}`, 
+        type: 'error' 
+      });
+    }
+  };
+
+  const handleSkip = () => {
+    onToast?.({ message: 'Skipped optimization process', type: 'info' });
+    onCompleted();
+  };
+
+  const handleComplete = () => {
+    onToast?.({ message: 'Optimization completed successfully!', type: 'success' });
+    onCompleted();
+  };
+
+  console.log({analysis});
+  
+  const renderStepContent = () => {
+    const summary = JSON.parse(analysis?.summary || '{}');
+    switch (currentStep) {
+      case "url-input":
+        return (
+          <UrlInputForm
+            onSubmit={handleSubmit}
+            adding={adding}
+            progress={progress}
+            phase={phase}
+            formError={formError}
+            siteHostname={siteHostname}
+          />
+        );
+      
+      case "analysis":
+        return (
+          <AnalysisOverview
+            analysis={analysis}
+            onSkip={handleSkip}
+            onContinue={() => goToStep("title-optimization")}
+          />
+        );
+      
+      case "title-optimization":
+        return (
+          <TitleOptimizationForm
+            title={pageContent.title}
+            onTitleChange={(title) => {
+              handleContentChange('title', title);
+              setSelectedTitleSuggestion(title); // Track manually typed content as selected
+            }}
+            titleSuggestions={titleSuggestions}
+            generatingTitle={generatingTitle}
+            onGenerateSuggestions={generateTitleSuggestions}
+            onSkip={handleSkip}
+            onContinue={() => {
+              deploySelectedContent('title');
+              goToStep("description-optimization");
+            }}
+            recommendations={summary.recommendations?.title || []}
+            onSuggestionSelect={(suggestion) => setSelectedTitleSuggestion(suggestion)}
+          />
+        );
+      
+      case "description-optimization":
+        return (
+          <DescriptionOptimizationForm
+            description={pageContent.description}
+            onDescriptionChange={(description) => {
+              handleContentChange('description', description);
+              setSelectedDescriptionSuggestion(description); // Track manually typed content as selected
+            }}
+            descriptionSuggestions={descriptionSuggestions}
+            generatingDescription={generatingDescription}
+            onGenerateSuggestions={generateDescriptionSuggestions}
+            onSkip={handleSkip}
+            onContinue={() => {
+              deploySelectedContent('description');
+              goToStep("content-optimization");
+            }}
+            recommendations={summary.recommendations?.description || []}
+            onSuggestionSelect={(suggestion) => setSelectedDescriptionSuggestion(suggestion)}
+          />
+        );
+      
+      case "content-optimization":
+        return (
+          <ContentOptimizationForm
+            faqs={pageContent.faqs}
+            onFaqsChange={(faqs) => handleContentChange('faqs', faqs)}
+            onSkip={handleSkip}
+            onContinue={() => {
+              deploySelectedContent('description');
+              goToStep("keywords-optimization");
+            }}
+            recommendations={summary.recommendations?.content || []}
+          />
+        );
+      
+      case "keywords-optimization":
+        return (
+          <KeywordsOptimizationForm
+            keywords={pageContent.keywords}
+            onKeywordsChange={(keywords) => handleContentChange('keywords', keywords)}
+            onSkip={handleSkip}
+            onContinue={() => goToStep("complete")}
+            recommendations={summary.recommendations?.keywords || []}
+          />
+        );
+      
+      case "complete":
+        return (
+          <OptimizationComplete
+            pageContent={pageContent}
+            onSkip={handleSkip}
+            onContinue={handleComplete}
+          />
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  const renderStepIndicator = () => {
+    if (currentStep === "url-input") return null;
+
+    const steps = [
+      { id: "analysis", label: "Analysis", icon: "📊" },
+      { id: "title-optimization", label: "Title", icon: "📝" },
+      { id: "description-optimization", label: "Description", icon: "📄" },
+      { id: "content-optimization", label: "Content", icon: "📚" },
+      { id: "keywords-optimization", label: "Keywords", icon: "🔍" },
+      { id: "complete", label: "Complete", icon: "✅" }
+    ];
+
+    const currentIndex = steps.findIndex(step => step.id === currentStep);
+    const progress = ((currentIndex + 1) / steps.length) * 100;
+
+    return (
+      <Card className="mb-6">
+        <CardContent className="pt-4">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-muted-foreground">Optimization Progress</span>
+            <span className="text-sm text-muted-foreground">
+              {currentIndex + 1} of {steps.length}
+            </span>
+          </div>
+          <Progress value={progress} className="w-full mb-3" />
+          <div className="flex justify-between text-xs text-muted-foreground">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex flex-col items-center">
+                <span className="mb-1">{step.icon}</span>
+                <span className={index <= currentIndex ? "text-primary font-medium" : ""}>
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
-      {formError && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
-          <p className="text-sm text-destructive">{formError}</p>
-        </div>
-      )}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Page URL</label>
-        <Input
-          type="url"
-          placeholder={siteHostname ? `https://${siteHostname}/path` : "https://example.com/page"}
-          {...form.register("url")}
-          disabled={adding}
-        />
-        {form.formState.errors.url?.message && (
-          <p className="text-sm text-destructive">{form.formState.errors.url.message}</p>
-        )}
-      </div>
-      {adding && (
-        <div className="rounded-md border bg-muted p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Sparkles className="w-4 h-4" />
-              <span>Adding page</span>
-            </div>
-            <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
-          </div>
-          <div className="w-full h-2 bg-background rounded-full overflow-hidden">
-            <div className="h-2 bg-primary transition-all duration-300" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2 text-sm">
-              {phase === "validating" ? (
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              ) : (
-                <CheckCircle className="w-4 h-4 text-primary" />
-              )}
-              <span>Validating URL</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm opacity-90">
-              {phase === "creating" ? (
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              ) : phase === "analyzing" || phase === "finalizing" ? (
-                <CheckCircle className="w-4 h-4 text-primary" />
-              ) : (
-                <Loader2 className="w-4 h-4 text-muted-foreground" />
-              )}
-              <span>Creating page</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm opacity-90">
-              {phase === "analyzing" ? (
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              ) : phase === "finalizing" || (phase === null && progress === 100) ? (
-                <CheckCircle className="w-4 h-4 text-primary" />
-              ) : (
-                <Loader2 className="w-4 h-4 text-muted-foreground" />
-              )}
-              <span>Starting analysis</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm opacity-90">
-              {phase === "finalizing" ? (
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              ) : phase === null && progress === 100 ? (
-                <CheckCircle className="w-4 h-4 text-primary" />
-              ) : (
-                <Loader2 className="w-4 h-4 text-muted-foreground" />
-              )}
-              <span>Finalizing</span>
-            </div>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">This may take ~5–10 seconds.</p>
-        </div>
-      )}
-      <Button type="submit" className="w-full mt-1" disabled={adding}>
-        {adding ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Adding...
-          </>
-        ) : (
-          <>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Page
-          </>
-        )}
-      </Button>
-    </form>
+    <div className="w-full">
+      {renderStepIndicator()}
+      {renderStepContent()}
+    </div>
   );
 }
 
