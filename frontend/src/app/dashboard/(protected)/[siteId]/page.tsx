@@ -293,11 +293,12 @@ export default function SiteDetailsPage() {
 
   // Calculate metrics
   const totalPages = pages.length;
+  const pagesWithScores = pages.filter(page => page.llmReadinessScore != null && page.llmReadinessScore > 0);
   const averageLLMScore =
-    totalPages > 0
+    pagesWithScores.length > 0
       ? Math.round(
-          pages.reduce((sum, page) => sum + page.llmReadinessScore, 0) /
-            totalPages
+          pagesWithScores.reduce((sum, page) => sum + (page.llmReadinessScore || 0), 0) /
+            pagesWithScores.length
         )
       : 0;
   const pagesAbove80 = pages.filter(

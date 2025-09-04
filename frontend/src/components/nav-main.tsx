@@ -1,8 +1,6 @@
 "use client"
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -10,7 +8,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
+import { type Icon } from "@tabler/icons-react"
+import Link from "next/link"
 
 export function NavMain({
   items,
@@ -31,7 +30,7 @@ export function NavMain({
         </SidebarMenu>
         <SidebarMenu>
           {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
+            <SidebarMenuItem key={item.title} className="cursor-pointer">
               <Link href={item.url}>
               <SidebarMenuButton tooltip={item.title}>
                 {item.icon && <item.icon />}

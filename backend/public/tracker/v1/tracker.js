@@ -239,7 +239,11 @@
           await this.injectSEOCriticalContent(response.content);
         }
       } catch (error) {
-                  console.warn('Cleversearch: Failed to load early content:', error.message);
+        if (error.message.includes('HTTP 404')) {
+          consolePrint(`Page not found (404) for URL: ${url} - skipping content injection`);
+        } else {
+          console.warn('Cleversearch: Failed to load early content:', error.message);
+        }
       }
     }
 
@@ -312,7 +316,11 @@
           }
         }
       } catch (error) {
-                  console.warn('Cleversearch: Failed to load content:', error.message);
+        if (error.message.includes('HTTP 404')) {
+          consolePrint(`Page not found (404) for URL: ${this.currentUrl} - skipping content injection`);
+        } else {
+          console.warn('Cleversearch: Failed to load content:', error.message);
+        }
       }
     }
 
@@ -805,12 +813,26 @@
         });
 
         if (!response.ok) {
+          // Don't retry on client errors (4xx) - they indicate invalid requests or missing resources
+          // if (response.status >= 400 && response.status < 500) {
+          //   consolePrint(`Client error ${response.status} for ${endpoint} - not retrying`);
+          //   throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // }
+          // // Only retry on server errors (5xx) or network issues
+          // consolePrint(`Server error ${response.status} for ${endpoint} - will retry if attempts remain`);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         return await response.json();
       } catch (error) {
-        if (retries < CONFIG.RETRY_ATTEMPTS) {
+        // Only retry on server errors (5xx) or network issues, not on client errors (4xx)
+        const isRetryableError = !error.message.includes('HTTP 4') && 
+                                (error.message.includes('HTTP 5') || 
+                                 error.message.includes('fetch') || 
+                                 error.message.includes('network') ||
+                                 error.message.includes('timeout'));
+        
+        if (isRetryableError && retries < CONFIG.RETRY_ATTEMPTS) {
           await this.delay(1000 * Math.pow(2, retries)); // Exponential backoff
           return this.apiCall(endpoint, data, retries + 1);
         }

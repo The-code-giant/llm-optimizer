@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import { redisConnection } from './queue';
 import winston from 'winston';
 import { db } from '../db/client';
-import { pages, analysisResults } from '../db/schema';
+import { pages, contentAnalysis } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { AnalysisService } from './analysisService';
 
@@ -40,27 +40,63 @@ async function analyzePage(pageId: string) {
       })
       .where(eq(pages.id, pageId));
 
-    // Store analysis results in database (including page summary)
-    await db.insert(analysisResults).values({
+    // Store analysis results in database (normalized structure)
+    const analysisResultRecord = await db.insert(contentAnalysis).values({
       pageId,
-      score: analysisResult.score,
-      recommendations: JSON.stringify({
-        recommendations: analysisResult.recommendations,
-        issues: analysisResult.issues,
-        summary: analysisResult.summary,
-        pageSummary: analysisResult.pageSummary, // Store AI page summary
-        contentQuality: analysisResult.contentQuality,
-        technicalSEO: analysisResult.technicalSEO,
-        keywordAnalysis: analysisResult.keywordAnalysis,
-        llmOptimization: analysisResult.llmOptimization
-      }),
+      overallScore: analysisResult.score,
       llmModelUsed: 'gpt-4o-mini',
-      rawLlmOutput: JSON.stringify(analysisResult),
-      analyzedAt: new Date()
-    });
+      pageSummary: analysisResult.pageSummary,
+      analysisSummary: analysisResult.summary,
+      
+      // Content quality metrics
+      contentClarity: analysisResult.contentQuality?.clarity || 0,
+      contentStructure: analysisResult.contentQuality?.structure || 0,
+      contentCompleteness: analysisResult.contentQuality?.completeness || 0,
+      
+      // Technical SEO metrics
+      titleOptimization: analysisResult.technicalSEO?.titleOptimization || 0,
+      metaDescription: analysisResult.technicalSEO?.metaDescription || 0,
+      headingStructure: analysisResult.technicalSEO?.headingStructure || 0,
+      schemaMarkup: analysisResult.technicalSEO?.schemaMarkup || 0,
+      
+      // Keyword analysis
+      primaryKeywords: analysisResult.keywordAnalysis?.primaryKeywords || [],
+      longTailKeywords: analysisResult.keywordAnalysis?.longTailKeywords || [],
+      keywordDensity: analysisResult.keywordAnalysis?.keywordDensity || 0,
+      semanticKeywords: analysisResult.keywordAnalysis?.semanticKeywords || [],
+      
+      // LLM optimization metrics
+      definitionsPresent: analysisResult.llmOptimization?.definitionsPresent ? 1 : 0,
+      faqsPresent: analysisResult.llmOptimization?.faqsPresent ? 1 : 0,
+      structuredData: analysisResult.llmOptimization?.structuredData ? 1 : 0,
+      citationFriendly: analysisResult.llmOptimization?.citationFriendly ? 1 : 0,
+      topicCoverage: analysisResult.llmOptimization?.topicCoverage || 0,
+      answerableQuestions: analysisResult.llmOptimization?.answerableQuestions || 0,
+      
+      confidence: 0.8, // Default confidence
+      analysisVersion: '2.0'
+    }).returning();
+
+    const analysisResultId = analysisResultRecord[0].id;
 
     logger.info(`✅ Analysis completed for page ${pageId} - Score: ${analysisResult.score}/100`);
     logger.info(`📝 Saved original content and AI summary for page ${pageId}`);
+
+    // Generate AI-powered recommendations
+    try {
+      const aiRecommendations = await AnalysisService.generateAIRecommendations(
+        analysisResult.content,
+        analysisResult,
+        analysisResult.pageSummary || ''
+      );
+
+      // Save AI recommendations to database
+      await AnalysisService.saveAIRecommendations(pageId, analysisResultId, aiRecommendations);
+      logger.info(`🤖 Generated and saved AI recommendations for page ${pageId}`);
+    } catch (aiError) {
+      logger.error(`❌ Failed to generate AI recommendations for page ${pageId}:`, aiError);
+      // Don't fail the analysis if AI recommendations fail
+    }
 
     // Auto-generate content suggestions after analysis (using the extracted content)
     try {
