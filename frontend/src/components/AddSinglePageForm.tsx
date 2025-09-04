@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { addPage, triggerAnalysis, getPageAnalysis, AnalysisResult } from "@/lib/api";
+import { AnalysisResult } from "@/lib/api";
+import { useEnhancedApi } from "@/hooks/useEnhancedApi";
 import { UrlInputForm } from "./add-page-forms";
 
 interface AddSinglePageFormProps {
@@ -14,8 +14,8 @@ interface AddSinglePageFormProps {
 }
 
 export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToast }: AddSinglePageFormProps) {
-  const { getToken } = useAuth();
   const router = useRouter();
+  const { addPage, triggerAnalysis, getPageAnalysis } = useEnhancedApi();
   
   // Form state
   const [adding, setAdding] = useState(false);
@@ -40,76 +40,83 @@ export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToas
     setFormError(null);
 
     try {
-      const token = await getToken();
-      if (!token) return;
-
       // Step 1: Validate and create page
       setProgress(25);
       setPhase("creating");
       
-      const created = await addPage(token, siteId, values.url);
+      const created = await addPage(siteId, values.url);
       
       setProgress(50);
       setPhase("analyzing");
       
-  // Step 2: Trigger analysis (starts background job)
-  await triggerAnalysis(token, created.id);
+      // Step 2: Trigger analysis (starts background job)
+      await triggerAnalysis(created.id);
 
-  setProgress(75);
-  setPhase("analyzing");
+      setProgress(75);
+      setPhase("analyzing");
 
-  // Robust polling with exponential backoff + timeout
-  const waitForAnalysis = async (
-    token: string,
-    pageId: string,
-    {
-      timeoutMs = 120_000,
-      initialDelay = 1000,
-      maxDelay = 10_000,
-    }: { timeoutMs?: number; initialDelay?: number; maxDelay?: number } = {}
-  ) => {
-    const start = Date.now();
-    let delay = initialDelay;
+      // Robust polling with exponential backoff + timeout + automatic token refresh
+      const waitForAnalysis = async (
+        pageId: string,
+        {
+          timeoutMs = 120_000,
+          initialDelay = 1000,
+          maxDelay = 10_000,
+        }: { timeoutMs?: number; initialDelay?: number; maxDelay?: number } = {}
+      ) => {
+        const start = Date.now();
+        let delay = initialDelay;
 
-    while (Date.now() - start < timeoutMs) {
-      try {
-        const data: AnalysisResult = await getPageAnalysis(token, pageId);
+        while (Date.now() - start < timeoutMs) {
+          try {
+            // Use enhanced API with automatic token refresh
+            const data: AnalysisResult = await getPageAnalysis(pageId);
 
-        // Consider analysis complete if we have recommendations, issues, or a summary
-        const hasRecommendations = Array.isArray(data.recommendations) && data.recommendations.length > 0;
-        const hasIssues = Array.isArray(data.issues) && data.issues.length > 0;
-        const hasSummary = Boolean(data.summary);
+            // Consider analysis complete if we have recommendations, issues, or a summary
+            const hasRecommendations = Array.isArray(data.recommendations) && data.recommendations.length > 0;
+            const hasIssues = Array.isArray(data.issues) && data.issues.length > 0;
+            const hasSummary = Boolean(data.summary);
 
-        if (hasRecommendations || hasIssues || hasSummary) {
-          return data;
+            if (hasRecommendations || hasIssues || hasSummary) {
+              return data;
+            }
+          } catch (err) {
+            // Check if it's an auth error that couldn't be resolved
+            if (err instanceof Error && 'isAuthError' in err && err.isAuthError) {
+              console.error("Authentication failed during polling:", err);
+              throw new Error("Authentication failed. Please sign in again.");
+            }
+            // API may return 404 or an error while the job is not ready; ignore and continue polling
+            console.debug("analysis not ready yet", err);
+          }
+
+          // bump progress slowly while waiting
+          setProgress((p) => Math.min(95, p + 5));
+
+          await new Promise((res) => setTimeout(res, delay));
+          delay = Math.min(maxDelay, Math.floor(delay * 1.5));
         }
-      } catch (err) {
-        // API may return 404 or an error while the job is not ready; ignore and continue polling
-        console.debug("analysis not ready yet", err);
-      }
 
-      // bump progress slowly while waiting
-      setProgress((p) => Math.min(95, p + 5));
-
-      await new Promise((res) => setTimeout(res, delay));
-      delay = Math.min(maxDelay, Math.floor(delay * 1.5));
-    }
-
-    throw new Error("analysis_timeout");
-  };
+        throw new Error("analysis_timeout");
+      };
 
   try {
-    const analysisResult = await waitForAnalysis(token, created.id);
+    const analysisResult = await waitForAnalysis(created.id);
     if (analysisResult) {
       setProgress(100);
       setPhase(null);
     }
   } catch (err) {
-    // Timeout waiting for analysis — proceed but inform user analysis may still be running
-  console.warn("Timed out waiting for analysis", err);
+    // Timeout waiting for analysis or auth error — proceed but inform user
+  console.warn("Error waiting for analysis", err);
     setProgress(90);
     setPhase(null);
-    onToast?.({ message: "Analysis may take longer than expected — navigating to the page now.", type: "info" });
+    if (err instanceof Error && err.message.includes("Authentication failed")) {
+      onToast?.({ message: "Session expired. Please sign in again.", type: "error" });
+      return;
+    } else {
+      onToast?.({ message: "Analysis may take longer than expected — navigating to the page now.", type: "info" });
+    }
   }
       
       onToast?.({ message: "Page added and analysis started successfully!", type: "success" });

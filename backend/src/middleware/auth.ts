@@ -14,9 +14,13 @@ export async function authenticateJWT(
 ) {
   const authHeader = req.headers["authorization"];
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    res
-      .status(401)
-      .json({ message: "Missing or invalid Authorization header" });
+    // Include WWW-Authenticate header to help clients detect auth failure reasons
+    res.setHeader(
+      'WWW-Authenticate',
+      'Bearer realm="api", error="invalid_request", error_description="Missing or invalid Authorization header"'
+    );
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(401).json({ message: "Missing or invalid Authorization header" });
     return;
   }
 
@@ -29,7 +33,9 @@ export async function authenticateJWT(
     });
 
     if (!payload || !payload.sub) {
-      res.status(401).json({ message: "Invalid token payload" });
+  res.setHeader('WWW-Authenticate', 'Bearer error="invalid_token", error_description="Invalid token payload"');
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(401).json({ message: "Invalid token payload" });
       return;
     }
 
@@ -37,7 +43,9 @@ export async function authenticateJWT(
     const user = await clerkClient.users.getUser(payload.sub);
 
     if (!user) {
-      res.status(401).json({ message: "User not found" });
+  res.setHeader('WWW-Authenticate', 'Bearer error="invalid_token", error_description="User not found"');
+  res.setHeader('Cache-Control', 'no-store');
+  res.status(401).json({ message: "User not found" });
       return;
     }
 
@@ -48,8 +56,13 @@ export async function authenticateJWT(
     };
 
     next();
-  } catch (err) {
+  } catch (err: any) {
     console.error("Auth error:", err);
-    res.status(401).json({ message: "Invalid or expired token" });
+    const reason = err?.reason || err?.message || "invalid_token";
+    // Send an RFC-6750 compatible WWW-Authenticate header so clients can detect 'token-expired'
+    const desc = String(err?.message || reason).replace(/\"/g, '');
+    res.setHeader('WWW-Authenticate', `Bearer error="${reason}", error_description="${desc}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(401).json({ message: "Invalid or expired token", reason });
   }
 }

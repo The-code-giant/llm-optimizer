@@ -1532,7 +1532,6 @@ router.delete('/:pageId', authenticateJWT, async (req: AuthenticatedRequest, res
       contentRecommendations: 0,
       contentDeployments: 0,
       contentAnalysis: 0,
-      pageInjectedContent: 0,
       pageContent: 0,
       contentSuggestions: 0,
       pageAnalytics: 0
@@ -1554,9 +1553,7 @@ router.delete('/:pageId', authenticateJWT, async (req: AuthenticatedRequest, res
     const analysisRes = await db.delete(contentAnalysis).where(eq(contentAnalysis.pageId, pageId));
     deletedData.contentAnalysis = analysisRes.rowCount || 0;
 
-    // 5. Delete page-injected content relationships
-    const pageInjectedRes = await db.delete(pageInjectedContent).where(eq(pageInjectedContent.pageId, pageId));
-    deletedData.pageInjectedContent = pageInjectedRes.rowCount || 0;
+  // NOTE: page_injected_content was removed from the schema; no related delete step needed
 
     // 6. Delete page content (optimized content)
     const pageContentRes = await db.delete(pageContent).where(eq(pageContent.pageId, pageId));
