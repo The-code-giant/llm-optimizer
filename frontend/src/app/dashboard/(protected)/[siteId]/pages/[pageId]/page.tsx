@@ -597,11 +597,11 @@ export default function PageAnalysisPage() {
                     </CardContent>
                   </Card>
                   {/* Tabs */}
-                  <Tabs defaultValue="content" className="w-full">
+                  <Tabs defaultValue="analysis" className="w-full">
                     <TabsList className="mt-2">
-                      <TabsTrigger value="content">Content</TabsTrigger>
+                      {/* <TabsTrigger value="content">Content</TabsTrigger> */}
                       <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="analysis">Analysis</TabsTrigger>
+                      <TabsTrigger value="analysis">Content</TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
@@ -683,7 +683,7 @@ export default function PageAnalysisPage() {
                     </TabsContent>
 
                     {/* Content Tab */}
-                    <TabsContent value="content" className="mt-4 space-y-6">
+                    {/* <TabsContent value="content" className="mt-4 space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {/* Left Column - Content Editors */}
                         <div className="space-y-6">
@@ -1242,7 +1242,7 @@ export default function PageAnalysisPage() {
                         </div>
                         {/* Close grid wrapper */}
                       </div>
-                    </TabsContent>
+                    </TabsContent> */}
 
                     {/* Analysis Tab */}
                     <TabsContent value="analysis" className="mt-4 space-y-6">
