@@ -149,17 +149,16 @@ router.get('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReques
     
     // Get section ratings and recommendations
     let sectionRatings = null;
-    let contentRecommendations: any = null;
+    let sectionRecommendationsData: any = {};
     
     try {
       sectionRatings = await EnhancedRatingService.getCurrentSectionRatings(req.params.pageId);
       
       if (sectionRatings) {
-        contentRecommendations = {};
         const sectionTypes = ['title', 'description', 'headings', 'content', 'schema', 'images', 'links'];
         
         for (const sectionType of sectionTypes) {
-          contentRecommendations[sectionType] = await EnhancedRatingService.getSectionRecommendations(
+          sectionRecommendationsData[sectionType] = await EnhancedRatingService.getSectionRecommendations(
             req.params.pageId, 
             sectionType
           );
@@ -169,14 +168,47 @@ router.get('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReques
       console.error('Failed to get section ratings:', error);
     }
 
+    // Create a structured summary object that matches frontend expectations
+    const structuredSummary = {
+      summary: analysis.analysisSummary || 'No summary available',
+      score: analysis.overallScore || 0,
+      contentQuality: {
+        clarity: analysis.contentClarity || 0,
+        structure: analysis.contentStructure || 0,
+        completeness: analysis.contentCompleteness || 0,
+      },
+      technicalSEO: {
+        titleOptimization: analysis.titleOptimization || 0,
+        metaDescription: analysis.metaDescription || 0,
+        headingStructure: analysis.headingStructure || 0,
+        schemaMarkup: analysis.schemaMarkup || 0,
+      },
+      keywordAnalysis: {
+        primaryKeywords: analysis.primaryKeywords || [],
+        longTailKeywords: analysis.longTailKeywords || [],
+        semanticKeywords: analysis.semanticKeywords || [],
+        keywordDensity: analysis.keywordDensity || 0,
+      },
+      llmOptimization: {
+        definitionsPresent: analysis.definitionsPresent || 0,
+        faqsPresent: analysis.faqsPresent || 0,
+        structuredData: analysis.structuredData || 0,
+        citationFriendly: analysis.citationFriendly || 0,
+        topicCoverage: analysis.topicCoverage || 0,
+        answerableQuestions: analysis.answerableQuestions || 0,
+      },
+      recommendations: sectionRecommendationsData || {},
+    };
+
     const result = {
       id: analysis.id,
       pageId: analysis.pageId,
-      summary: analysis.analysisSummary || 'No summary available',
+      summary: JSON.stringify(structuredSummary),
       issues: issues,
       recommendations: recommendations,
+      score: analysis.overallScore || 0,
       sectionRatings,
-      contentRecommendations,
+      sectionRecommendations: sectionRecommendationsData,
       createdAt: analysis.createdAt?.toISOString() || '',
     };
     
@@ -1565,11 +1597,11 @@ router.get('/:pageId/section-ratings', authenticateJWT, async (req: Authenticate
     }
 
     // Get content recommendations
-    const contentRecommendations: any = {};
+    const sectionRecommendationsData: any = {};
     const sectionTypes = ['title', 'description', 'headings', 'content', 'schema', 'images', 'links'];
     
     for (const sectionType of sectionTypes) {
-      contentRecommendations[sectionType] = await EnhancedRatingService.getSectionRecommendations(
+      sectionRecommendationsData[sectionType] = await EnhancedRatingService.getSectionRecommendations(
         req.params.pageId, 
         sectionType
       );
@@ -1578,7 +1610,7 @@ router.get('/:pageId/section-ratings', authenticateJWT, async (req: Authenticate
     res.json({
       pageId: req.params.pageId,
       sectionRatings,
-      contentRecommendations
+      sectionRecommendations: sectionRecommendationsData
     });
 
   } catch (err) {
