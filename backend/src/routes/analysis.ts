@@ -1,6 +1,6 @@
 import { Router, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, pages, analysisResults } from '../db/schema';
+import { sites, pages } from '../db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { analysisQueue } from '../utils/queue';
@@ -14,53 +14,6 @@ interface AuthenticatedRequest extends Request {
 const router = Router();
 
 
-
-/**
- * @openapi
- * /api/v1/sites/{siteId}/analysis:
- *   post:
- *     summary: Trigger analysis for all pages in a site
- *     tags: [Analysis]
- *     parameters:
- *       - in: path
- *         name: siteId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       202:
- *         description: Analysis started for all pages
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 jobId:
- *                   type: string
- *       404:
- *         description: Site not found
- */
-// Trigger analysis for all pages in a site
-router.post('/sites/:siteId/analysis', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const siteArr = await db.select().from(sites).where(eq(sites.id, req.params.siteId)).limit(1);
-    const site = siteArr[0];
-    if (!site || site.userId !== req.user!.userId) {
-      res.status(404).json({ message: 'Site not found' });
-      return;
-    }
-    // Enqueue analysis job for all pages
-    const job = await analysisQueue.add('site-analysis', {
-      siteId: req.params.siteId,
-      userId: req.user!.userId,
-    });
-    res.status(202).json({ message: 'Analysis started for all pages', jobId: job.id });
-  } catch (err) {
-    next(err);
-  }
-});
 
 /**
  * @openapi

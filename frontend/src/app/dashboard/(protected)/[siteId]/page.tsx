@@ -15,7 +15,6 @@ import {
   FileText,
   Globe,
   ListPlus,
-  Play,
   Plus,
   RefreshCw,
   Search,
@@ -177,15 +176,6 @@ export default function SiteDetailsPage() {
     } else {
       setSelectedPages(new Set(filteredAndSortedPages.map((page) => page.id)));
     }
-  };
-
-  const handleBulkAnalyze = async () => {
-    if (selectedPages.size === 0) return;
-    setToast({
-      message: `Starting analysis for ${selectedPages.size} pages...`,
-      type: "info",
-    });
-    // Here you would implement bulk analysis API call
   };
 
   const handleBulkDelete = async () => {
@@ -565,11 +555,9 @@ export default function SiteDetailsPage() {
                       site={site}
                       pages={pages}
                       recentlyScanned={recentlyScanned}
-                      pagesAbove80={pagesAbove80}
                       onShowTrackerScript={() => setShowTrackerScript(true)}
                       onShowPageManagement={() => setShowPageManagement(true)}
                       onSetActiveTab={setActiveTab}
-                      onSetScoreFilter={setScoreFilter}
                     />
                     </div>
 
@@ -690,14 +678,6 @@ export default function SiteDetailsPage() {
                                           {selectedPages.size} selected
                                         </span>
                                         <div className="flex gap-2">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleBulkAnalyze}
-                                          >
-                                            <Play className="h-4 w-4 mr-1" />
-                                            Analyze
-                                          </Button>
                                           <Button
                                             variant="outline"
                                             size="sm"

@@ -153,21 +153,13 @@ async function analyzePage(pageId: string) {
 
 const analysisWorker = new Worker('analysis', async (job) => {
   logger.info(`Processing analysis job: ${JSON.stringify(job.data)}`);
-  if (job.name === 'site-analysis') {
-    // Analyze all pages for the site
-    const { siteId } = job.data;
-    const sitePages = await db.select().from(pages).where(eq(pages.siteId, siteId));
-    for (const page of sitePages) {
-      await analyzePage(page.id);
-    }
-    logger.info(`Completed analysis for all pages in site ${siteId}`);
-    return { status: 'done', analyzed: sitePages.length };
-  } else if (job.name === 'page-analysis') {
+  if (job.name === 'page-analysis') {
     const { pageId } = job.data;
     await analyzePage(pageId);
     logger.info(`Completed analysis for page ${pageId}`);
     return { status: 'done', analyzed: 1 };
   }
+  logger.warn(`Unknown job type: ${job.name}`);
   return { status: 'skipped' };
 }, { connection: redisConnection });
 
