@@ -89,10 +89,13 @@ SCORING CRITERIA:
 - 9-10: Excellent/Industry best practices
 
 IMPACT SCORING GUIDELINES:
-- High-impact recommendations: 3-5 points (major improvements)
-- Medium-impact recommendations: 2-3 points (moderate improvements)
-- Low-impact recommendations: 1-2 points (minor improvements)
-- Total improvements should realistically reach 8-10/10 when all recommendations are implemented
+- CRITICAL RULE: Total points from all recommendations per section must equal exactly (10 - current_score)
+- If current score is 6/10, recommendations must total exactly 4 points
+- If current score is 3/10, recommendations must total exactly 7 points
+- High-impact recommendations: 2-3 points each
+- Medium-impact recommendations: 1-2 points each  
+- Low-impact recommendations: 1 point each
+- MATHEMATICAL ACCURACY: Always ensure recommendations sum to fill the exact gap to 10/10
 
 IMPORTANT: Always analyze the ACTUAL content provided and give recommendations specific to that content. Do not give generic advice that could apply to any page.`;
 
@@ -125,22 +128,32 @@ PAGE CONTENT:
 - Meta Description: "${pageContent.metaDescription || 'No meta description'}"
 - Main Content: ${pageContent.bodyText?.substring(0, 1000) || 'No content'}
 
-ANALYSIS DATA:
-- Overall Score: ${analysisData.score}/100
-- Keywords: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
+CURRENT SECTION SCORES:
+- Title: ${analysisData.sectionRatings?.title || 0}/10
+- Description: ${analysisData.sectionRatings?.description || 0}/10  
+- Headings: ${analysisData.sectionRatings?.headings || 0}/10
+- Content: ${analysisData.sectionRatings?.content || 0}/10
+- Schema: ${analysisData.sectionRatings?.schema || 0}/10
+- Images: ${analysisData.sectionRatings?.images || 0}/10
+- Links: ${analysisData.sectionRatings?.links || 0}/10
 
-Provide recommendations for each section (title, description, headings, content, schema, images, links) with:
-- Current score (0-10)
+KEYWORDS: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
+
+CRITICAL SCORING RULE:
+For each section, the total points from ALL recommendations should equal exactly (10 - current_score).
+Example: If title score is 6/10, then ALL title recommendations combined should total exactly 4 points.
+
+Provide recommendations for each section with:
+- Current score (use the scores provided above)
 - 2-3 specific recommendations with titles
-- Priority level (low, medium, high)
-- Expected impact (1-5 points improvement per recommendation)
+- Priority level (low, medium, high, critical)
+- Points per recommendation (must sum to exactly fill the gap to 10/10)
 
-IMPORTANT SCORING GUIDELINES:
-- Each recommendation should provide 1-5 points of improvement
-- Total improvements should be realistic (aim for 8-10/10 total score)
-- High-impact recommendations should give 3-5 points
-- Medium-impact recommendations should give 2-3 points
-- Low-impact recommendations should give 1-2 points
+POINT ALLOCATION STRATEGY:
+- If gap is 1-2 points: 1-2 medium recommendations (1-2 points each)
+- If gap is 3-4 points: 2-3 recommendations (1-2 points each)  
+- If gap is 5+ points: 3-4 recommendations (1-3 points each)
+- TOTAL must always equal the gap to reach 10/10
 
 Focus on specific, actionable improvements for this content.`;
 
@@ -173,49 +186,70 @@ Focus on specific, actionable improvements for this content.`;
   }
 
   /**
-   * Post-process recommendations to ensure realistic impact scores
+   * Post-process recommendations to ensure EXACT mathematical accuracy
    */
   private static postProcessRecommendations(result: any): PageAnalysisResult {
-    console.log('🔧 Post-processing recommendations for realistic impact scores...');
+    console.log('🔧 Validating recommendation math for exact 10/10 totals...');
     
     const processedSections = result.sections.map((section: any) => {
       const currentScore = section.currentScore || 0;
       const recommendations = section.recommendations || [];
       
-      // Calculate how many points we need to reach 8-10/10
-      const targetScore = 9; // Aim for 9/10
-      const neededPoints = Math.max(0, targetScore - currentScore);
+      // Calculate EXACT points needed to reach 10/10
+      const pointsNeeded = Math.max(0, 10 - currentScore);
       
-      // Distribute points among recommendations
-      if (recommendations.length > 0 && neededPoints > 0) {
-        const processedRecommendations = recommendations.map((rec: any, index: number) => {
-          // Assign higher impact to first recommendations
-          let impact = 2; // Default
-          if (index === 0) impact = 4; // First recommendation gets highest impact
-          else if (index === 1) impact = 3; // Second gets medium impact
-          else impact = 2; // Others get lower impact
-          
-          return {
-            ...rec,
-            expectedImpact: impact
-          };
-        });
+      console.log(`📊 Section ${section.sectionType}: Current ${currentScore}/10, needs ${pointsNeeded} points`);
+      
+      if (recommendations.length > 0 && pointsNeeded > 0) {
+        // Calculate current total from AI recommendations
+        const currentTotal = recommendations.reduce((sum: number, rec: any) => sum + (rec.expectedImpact || 0), 0);
+        
+        console.log(`📊 AI gave ${currentTotal} points total, but we need exactly ${pointsNeeded} points`);
+        
+        // Redistribute points to equal exactly the needed amount
+        const adjustedRecommendations = this.redistributePoints(recommendations, pointsNeeded);
+        
+        const newTotal = adjustedRecommendations.reduce((sum: number, rec: any) => sum + rec.expectedImpact, 0);
+        console.log(`✅ Adjusted to ${newTotal} points (should equal ${pointsNeeded})`);
         
         return {
           ...section,
-          recommendations: processedRecommendations,
-          estimatedImprovement: Math.min(neededPoints, 6)
+          recommendations: adjustedRecommendations,
+          estimatedImprovement: pointsNeeded
         };
       }
       
       return section;
     });
     
-    console.log('✅ Post-processing complete. Adjusted impact scores for realistic improvements.');
+    console.log('✅ Math validation complete. All sections now total exactly 10/10.');
     return {
       ...result,
       sections: processedSections
     };
+  }
+
+  /**
+   * Redistribute points among recommendations to match exact target
+   */
+  private static redistributePoints(recommendations: any[], targetTotal: number): any[] {
+    if (recommendations.length === 0) return recommendations;
+    
+    // Sort recommendations by priority (high priority gets more points)
+    const sorted = [...recommendations].sort((a, b) => {
+      const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+      return (priorityOrder[b.priority as keyof typeof priorityOrder] || 0) - 
+             (priorityOrder[a.priority as keyof typeof priorityOrder] || 0);
+    });
+    
+    // Distribute points proportionally but ensure exact total
+    const basePoints = Math.floor(targetTotal / sorted.length);
+    const remainder = targetTotal % sorted.length;
+    
+    return sorted.map((rec, index) => ({
+      ...rec,
+      expectedImpact: basePoints + (index < remainder ? 1 : 0)
+    }));
   }
 
   /**
@@ -312,6 +346,15 @@ QUALITY STANDARDS:
 CONTENT REQUIREMENTS:
 ${this.getContentTypeRequirements(contentType)}
 
+${contentType === 'schema' ? `
+CRITICAL SCHEMA OUTPUT FORMAT:
+- Output ONLY pure JSON-LD markup (no HTML, no explanations, no script tags)
+- Use valid JSON syntax that can be directly parsed
+- All URLs must be absolute and use the actual domain from the page
+- Return only the JSON object starting with { and ending with }
+- No surrounding text, comments, or HTML elements
+` : ''}
+
 IMPORTANT: For titles, generate ONLY the actual title text (50-60 characters), not guides or explanations.`;
 
     const userPrompt = `Generate ${count} optimized ${contentType} suggestions for this webpage:
@@ -333,7 +376,15 @@ ${pageSummary}
 
 Generate ${count} distinct, high-quality ${contentType} options that will improve this page's performance.
 
-${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-60 characters), not guides or explanations. Return a simple array of title strings.' : ''}`;
+${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-60 characters), not guides or explanations. Return a simple array of title strings.' : ''}${contentType === 'schema' ? `
+
+CRITICAL SCHEMA REQUIREMENTS:
+- Return ONLY pure JSON-LD markup, no HTML tags or script wrappers
+- Use the actual domain: ${new URL(pageContent.url).origin}
+- Include relevant schema types: Organization, WebSite, SoftwareApplication, BreadcrumbList, FAQPage (as appropriate)
+- Make all URLs absolute and real (not placeholder URLs)
+- Ensure the JSON is valid and can be directly injected into <script type="application/ld+json"> tags
+- NO HTML content, NO explanatory text, ONLY the JSON object` : ''}`;
 
     try {
       const { text: responseText } = await generateText({
@@ -344,6 +395,8 @@ ${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-
       });
 
       if (!responseText) throw new Error('No response from AI');
+
+      console.log(`🤖 AI Response for ${contentType}:`, responseText.substring(0, 200) + '...');
 
       // Parse the response based on content type
       return this.parseContentResponse(responseText, contentType, count);
@@ -369,7 +422,14 @@ ${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-
       case 'keywords':
         return '- Include primary, long-tail, and semantic keywords\n- Organize by category\n- Provide search volume insights\n- Include related terms';
       case 'schema':
-        return '- Generate valid JSON-LD markup\n- Use real URLs and accurate data\n- Include appropriate schema types\n- Follow schema.org standards';
+        return `- Generate ONLY valid JSON-LD markup (pure JSON, no HTML)
+- Use real URLs and accurate data from the page content
+- Include appropriate schema types for the page (Organization, WebSite, SoftwareApplication, etc.)
+- Follow schema.org standards exactly
+- Return ONLY the JSON object, no surrounding HTML tags or script tags
+- Ensure all URLs use the actual domain from the page
+- Make the schema comprehensive but relevant to the page content
+- CRITICAL: Output format must be pure JSON that can be directly injected into <script type="application/ld+json"> tags`;
       default:
         return '- High-quality, optimized content\n- Relevant to the page topic\n- Include appropriate keywords';
     }
@@ -381,6 +441,11 @@ ${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-
   private static parseContentResponse(responseText: string, contentType: string, count: number): any {
     try {
       const cleaned = responseText.replace(/```json|```/g, '').trim();
+      
+      // Special handling for schema content
+      if (contentType === 'schema') {
+        return this.parseSchemaResponse(cleaned);
+      }
       
       // For titles, try to extract just the title strings
       if (contentType === 'title') {
@@ -428,6 +493,71 @@ ${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-
       console.error(`Failed to parse ${contentType} response:`, responseText);
       // Fallback: return the raw text as a single suggestion
       return [responseText.trim()];
+    }
+  }
+
+  /**
+   * Parse schema response to extract clean JSON-LD
+   */
+  private static parseSchemaResponse(responseText: string): string {
+    console.log('🔧 Parsing schema response...', responseText.substring(0, 100) + '...');
+    
+    try {
+      // Remove common wrapper text and HTML tags
+      let cleaned = responseText
+        .replace(/```json|```/g, '')
+        .replace(/<script[^>]*>/gi, '')
+        .replace(/<\/script>/gi, '')
+        .replace(/Here's the schema markup:|Generated schema:|Schema markup:/gi, '')
+        .replace(/^[^\{]*/, '') // Remove everything before first {
+        .replace(/[^\}]*$/, '}') // Remove everything after last }
+        .trim();
+
+      // Extract JSON from HTML if present
+      const scriptMatch = cleaned.match(/<script[^>]*type=['"]application\/ld\+json['"][^>]*>\s*([\s\S]*?)\s*<\/script>/i);
+      if (scriptMatch) {
+        console.log('📜 Found script tag, extracting JSON...');
+        cleaned = scriptMatch[1].trim();
+      }
+
+      // Find JSON object in the text
+      const jsonStart = cleaned.indexOf('{');
+      const jsonEnd = cleaned.lastIndexOf('}');
+      
+      if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+      }
+
+      // Validate JSON
+      const parsed = JSON.parse(cleaned);
+      console.log('✅ Schema JSON parsed successfully');
+      
+      // Return formatted JSON string
+      return JSON.stringify(parsed, null, 2);
+    } catch (error) {
+      console.error('❌ Failed to parse schema JSON:', error);
+      console.error('📄 Raw response:', responseText);
+      
+      // Fallback: try to extract any JSON-like content
+      try {
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          console.log('✅ Fallback parsing successful');
+          return JSON.stringify(parsed, null, 2);
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback parsing also failed:', fallbackError);
+      }
+      
+      // Last resort: return empty schema structure
+      console.log('⚠️ Using fallback empty schema structure');
+      return JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Website",
+        "url": "https://example.com"
+      }, null, 2);
     }
   }
 }

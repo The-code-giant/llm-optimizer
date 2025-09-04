@@ -779,6 +779,9 @@ FOCUS ON:
       return;
     }
 
+    // **CLEANUP: Already done at the beginning of main analysis**
+    console.log('📝 Content suggestions will be generated fresh (cleanup already completed)');
+
     const pageSummary = analysisResult.pageSummary || analysisResult.summary || '';
 
     try {
@@ -818,13 +821,7 @@ FOCUS ON:
         } catch (unifiedError) {
           console.error(`❌ Unified service failed for ${type}, using direct database save:`, unifiedError);
           
-          // Fallback to direct database save
-          await db.delete(contentSuggestions)
-            .where(and(
-              eq(contentSuggestions.pageId, pageId),
-              eq(contentSuggestions.contentType, type)
-            ));
-
+          // Direct database save (cleanup already done at the beginning)
           await db.insert(contentSuggestions).values({
             pageId,
             contentType: type,
@@ -1035,12 +1032,7 @@ Generate 3 FAQ pairs and 3 informative paragraphs following the JSON format abov
           }
 
           // Save using old method as fallback
-          await db.delete(contentSuggestions)
-            .where(and(
-              eq(contentSuggestions.pageId, pageId),
-              eq(contentSuggestions.contentType, type)
-            ));
-
+          // Direct database save (cleanup already done at the beginning)
           await db.insert(contentSuggestions).values({
             pageId,
             contentType: type,
@@ -1790,8 +1782,25 @@ Do not include any explanations or markdown formatting.`,
       const cleaned = responseText.replace(/```json|```/g, '').trim();
       const result = JSON.parse(cleaned);
 
+      let content = result.content || '';
+      
+      // **VALIDATION: Enforce character limits for specific section types**
+      if (sectionType === 'title' && content.length > 60) {
+        console.warn(`Generated title exceeds 60 characters (${content.length}): ${content}`);
+        // Truncate if necessary
+        content = content.substring(0, 57) + '...';
+        console.log(`Truncated title to: ${content}`);
+      }
+      
+      if (sectionType === 'description' && content.length > 160) {
+        console.warn(`Generated description exceeds 160 characters (${content.length}): ${content}`);
+        // Truncate if necessary
+        content = content.substring(0, 157) + '...';
+        console.log(`Truncated description to: ${content}`);
+      }
+
       return {
-        content: result.content || '',
+        content,
         keyPoints: Array.isArray(result.keyPoints) ? result.keyPoints : []
       };
     } catch (error) {

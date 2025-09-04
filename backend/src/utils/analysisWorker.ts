@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import { redisConnection } from './queue';
 import winston from 'winston';
 import { db } from '../db/client';
-import { pages, contentAnalysis } from '../db/schema';
+import { pages, contentAnalysis, contentSuggestions, contentRecommendations } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { AnalysisService } from './analysisService';
 
@@ -15,6 +15,49 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 });
 
+/**
+ * Clean up all existing analysis data for a page to prevent duplicates
+ */
+async function cleanupExistingAnalysisData(pageId: string): Promise<void> {
+  try {
+    console.log(`🧹 Starting cleanup for page ${pageId}...`);
+
+    // 1. Get all existing content analysis IDs for this page
+    const existingAnalysis = await db.select({ id: contentAnalysis.id })
+      .from(contentAnalysis)
+      .where(eq(contentAnalysis.pageId, pageId));
+
+    console.log(`📊 Found ${existingAnalysis.length} existing analysis records`);
+
+    // 2. Delete content recommendations (dependent on content analysis)
+    if (existingAnalysis.length > 0) {
+      for (const analysis of existingAnalysis) {
+        await db.delete(contentRecommendations)
+          .where(eq(contentRecommendations.analysisResultId, analysis.id));
+      }
+      console.log(`🗑️ Deleted content recommendations for ${existingAnalysis.length} analysis records`);
+    }
+
+    // 3. Delete content suggestions (independent)
+    const deletedSuggestions = await db.delete(contentSuggestions)
+      .where(eq(contentSuggestions.pageId, pageId));
+    console.log(`🗑️ Deleted content suggestions for page ${pageId}`);
+
+    // 4. Delete content analysis records (main analysis data)
+    if (existingAnalysis.length > 0) {
+      const deletedAnalysis = await db.delete(contentAnalysis)
+        .where(eq(contentAnalysis.pageId, pageId));
+      console.log(`🗑️ Deleted ${existingAnalysis.length} content analysis records`);
+    }
+
+    console.log(`✅ Cleanup completed - page ${pageId} is ready for fresh analysis`);
+  } catch (error) {
+    console.error(`❌ Cleanup failed for page ${pageId}:`, error);
+    // Don't throw error - allow analysis to continue even if cleanup fails
+    logger.warn(`⚠️ Cleanup failed but continuing with analysis for page ${pageId}`);
+  }
+}
+
 async function analyzePage(pageId: string) {
   const pageArr = await db.select().from(pages).where(eq(pages.id, pageId)).limit(1);
   const page = pageArr[0];
@@ -23,6 +66,11 @@ async function analyzePage(pageId: string) {
   logger.info(`🔍 Starting comprehensive analysis for page ${pageId} (${page.url})...`);
   
   try {
+    // **CLEANUP: Remove all existing analysis data to prevent duplicates**
+    console.log('🧹 Cleaning up existing analysis data to prevent duplicates...');
+    await cleanupExistingAnalysisData(pageId);
+    console.log('✅ Cleanup completed successfully');
+
     // Use the new AnalysisService for comprehensive analysis
     console.log('🔍 About to call AnalysisService.analyzePage...');
     const analysisResult = await AnalysisService.analyzePage({
