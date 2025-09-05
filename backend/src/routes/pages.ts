@@ -2012,9 +2012,66 @@ router.post('/:pageId/section-content', authenticateJWT, async (req: Authenticat
     }
 
     try {
-      // Parse analysis result to get page content and context
-      const analysisData = {}; // No longer stored in analysis table
+      // Construct proper analysisData from the contentAnalysis record
+      const analysisData = {
+        score: analysis.overallScore || 0,
+        summary: analysis.analysisSummary || '',
+        issues: [], // Could be populated from separate analysis
+        recommendations: [], // Could be populated from separate analysis
+        keywordAnalysis: {
+          primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
+          longTailKeywords: Array.isArray(analysis.longTailKeywords) ? analysis.longTailKeywords : [],
+          semanticKeywords: Array.isArray(analysis.semanticKeywords) ? analysis.semanticKeywords : [],
+          keywordDensity: analysis.keywordDensity || 0,
+          missingKeywords: []
+        },
+        technicalSEO: {
+          titleOptimization: analysis.titleOptimization || 0,
+          metaDescription: analysis.metaDescription || 0,
+          headingStructure: analysis.headingStructure || 0,
+          schemaMarkup: analysis.schemaMarkup || 0,
+          semanticMarkup: 0,
+          contentDepth: 0
+        },
+        contentQuality: {
+          clarity: analysis.contentClarity || 0,
+          structure: analysis.contentStructure || 0,
+          completeness: analysis.contentCompleteness || 0
+        },
+        llmOptimization: {
+          definitionsPresent: Boolean(analysis.definitionsPresent),
+          faqsPresent: Boolean(analysis.faqsPresent),
+          structuredData: Boolean(analysis.structuredData),
+          citationFriendly: Boolean(analysis.citationFriendly),
+          topicCoverage: analysis.topicCoverage || 0,
+          answerableQuestions: 0
+        },
+        sectionRatings: {
+          title: Math.round((analysis.titleOptimization || 0) / 10),
+          description: Math.round((analysis.metaDescription || 0) / 10),
+          headings: Math.round((analysis.headingStructure || 0) / 10),
+          content: Math.round((analysis.contentClarity || 0) / 10),
+          schema: Math.round((analysis.schemaMarkup || 0) / 10),
+          images: 0,
+          links: 0
+        },
+        contentRecommendations: {
+          title: [],
+          description: [],
+          headings: [],
+          content: [],
+          schema: [],
+          images: [],
+          links: []
+        }
+      };
+      
+      // Construct proper pageContent object with all required fields for AI generation
       const pageContent = {
+        url: page.url,
+        title: page.title || '',
+        metaDescription: '', // Not stored in pages table, could be extracted from contentSnapshot
+        bodyText: page.contentSnapshot || '',
         summary: analysis.analysisSummary || '',
         pageSummary: analysis.pageSummary || ''
       };

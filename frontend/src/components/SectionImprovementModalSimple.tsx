@@ -47,15 +47,12 @@ const calculateScoreImprovement = (recommendations: string[], currentScore: numb
     }
   }
   
-  // Simple improvement calculation - ensure minimum improvement and cap at 10
-  const finalImprovement = Math.max(0.5, improvement);
-  
-  // Don't allow final score to exceed 10
-  if (currentScore + finalImprovement > 10) {
-    return Math.max(0.5, 10 - currentScore);
+  // Cap the final score at 10
+  if (currentScore + improvement > 10) {
+    return Math.max(0.1, 10 - currentScore);
   }
   
-  return finalImprovement;
+  return improvement;
 };
 
 export default function SectionImprovementModal({
@@ -73,12 +70,6 @@ export default function SectionImprovementModal({
   const [generatedContent, setGeneratedContent] = useState<string>("");
   const [selectedRecommendations, setSelectedRecommendations] = useState<string[]>([]);
   const [estimatedNewScore, setEstimatedNewScore] = useState<number>(currentScore);
-  
-  // Additional AI generation details
-  const [aiKeyPoints, setAiKeyPoints] = useState<string[]>([]);
-  const [aiRecommendationsAddressed, setAiRecommendationsAddressed] = useState<string[]>([]);
-  const [aiGenerationContext, setAiGenerationContext] = useState<string>("");
-  const [originalRawContent, setOriginalRawContent] = useState<string>(""); // Track original before cleaning
 
   const totalSteps = 3;
 
@@ -90,51 +81,8 @@ export default function SectionImprovementModal({
       setGeneratedContent("");
       setSelectedRecommendations([]);
       setEstimatedNewScore(currentScore);
-      setAiKeyPoints([]);
-      setAiRecommendationsAddressed([]);
-      setAiGenerationContext("");
-      setOriginalRawContent("");
     }
   }, [isOpen, currentScore]);
-
-  // Helper function to clean schema content (safety net)
-  const cleanSchemaContent = (content: string): string => {
-    if (sectionType !== 'schema') return content;
-    
-    // Backend should now generate clean JSON, but keep this as safety net
-    try {
-      // If it's already clean JSON, just format it
-      const parsed = JSON.parse(content);
-      return JSON.stringify(parsed, null, 2);
-    } catch {
-      // If not valid JSON, try to extract from HTML (fallback)
-      const scriptRegex = /<script type=['"]application\/ld\+json['"]>\s*([\s\S]*?)\s*<\/script>/;
-      const scriptMatch = content.match(scriptRegex);
-      if (scriptMatch) {
-        try {
-          const jsonContent = scriptMatch[1].trim();
-          const parsed = JSON.parse(jsonContent);
-          return JSON.stringify(parsed, null, 2);
-        } catch (error) {
-          console.warn('Invalid JSON in schema content:', error);
-          return scriptMatch[1].trim();
-        }
-      }
-      
-      // If no script tag found, try to extract JSON directly
-      try {
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          return JSON.stringify(parsed, null, 2);
-        }
-      } catch (error) {
-        console.warn('Could not parse JSON from content:', error);
-      }
-      
-      return content;
-    }
-  };
 
   // Character count helper
   const getCharacterCount = () => {
@@ -174,15 +122,14 @@ export default function SectionImprovementModal({
         selectedRecommendations
       );
 
-      setOriginalRawContent(result.generatedContent); // Store original for comparison
-      const cleanedContent = cleanSchemaContent(result.generatedContent);
-      setGeneratedContent(cleanedContent);
-      setAiKeyPoints(result.keyPoints);
-      setAiRecommendationsAddressed(result.recommendationsAddressed);
-      setAiGenerationContext(result.generationContext);
-      setCurrentStep(2); // Move to step 2 (Review & Regenerate) instead of 3
+      if (result && result.generatedContent) {
+        setGeneratedContent(result.generatedContent);
+        // Move to step 2 (Review & Regenerate) after generation
+        setCurrentStep(2);
+      }
     } catch (error) {
-      console.error("Error generating content:", error);
+      console.error('Failed to generate content:', error);
+      // Handle error
     } finally {
       setGenerating(false);
     }
@@ -214,7 +161,7 @@ export default function SectionImprovementModal({
       );
 
       onContentGenerated(generatedContent, estimatedNewScore);
-      setCurrentStep(3); // Move to final step (3) instead of 4
+      setCurrentStep(3);
     } catch (error) {
       console.error("Error deploying content:", error);
     }
@@ -326,8 +273,7 @@ export default function SectionImprovementModal({
                 <h3 className="text-lg font-medium">Review & Regenerate</h3>
               </div>
 
-              <div className="space-y-6">
-                {/* Success Summary */}
+              <div className="space-y-4">
                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                   <div className="flex items-center space-x-2 mb-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
@@ -339,98 +285,14 @@ export default function SectionImprovementModal({
                   </p>
                 </div>
 
-                {/* AI Improvements Made */}
-                {aiRecommendationsAddressed.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-3">🤖 AI Improvements Applied</h4>
-                    <div className="space-y-2">
-                      {aiRecommendationsAddressed.map((recommendation, index) => (
-                        <div key={index} className="flex items-start space-x-2">
-                          <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-blue-700">{recommendation}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Key Points Enhanced */}
-                {aiKeyPoints.length > 0 && (
-                  <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-purple-800 mb-3">✨ Key Enhancements Made</h4>
-                    <div className="space-y-2">
-                      {aiKeyPoints.map((point, index) => (
-                        <div key={index} className="flex items-start space-x-2">
-                          <Lightbulb className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm text-purple-700">{point}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* AI Generation Context */}
-                {aiGenerationContext && (
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">🧠 AI Analysis Context</h4>
-                    <p className="text-sm text-gray-700">{aiGenerationContext}</p>
-                  </div>
-                )}
-
-                {/* Schema Content Notice */}
-                {sectionType === 'schema' && originalRawContent !== generatedContent && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-yellow-800 mb-2">📋 Schema Content Processing</h4>
-                    <p className="text-sm text-yellow-700">
-                      The content has been processed to ensure clean JSON-LD format for website injection. 
-                      The final schema markup is ready for deployment.
-                    </p>
-                    <details className="mt-3">
-                      <summary className="text-xs text-yellow-600 cursor-pointer hover:text-yellow-800">
-                        View original AI output (before processing)
-                      </summary>
-                      <div className="mt-2 p-2 bg-yellow-100 rounded text-xs max-h-32 overflow-y-auto">
-                        <pre className="whitespace-pre-wrap text-yellow-800">{originalRawContent}</pre>
-                      </div>
-                    </details>
-                  </div>
-                )}
-
-                {/* Schema Content Success Notice */}
-                {sectionType === 'schema' && originalRawContent === generatedContent && (
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-green-800 mb-2">✅ Clean Schema Generated</h4>
-                    <p className="text-sm text-green-700">
-                      Perfect! The AI generated clean JSON-LD markup that&apos;s ready for direct injection 
-                      into your website without any processing needed.
-                    </p>
-                  </div>
-                )}
-
-                {/* Generated Content */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">
-                    {sectionType === 'schema' ? 'Generated Schema JSON-LD:' : 'Generated Content:'}
-                  </label>
-                  <div className="bg-gray-50 p-4 rounded-lg border">
-                    {sectionType === 'schema' ? (
-                      <pre className="text-xs text-gray-800 overflow-x-auto">
-                        <code>{generatedContent}</code>
-                      </pre>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
-                    )}
+                  <label className="block text-sm font-medium mb-2">Generated Content:</label>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
                   </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <p className="text-xs text-muted-foreground">
-                      {getCharacterCount()} characters
-                    </p>
-                    {sectionType === 'schema' && (
-                      <p className="text-xs text-green-600">
-                        ✓ Clean JSON-LD (HTML removed)
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {getCharacterCount()} characters
+                  </p>
                 </div>
 
                 <div className="flex items-center justify-between">
@@ -482,32 +344,13 @@ export default function SectionImprovementModal({
                 </div>
                 
                 <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <h4 className="font-medium text-green-800 mb-3">📊 Improvement Summary</h4>
-                  <div className="text-sm text-green-700 space-y-2">
-                    <div className="flex justify-between">
-                      <span>Previous Score:</span>
-                      <span className="font-medium">{currentScore.toFixed(1)}/10</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>New Score:</span>
-                      <span className="font-medium">{estimatedNewScore.toFixed(1)}/10</span>
-                    </div>
-                    <div className="flex justify-between border-t border-green-200 pt-2">
-                      <span>Improvement:</span>
-                      <span className="font-bold text-green-800">+{(estimatedNewScore - currentScore).toFixed(1)} points</span>
-                    </div>
+                  <h4 className="font-medium text-green-800 mb-2">Improvement Summary</h4>
+                  <div className="text-sm text-green-700 space-y-1">
+                    <p>Previous Score: {currentScore.toFixed(1)}/10</p>
+                    <p>New Score: {estimatedNewScore.toFixed(1)}/10</p>
+                    <p className="font-medium">Improvement: +{(estimatedNewScore - currentScore).toFixed(1)} points</p>
                   </div>
                 </div>
-
-                {/* Show applied improvements summary */}
-                {aiRecommendationsAddressed.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-2">✅ Improvements Applied</h4>
-                    <p className="text-sm text-blue-700">
-                      {aiRecommendationsAddressed.length} recommendation(s) successfully implemented
-                    </p>
-                  </div>
-                )}
 
                 <Button onClick={onClose} className="w-full">
                   Close

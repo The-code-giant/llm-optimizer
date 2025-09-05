@@ -1704,6 +1704,37 @@ Return structured schema data with the appropriate type and content using ONLY t
       throw new Error('OpenAI API key not configured');
     }
 
+    // Validate essential page context before calling the AI.
+    // If required fields are missing, abort the AI call and log a clear message so callers can fix upstream data.
+    const missingFields: string[] = [];
+    if (!pageContent || !pageContent.url) missingFields.push('url');
+    // Consider title/meta/body as content context; at least one should be present
+    if (!pageContent || (!pageContent.title && !pageContent.metaDescription && !pageContent.bodyText)) missingFields.push('content(title|metaDescription|bodyText)');
+
+    if (missingFields.length > 0) {
+      // Log structured payload so operators can see exactly what would have been sent
+      try {
+        console.warn('🛑 Aborting AI request: insufficient page context for section generation', {
+          sectionType,
+          missingFields,
+          pageContentSummary: pageContent ? {
+            url: pageContent.url,
+            title: pageContent.title ? `${pageContent.title.substring(0, 120)}${pageContent.title.length > 120 ? '...' : ''}` : null,
+            metaDescription: pageContent.metaDescription ? `${pageContent.metaDescription.substring(0, 160)}${pageContent.metaDescription.length > 160 ? '...' : ''}` : null,
+            hasBodyText: Boolean(pageContent.bodyText)
+          } : null,
+          currentContent: currentContent ? `${currentContent.substring(0, 200)}${currentContent.length > 200 ? '...' : ''}` : null,
+          additionalContext: additionalContext ? `${additionalContext.substring(0, 200)}${additionalContext.length > 200 ? '...' : ''}` : null,
+          analysisDataSummary: analysisData ? {
+            primaryKeywords: analysisData.keywordAnalysis?.primaryKeywords?.slice(0, 5) || []
+          } : null
+        });
+      } catch (logErr) {
+        console.warn('⚠️ Failed to log AI abort context', logErr);
+      }
+
+      throw new Error(`Insufficient page context for AI generation. Missing: ${missingFields.join(', ')}`);
+    }
 
 
     const systemPrompt = `You are an expert in Generative Engine Optimization (GEO) and SEO content optimization.
@@ -1754,25 +1785,27 @@ ${sectionType === 'title' ? '- Generate ONLY the actual title text (50-60 charac
 Generate the optimized content now.`;
 
     try {
+      // Debug logging for section content generation (title requests always logged)
+      if (sectionType === 'title' || process.env.DEBUG_AI_PROMPTS === '1') {
+        try {
+          console.log('🧾 AnalysisService AI Request:', JSON.stringify({
+             system: systemPrompt,
+        prompt: userPrompt + `\n\nIMPORTANT: Return ONLY a valid JSON object with the following structure:\n` + (sectionType === 'title' ? 
+`{\n  "content": "the optimized title (50-60 characters only)",\n  "keyPoints": ["key point 1", "key point 2"],\n  "recommendationsAddressed": ["rec 1", "rec 2"],\n  "estimatedImpact": "brief impact description"\n}` : 
+`{\n  "content": "the optimized content",\n  "keyPoints": ["key point 1", "key point 2", "key point 3"],\n  "recommendationsAddressed": ["rec 1", "rec 2"],\n  "estimatedImpact": "brief impact description"\n}`) + `\n\nDo not include any explanations or markdown formatting.`,
+        temperature: 0.7,
+          }, null, 2));
+        } catch (logErr) {
+          console.log('⚠️ Failed to stringify AnalysisService AI payload', logErr);
+        }
+      }
+
       const { text: responseText } = await generateText({
         model: aiOpenAI(OPENAI_MODEL) as any,
         system: systemPrompt,
-        prompt: userPrompt + `\n\nIMPORTANT: Return ONLY a valid JSON object with the following structure:
-${sectionType === 'title' ? 
-`{
-  "content": "the optimized title (50-60 characters only)",
-  "keyPoints": ["key point 1", "key point 2"],
-  "recommendationsAddressed": ["rec 1", "rec 2"],
-  "estimatedImpact": "brief impact description"
-}` : 
-`{
-  "content": "the optimized content",
-  "keyPoints": ["key point 1", "key point 2", "key point 3"],
-  "recommendationsAddressed": ["rec 1", "rec 2"],
-  "estimatedImpact": "brief impact description"
-}`}
-
-Do not include any explanations or markdown formatting.`,
+        prompt: userPrompt + `\n\nIMPORTANT: Return ONLY a valid JSON object with the following structure:\n` + (sectionType === 'title' ? 
+`{\n  "content": "the optimized title (50-60 characters only)",\n  "keyPoints": ["key point 1", "key point 2"],\n  "recommendationsAddressed": ["rec 1", "rec 2"],\n  "estimatedImpact": "brief impact description"\n}` : 
+`{\n  "content": "the optimized content",\n  "keyPoints": ["key point 1", "key point 2", "key point 3"],\n  "recommendationsAddressed": ["rec 1", "rec 2"],\n  "estimatedImpact": "brief impact description"\n}`) + `\n\nDo not include any explanations or markdown formatting.`,
         temperature: 0.7,
       });
 

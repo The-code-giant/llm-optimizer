@@ -1426,8 +1426,18 @@ export default function PageAnalysisPage() {
                                     type: "success",
                                   });
 
-                                  // Refresh data to show updated ratings
-                                  await fetchData();
+                                  // Update ratings locally instead of full page refresh
+                                  if (analysis && analysis.sectionRatings) {
+                                    const updatedAnalysis = {
+                                      ...analysis,
+                                      sectionRatings: {
+                                        ...analysis.sectionRatings,
+                                        [improvementModal.sectionType]: newScore
+                                      }
+                                    };
+                                    setAnalysis(updatedAnalysis);
+                                  }
+                                  
                                   setImprovementModal(null);
                                 } catch (error) {
                                   const message =

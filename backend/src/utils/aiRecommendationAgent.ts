@@ -59,45 +59,24 @@ export interface PageAnalysisResult {
 }
 
 export class AIRecommendationAgent {
-  private static readonly SYSTEM_PROMPT = `You are an expert AI content optimization specialist with deep expertise in:
-- SEO and search engine optimization
-- Generative Engine Optimization (GEO) for LLM citation
-- User experience and conversion optimization
-- Technical web development and structured data
-- Content strategy and marketing
+  private static readonly SYSTEM_PROMPT = `You are an expert content & GEO (Generative Engine Optimization) specialist. Your output must be concise, evidence‑anchored, and formatted as a single JSON object that exactly matches the expected schema. Follow these strict rules:
 
-Your task is to analyze web content and provide intelligent, actionable recommendations that will significantly improve the content's performance, search visibility, and user engagement.
+1) SOURCE-FIRST: Base every claim on the provided page content only. Do NOT invent facts. When you reference evidence, include a short excerpt (<=140 chars) inside the issue string in parentheses.
 
-ANALYSIS APPROACH:
-1. **Deep Content Analysis**: Examine the ACTUAL content provided, not just metrics
-2. **Context-Aware Recommendations**: Consider the page's purpose, audience, and industry based on the content
-3. **Prioritized Action Items**: Focus on high-impact improvements specific to this content
-4. **Specific Implementation Guidance**: Provide clear, actionable steps tailored to this content
-5. **Evidence-Based Suggestions**: Base recommendations on the actual content analysis
+2) JSON-ONLY: Output exactly one JSON object that follows the expected schema. No surrounding commentary, no HTML, no markdown, no code fences. If you are generating 'schema' content, output only pure JSON-LD.
 
-RECOMMENDATION QUALITY STANDARDS:
-- Be specific and actionable for THIS content, not generic
-- Provide concrete examples and implementation details based on the actual content
-- Consider the user's technical expertise level
-- Focus on measurable improvements specific to this page
-- Prioritize recommendations by impact and effort required
+3) CONCISE: Keep recommendation descriptions <= 50 words. Titles <= 12 words. Implementation steps: max 3 bullet-like short steps.
 
-SCORING CRITERIA:
-- 0-3: Poor/Needs major work
-- 4-6: Average/Some improvements needed  
-- 7-8: Good/Minor optimizations possible
-- 9-10: Excellent/Industry best practices
+4) GEO / LLM CITATION FOCUS: Prioritize changes that increase the page's chance to be cited by LLMs: explicit entity mentions, authoritative facts, canonical URLs, clear data statements, and structured data.
 
-IMPACT SCORING GUIDELINES:
-- CRITICAL RULE: Total points from all recommendations per section must equal exactly (10 - current_score)
-- If current score is 6/10, recommendations must total exactly 4 points
-- If current score is 3/10, recommendations must total exactly 7 points
-- High-impact recommendations: 2-3 points each
-- Medium-impact recommendations: 1-2 points each  
-- Low-impact recommendations: 1 point each
-- MATHEMATICAL ACCURACY: Always ensure recommendations sum to fill the exact gap to 10/10
+5) SCORING: 'expectedImpact' must be an integer. 'estimatedImprovement' must equal the sum of 'expectedImpact' for that section and must be <= (10 - currentScore).
 
-IMPORTANT: Always analyze the ACTUAL content provided and give recommendations specific to that content. Do not give generic advice that could apply to any page.`;
+6) NO FILLER: Avoid generic, marketing, or speculative language. Do not use 'In summary' or long essays.
+
+7) FAIL-SAFE: If the page content is insufficient to make confident recommendations, return 'issues: ["insufficient_content"]' and an empty or minimal 'recommendations' array. Do not invent data.
+
+If you cannot follow these rules, return a JSON object with 'criticalIssues: ["model_rules_not_followed"]'.
+`;
 
   /**
    * Generate AI-powered recommendations for all page sections
@@ -120,17 +99,17 @@ IMPORTANT: Always analyze the ACTUAL content provided and give recommendations s
       hasKeywords: !!analysisData.keywordAnalysis?.primaryKeywords?.length
     });
 
-    const userPrompt = `Analyze this webpage and provide recommendations for each section.
+    const userPrompt = `Analyze this webpage using only the provided content and return a single JSON object that matches the SectionAnalysis schema.
 
-PAGE CONTENT:
+PAGE:
 - URL: ${pageContent.url}
 - Title: "${pageContent.title || 'No title'}"
 - Meta Description: "${pageContent.metaDescription || 'No meta description'}"
-- Main Content: ${pageContent.bodyText?.substring(0, 1000) || 'No content'}
+- Body (first 1500 chars): """${pageContent.bodyText?.substring(0, 1500) || 'No content'}"""
 
-CURRENT SECTION SCORES:
+SCORES:
 - Title: ${analysisData.sectionRatings?.title || 0}/10
-- Description: ${analysisData.sectionRatings?.description || 0}/10  
+- Description: ${analysisData.sectionRatings?.description || 0}/10
 - Headings: ${analysisData.sectionRatings?.headings || 0}/10
 - Content: ${analysisData.sectionRatings?.content || 0}/10
 - Schema: ${analysisData.sectionRatings?.schema || 0}/10
@@ -139,23 +118,13 @@ CURRENT SECTION SCORES:
 
 KEYWORDS: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
 
-CRITICAL SCORING RULE:
-For each section, the total points from ALL recommendations should equal exactly (10 - current_score).
-Example: If title score is 6/10, then ALL title recommendations combined should total exactly 4 points.
-
-Provide recommendations for each section with:
-- Current score (use the scores provided above)
-- 2-3 specific recommendations with titles
-- Priority level (low, medium, high, critical)
-- Points per recommendation (must sum to exactly fill the gap to 10/10)
-
-POINT ALLOCATION STRATEGY:
-- If gap is 1-2 points: 1-2 medium recommendations (1-2 points each)
-- If gap is 3-4 points: 2-3 recommendations (1-2 points each)  
-- If gap is 5+ points: 3-4 recommendations (1-3 points each)
-- TOTAL must always equal the gap to reach 10/10
-
-Focus on specific, actionable improvements for this content.`;
+REQUIREMENTS:
+- For each section produce:
+  - currentScore (0-10)
+  - issues: 3 specific short strings each including an evidence excerpt (<=140 chars) and sentence index
+  - recommendations: 2-4 objects with {priority, category, title, description (<=50 words), expectedImpact (integer), implementation (max 3 short steps)}
+  - estimatedImprovement: numeric (sum of expectedImpact, <= 10 - currentScore)
+- Keep output JSON-only. Do not add any extra text.`;
 
     try {
       console.log('🤖 AI Agent: Calling OpenAI API...');
@@ -266,41 +235,25 @@ Focus on specific, actionable improvements for this content.`;
       throw new Error('OpenAI API key not configured');
     }
 
-    const userPrompt = `Analyze the ${sectionType} section of this webpage and provide detailed recommendations.
+  const userPrompt = `Focus on the ${sectionType} section. Use only the provided content and return a single JSON object matching RecommendationSchema.
 
-SECTION TYPE: ${sectionType.toUpperCase()}
-
-CURRENT ${sectionType.toUpperCase()} CONTENT:
+SECTION CONTENT:
+"""
 ${currentContent || 'No current content provided'}
+"""
 
 PAGE CONTEXT:
 - URL: ${pageContent.url}
-- Page Title: ${pageContent.title || 'No title'}
-- Meta Description: ${pageContent.metaDescription || 'No meta description'}
-- Main Content: ${pageContent.bodyText?.substring(0, 1000) || 'No content'}
+- Page Title: "${pageContent.title || 'No title'}"
+- Keywords: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
 
-ANALYSIS DATA:
-- Overall Score: ${analysisData.score}/100
-- Primary Keywords: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
-- Long-tail Keywords: ${analysisData.keywordAnalysis?.longTailKeywords?.slice(0, 3).join(', ') || 'None'}
+REQUEST:
+1) currentScore: 0-10
+2) issues: list 3 short items with an evidence excerpt (<=140 chars) and sentence index
+3) recommendations: 3 items with {title, description <=50 words, implementation (<=3 steps), expectedImpact (int), priority, category}
+4) estimatedImprovement: sum(expectedImpact)
 
-ADDITIONAL CONTEXT:
-${additionalContext || 'No additional context provided'}
-
-REQUIREMENTS:
-1. **Score Assessment**: Provide honest current score (0-10) for this section
-2. **Issue Identification**: Identify 3-5 specific issues with this section
-3. **Recommendations**: Provide 3-5 prioritized recommendations with:
-   - Priority level (low/medium/high/critical)
-   - Category (SEO/UX/Technical/Content)
-   - Clear title and description
-   - Expected impact score (0-10 improvement)
-   - Specific implementation steps
-   - Examples or code snippets where applicable
-4. **Overall Assessment**: Brief summary of this section's current state
-5. **Estimated Improvement**: Total score improvement if all recommendations are implemented
-
-Focus on actionable, specific improvements that will have measurable impact on this section's performance.`;
+Output exactly the JSON object only.`;
 
     try {
       const { object: result } = await generateObject({
@@ -331,67 +284,53 @@ Focus on actionable, specific improvements that will have measurable impact on t
     if (!process.env.OPENAI_API_KEY) {
       throw new Error('OpenAI API key not configured');
     }
+    console.log(`🤖 AI Content Suggestion: Generating ${count} ${contentType}(s) for ${pageContent.url}${pageSummary}`);
+  // Derive a brand hint to ensure titles stay on-brand
+  const brandHint = pageContent.brand || pageContent.siteName || (pageContent.title ? pageContent.title.split(' - ').slice(-1)[0].trim() : new URL(pageContent.url).hostname);
+  
+  // Choose temperature: deterministic for titles to avoid off-brand creativity
+  const temperatureSetting = contentType === 'title' ? 0.0 : 0.7;
 
-    const systemPrompt = `You are an expert content strategist specializing in ${contentType} optimization for SEO and LLM citation.
+  const systemPrompt = `You are an expert content strategist. Output must be concise, JSON-only, and optimized for GEO (LLM citation).
 
-Your task is to generate high-quality, optimized ${contentType} suggestions that will improve the page's performance and search visibility.
+Focus: ${contentType}
 
-QUALITY STANDARDS:
-- Generate content that is specific, actionable, and tailored to the page
-- Optimize for both search engines and AI citation
-- Include relevant keywords naturally
-- Follow best practices for ${contentType} optimization
-- Provide ${count} distinct, high-quality options
-
-CONTENT REQUIREMENTS:
+Rules:
+- Generate ${count} distinct, high-quality options.
+- Keep items directly usable (titles 50-60 chars; descriptions 150-160 chars).
+- Follow content-type requirements:
 ${this.getContentTypeRequirements(contentType)}
 
-${contentType === 'schema' ? `
-CRITICAL SCHEMA OUTPUT FORMAT:
-- Output ONLY pure JSON-LD markup (no HTML, no explanations, no script tags)
-- Use valid JSON syntax that can be directly parsed
-- All URLs must be absolute and use the actual domain from the page
-- Return only the JSON object starting with { and ending with }
-- No surrounding text, comments, or HTML elements
-` : ''}
+If contentType is 'schema', output only a single pure JSON-LD object (no wrappers, no commentary).
 
-IMPORTANT: For titles, generate ONLY the actual title text (50-60 characters), not guides or explanations.`;
+${contentType === 'title' ? `For titles: MUST include the brand token '${brandHint}' (if present) and at least one primary keyword from the provided keywords. Titles must be strictly relevant to the page content and brand; avoid unrelated or promotional language.` : ''}`;
 
-    const userPrompt = `Generate ${count} optimized ${contentType} suggestions for this webpage:
+  const userPrompt = `Generate ${count} ${contentType} options for this page using only the provided content. Return JSON only.
 
-PAGE DETAILS:
+PAGE:
 - URL: ${pageContent.url}
-- Current Title: ${pageContent.title || 'No title'}
-- Current Meta Description: ${pageContent.metaDescription || 'No meta description'}
-- Main Content: ${pageContent.bodyText?.substring(0, 1500) || 'No content'}
+- Title: "${pageContent.title || 'No title'}"
+- Meta: "${pageContent.metaDescription || 'No meta description'}"
+- Body (first 1500 chars): """${pageContent.bodyText?.substring(0,1500) || 'No content'}"""
 
-ANALYSIS INSIGHTS:
+ANALYSIS:
 - Overall Score: ${analysisData.score}/100
 - Primary Keywords: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
-- Long-tail Keywords: ${analysisData.keywordAnalysis?.longTailKeywords?.slice(0, 3).join(', ') || 'None'}
-- Missing Keywords: ${analysisData.keywordAnalysis?.missingKeywords?.slice(0, 3).join(', ') || 'None'}
+- Missing Keywords: ${analysisData.keywordAnalysis?.missingKeywords?.slice(0,3).join(', ') || 'None'}
 
-PAGE SUMMARY:
-${pageSummary}
-
-Generate ${count} distinct, high-quality ${contentType} options that will improve this page's performance.
-
-${contentType === 'title' ? 'IMPORTANT: Generate ONLY the actual title text (50-60 characters), not guides or explanations. Return a simple array of title strings.' : ''}${contentType === 'schema' ? `
-
-CRITICAL SCHEMA REQUIREMENTS:
-- Return ONLY pure JSON-LD markup, no HTML tags or script wrappers
-- Use the actual domain: ${new URL(pageContent.url).origin}
-- Include relevant schema types: Organization, WebSite, SoftwareApplication, BreadcrumbList, FAQPage (as appropriate)
-- Make all URLs absolute and real (not placeholder URLs)
-- Ensure the JSON is valid and can be directly injected into <script type="application/ld+json"> tags
-- NO HTML content, NO explanatory text, ONLY the JSON object` : ''}`;
+Requirements:
+ - For titles: return an array of ${count} title strings (50-60 chars) only. Each title MUST include the brand token '${brandHint}' (if present) and at least one primary keyword from: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}. If the page content lacks keywords or brand info, produce conservative options that explicitly reference a clear phrase from the page content.
+- For schema: return one pure JSON-LD object using domain ${new URL(pageContent.url).origin}. Include a sourceEvidence array when facts are used.
+- For other types: return JSON array/object directly parseable by the existing parser.`;
 
     try {
+    
+
       const { text: responseText } = await generateText({
         model: aiOpenAI(OPENAI_MODEL) as any,
         system: systemPrompt,
         prompt: userPrompt,
-        temperature: 0.7,
+        temperature: temperatureSetting,
       });
 
       if (!responseText) throw new Error('No response from AI');
@@ -399,7 +338,15 @@ CRITICAL SCHEMA REQUIREMENTS:
       console.log(`🤖 AI Response for ${contentType}:`, responseText.substring(0, 200) + '...');
 
       // Parse the response based on content type
-      return this.parseContentResponse(responseText, contentType, count);
+      const parsed = this.parseContentResponse(responseText, contentType, count);
+
+      // Post-process titles to ensure brand/keyword relevance
+      if (contentType === 'title') {
+        const validated = this.ensureTitlesOnBrand(parsed, brandHint, analysisData, count);
+        return validated;
+      }
+
+      return parsed;
     } catch (error) {
       console.error(`❌ AI content generation failed for ${contentType}:`, error);
       throw new Error(`Failed to generate ${contentType} content: ${error}`);
@@ -494,6 +441,50 @@ CRITICAL SCHEMA REQUIREMENTS:
       // Fallback: return the raw text as a single suggestion
       return [responseText.trim()];
     }
+  }
+
+  /**
+   * Ensure titles include brand or primary keywords; minimally fix or filter unrelated titles.
+   */
+  private static ensureTitlesOnBrand(titles: string[] | any, brandHint: string, analysisData: any, count: number): string[] {
+    if (!Array.isArray(titles)) return titles;
+
+    const primaryKeywords: string[] = (analysisData?.keywordAnalysis?.primaryKeywords) || [];
+
+    const containsKeywordOrBrand = (title: string) => {
+      const lower = title.toLowerCase();
+      if (brandHint && lower.includes(brandHint.toLowerCase())) return true;
+      for (const k of primaryKeywords) {
+        if (!k) continue;
+        if (lower.includes(k.toLowerCase())) return true;
+      }
+      return false;
+    };
+
+    // Filter titles that already match
+    let good = titles.filter(t => typeof t === 'string' && containsKeywordOrBrand(t));
+
+    // If none match, attempt to patch titles by prepending brand or first keyword
+    if (good.length === 0) {
+      const token = brandHint || primaryKeywords[0] || '';
+      if (token) {
+        good = titles.map(t => {
+          if (typeof t !== 'string') return t;
+          // If token already present, keep; else prepend
+          if (t.toLowerCase().includes(token.toLowerCase())) return t;
+          return `${token} - ${t}`.slice(0, 60);
+        });
+      }
+    }
+
+    // Ensure we return exactly 'count' items; pad or trim as needed
+    const unique = Array.from(new Set(good)).slice(0, count);
+    while (unique.length < count && titles.length > 0) {
+      const candidate = titles.shift();
+      if (!unique.includes(candidate)) unique.push(candidate);
+    }
+
+    return unique;
   }
 
   /**
