@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { getSitesWithMetrics, SiteWithMetrics, addSite } from "@/lib/api";
+import { getSitesWithMetrics, SiteWithMetrics, addSite, getDashboardMetrics, DashboardMetrics } from "@/lib/api";
 import { AddSiteModal } from "@/components/add-site-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
   const { user, isSignedIn, isLoaded } = useUser();
   const { getToken } = useAuth();
   const [sites, setSites] = useState<SiteWithMetrics[]>(initialSites);
+  const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -48,6 +49,21 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       setError(err instanceof Error ? err.message : "Failed to load sites");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchDashboardMetrics = async () => {
+    if (!isSignedIn) return;
+
+    try {
+      const token = await getToken();
+      if (!token) return;
+
+      const metrics = await getDashboardMetrics(token);
+      setDashboardMetrics(metrics);
+    } catch (err) {
+      console.error("Error fetching dashboard metrics:", err);
+      // Don't set error state for metrics, fall back to calculation
     }
   };
 
@@ -111,6 +127,9 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
       fetchSites();
     }
 
+    // Fetch dashboard metrics for optimized calculation
+    fetchDashboardMetrics();
+
     // Handle website URL if present
     if (searchParams.get('website')) {
       handleWebsiteUrl();
@@ -119,6 +138,7 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
 
   const handleSiteAdded = async (siteId?: string) => {
     await fetchSites(); // Refresh the sites list
+    await fetchDashboardMetrics(); // Refresh the dashboard metrics
     
     // If a siteId is provided, redirect to that site page
     if (siteId) {
@@ -182,11 +202,13 @@ export function DashboardClient({ initialSites = [] }: DashboardClientProps) {
     return "bg-red-500";
   };
 
-  // Calculate totals for stats
-  const totalSites = sites.length;
-  const avgLLMReadiness = sites.length > 0 
-    ? Math.round(sites.reduce((sum, site) => sum + (site.llmReadiness || 0), 0) / sites.length)
-    : 0;
+  // Calculate totals for stats - use optimized metrics when available
+  const totalSites = dashboardMetrics?.totalSites ?? sites.length;
+  const avgLLMReadiness = dashboardMetrics?.avgLLMReadiness ?? (
+    sites.length > 0 
+      ? Math.round(sites.reduce((sum, site) => sum + (site.llmReadiness || 0), 0) / sites.length)
+      : 0
+  );
 
   if (!isLoaded) {
     return (

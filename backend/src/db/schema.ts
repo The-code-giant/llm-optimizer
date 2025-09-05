@@ -37,6 +37,11 @@ export const sites = pgTable("sites", {
   trackerId: uuid("tracker_id").notNull().unique(),
   status: varchar("status", { length: 32 }).notNull(),
   settings: jsonb("settings").default({}),
+  // Cached metrics for performance
+  averageLLMScore: doublePrecision("average_llm_score"), // Cached average of all page scores
+  totalPages: integer("total_pages").default(0), // Count of pages for faster calculations
+  pagesWithScores: integer("pages_with_scores").default(0), // Count of analyzed pages
+  lastMetricsUpdate: timestamp("last_metrics_update"), // When metrics were last calculated
   deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -55,7 +60,9 @@ export const pages = pgTable("pages", {
   contentSnapshot: text("content_snapshot"),
   lastScannedAt: timestamp("last_scanned_at"),
   lastAnalysisAt: timestamp("last_analysis_at"),
-  llmReadinessScore: doublePrecision("llm_readiness_score"),
+  llmReadinessScore: doublePrecision("llm_readiness_score"), // Legacy field for compatibility
+  pageScore: doublePrecision("page_score"), // Cached overall score (0-100) from section ratings
+  lastScoreUpdate: timestamp("last_score_update"), // When score was last calculated
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

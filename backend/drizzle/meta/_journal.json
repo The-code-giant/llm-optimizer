@@ -134,6 +134,13 @@
       "when": 1756241256062,
       "tag": "0018_fuzzy_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1757053466276,
+      "tag": "0019_powerful_tempest",
+      "breakpoints": true
     }
   ]
 }

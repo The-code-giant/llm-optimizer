@@ -403,48 +403,19 @@ FOCUS ON:
   /**
    * Main analysis function - analyzes a page by URL or existing content
    */
-  static async analyzePage(pageData: { url: string; contentSnapshot?: string; forceRefresh?: boolean }): Promise<AnalysisResult & { content: PageContent; pageSummary: string }> {
-    console.log(`🔍 Starting analysis for: ${pageData.url}`);
+  static async analyzePage(pageData: { url: string }): Promise<AnalysisResult & { content: PageContent; pageSummary: string }> {
+    console.log(`🔍 Starting fresh analysis for: ${pageData.url}`);
 
-    let content: PageContent;
-    let contentSource = 'fresh';
-
-    // Determine if we should use cached content or fetch fresh
-    const shouldUseCachedContent = !pageData.forceRefresh && 
-                                  pageData.contentSnapshot && 
-                                  pageData.contentSnapshot.length > 100;
-
-    if (shouldUseCachedContent) {
-      console.log('📄 Using existing content snapshot for analysis');
-      try {
-        const parsedContent = JSON.parse(pageData.contentSnapshot!);
-        // Validate that parsed content has essential fields
-        if (parsedContent.title || parsedContent.bodyText || parsedContent.metaDescription) {
-          content = {
-            url: pageData.url,
-            ...parsedContent
-          };
-          contentSource = 'cached';
-          console.log(`✅ Successfully loaded cached content (${Object.keys(parsedContent).length} fields)`);
-        } else {
-          console.log('⚠️ Cached content appears incomplete, fetching fresh content...');
-          content = await this.fetchPageContent(pageData.url);
-        }
-      } catch (parseError) {
-        console.log('⚠️ Failed to parse cached content, fetching fresh content...');
-        content = await this.fetchPageContent(pageData.url);
-      }
-    } else {
-      console.log('🌐 Fetching fresh content from URL');
-      content = await this.fetchPageContent(pageData.url);
-    }
+    // Always fetch fresh content from URL
+    console.log('🌐 Fetching fresh content from URL');
+    const content = await this.fetchPageContent(pageData.url);
 
     // Ensure content has minimum required data
     if (!content.title && !content.bodyText && !content.metaDescription) {
       throw new Error('No meaningful content found on the page');
     }
 
-    // **OPTIMIZATION 2: Parallel Processing - Run page summary and analysis simultaneously**
+    // **PARALLEL PROCESSING: Run page summary and analysis simultaneously**
     console.log('🚀 Starting PARALLEL processing: AI summary + content analysis...');
     const [pageSummary, result] = await Promise.all([
       // Generate AI page summary for context
@@ -454,8 +425,8 @@ FOCUS ON:
     ]);
 
     console.log(`✅ PARALLEL analysis completed for ${pageData.url} - Score: ${result.score}/100`);
-    console.log(`📊 Content source: ${contentSource}, Summary length: ${pageSummary.length} chars`);
-    console.log(`⚡ Performance: Used parallel processing + content optimization for GPT-5 Nano`);
+    console.log(`📊 Fresh content fetched, Summary length: ${pageSummary.length} chars`);
+    console.log(`⚡ Performance: Used parallel processing + content optimization`);
     
     return {
       ...result,

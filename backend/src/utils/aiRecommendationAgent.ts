@@ -6,29 +6,13 @@ import { createOpenAI } from '@ai-sdk/openai';
 const aiOpenAI = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
-// Simplified schema for AI-generated recommendations
-const RecommendationSchema = z.object({
-  sectionType: z.enum(['title', 'description', 'headings', 'content', 'schema', 'images', 'links']),
-  currentScore: z.number().min(0).max(10),
-  issues: z.array(z.string()).optional().default([]),
-  recommendations: z.array(z.object({
-    priority: z.enum(['low', 'medium', 'high']).optional().default('medium'),
-    category: z.string().optional().default('SEO'),
-    title: z.string(),
-    description: z.string().optional().default(''),
-    expectedImpact: z.number().min(0).max(20).optional().default(2), // Allow up to 20
-    implementation: z.string().optional().default('')
-  })),
-  overallAssessment: z.string().optional().default(''),
-  estimatedImprovement: z.number().min(0).max(20).optional().default(2) // Allow up to 20
-});
-
+// Use a flexible schema that works with AI SDK
 const SectionAnalysisSchema = z.object({
-  sections: z.array(RecommendationSchema),
-  overallPageAssessment: z.string().optional().default(''),
-  criticalIssues: z.array(z.string()).optional().default([]),
-  quickWins: z.array(z.string()).optional().default([]),
-  longTermStrategy: z.array(z.string()).optional().default([])
+  sections: z.array(z.record(z.any())).describe("Array of section objects"),
+  overallPageAssessment: z.string(),
+  criticalIssues: z.array(z.string()),
+  quickWins: z.array(z.string()),
+  longTermStrategy: z.array(z.string())
 });
 
 export interface AIRecommendation {
@@ -59,24 +43,55 @@ export interface PageAnalysisResult {
 }
 
 export class AIRecommendationAgent {
-  private static readonly SYSTEM_PROMPT = `You are an expert content & GEO (Generative Engine Optimization) specialist. Your output must be concise, evidence‑anchored, and formatted as a single JSON object that exactly matches the expected schema. Follow these strict rules:
+  private static readonly SYSTEM_PROMPT = `You are an expert content & GEO (Generative Engine Optimization) specialist. Your output must be a single JSON object that exactly matches the expected schema.
 
-1) SOURCE-FIRST: Base every claim on the provided page content only. Do NOT invent facts. When you reference evidence, include a short excerpt (<=140 chars) inside the issue string in parentheses.
+CRITICAL SCHEMA REQUIREMENTS:
+- sectionType: Must be one of: "title", "description", "headings", "content", "schema", "images", "links"
+- priority: Must be one of: "low", "medium", "high", "critical"
+- currentScore: Integer between 0-10
+- expectedImpact: Integer between 0-10
+- estimatedImprovement: Integer between 0-10
 
-2) JSON-ONLY: Output exactly one JSON object that follows the expected schema. No surrounding commentary, no HTML, no markdown, no code fences. If you are generating 'schema' content, output only pure JSON-LD.
+OUTPUT FORMAT:
+Return ONLY a JSON object with this exact structure:
+{
+  "sections": [
+    {
+      "sectionType": "title",
+      "currentScore": 7,
+      "issues": ["issue1", "issue2", "issue3"],
+      "recommendations": [
+        {
+          "priority": "high",
+          "category": "SEO",
+          "title": "Fix Title Length",
+          "description": "Title is too long for optimal SEO",
+          "expectedImpact": 3,
+          "implementation": "Reduce title to 60 characters"
+        }
+      ],
+      "overallAssessment": "Brief assessment",
+      "estimatedImprovement": 3
+    }
+  ],
+  "overallPageAssessment": "Overall page assessment",
+  "criticalIssues": ["critical issue 1"],
+  "quickWins": ["quick win 1"],
+  "longTermStrategy": ["strategy 1"]
+}
 
-3) CONCISE: Keep recommendation descriptions <= 50 words. Titles <= 12 words. Implementation steps: max 3 bullet-like short steps.
+RULES:
+1) Generate exactly 7 sections (one for each sectionType)
+2) Keep descriptions <= 50 words, titles <= 12 words
+3) For each section: sum of expectedImpact + currentScore must equal 10
+4) estimatedImprovement = sum of expectedImpact for that section
+5) AI decides how many recommendations (1-5) based on section needs
+6) AI decides how many issues (1-5) based on section problems found
+7) Points are distributed among recommendations dynamically
+8) NO extra text, comments, or markdown formatting
+9) If insufficient content, return minimal valid JSON with empty arrays
 
-4) GEO / LLM CITATION FOCUS: Prioritize changes that increase the page's chance to be cited by LLMs: explicit entity mentions, authoritative facts, canonical URLs, clear data statements, and structured data.
-
-5) SCORING: 'expectedImpact' must be an integer. 'estimatedImprovement' must equal the sum of 'expectedImpact' for that section and must be <= (10 - currentScore).
-
-6) NO FILLER: Avoid generic, marketing, or speculative language. Do not use 'In summary' or long essays.
-
-7) FAIL-SAFE: If the page content is insufficient to make confident recommendations, return 'issues: ["insufficient_content"]' and an empty or minimal 'recommendations' array. Do not invent data.
-
-If you cannot follow these rules, return a JSON object with 'criticalIssues: ["model_rules_not_followed"]'.
-`;
+FAILURE TO FOLLOW SCHEMA WILL RESULT IN ERROR.`;
 
   /**
    * Generate AI-powered recommendations for all page sections
@@ -99,15 +114,15 @@ If you cannot follow these rules, return a JSON object with 'criticalIssues: ["m
       hasKeywords: !!analysisData.keywordAnalysis?.primaryKeywords?.length
     });
 
-    const userPrompt = `Analyze this webpage using only the provided content and return a single JSON object that matches the SectionAnalysis schema.
+    const userPrompt = `Analyze this webpage and return a JSON object matching the SectionAnalysis schema.
 
-PAGE:
+PAGE DATA:
 - URL: ${pageContent.url}
 - Title: "${pageContent.title || 'No title'}"
 - Meta Description: "${pageContent.metaDescription || 'No meta description'}"
-- Body (first 1500 chars): """${pageContent.bodyText?.substring(0, 1500) || 'No content'}"""
+- Body Text: "${pageContent.bodyText?.substring(0, 1000) || 'No content'}"
 
-SCORES:
+CURRENT SCORES:
 - Title: ${analysisData.sectionRatings?.title || 0}/10
 - Description: ${analysisData.sectionRatings?.description || 0}/10
 - Headings: ${analysisData.sectionRatings?.headings || 0}/10
@@ -119,26 +134,64 @@ SCORES:
 KEYWORDS: ${analysisData.keywordAnalysis?.primaryKeywords?.join(', ') || 'None'}
 
 REQUIREMENTS:
-- For each section produce:
-  - currentScore (0-10)
-  - issues: 3 specific short strings each including an evidence excerpt (<=140 chars) and sentence index
-  - recommendations: 2-4 objects with {priority, category, title, description (<=50 words), expectedImpact (integer), implementation (max 3 short steps)}
-  - estimatedImprovement: numeric (sum of expectedImpact, <= 10 - currentScore)
-- Keep output JSON-only. Do not add any extra text.`;
+- Generate exactly 7 sections (title, description, headings, content, schema, images, links)
+- Each section needs: currentScore (0-10), issues (1-5 items), recommendations (1-5 items), estimatedImprovement
+- Each recommendation needs: priority (low/medium/high/critical), title, description, expectedImpact (0-10), implementation
+- IMPORTANT: For each section, currentScore + sum(expectedImpact) must equal exactly 10
+- AI decides how many recommendations and issues based on section needs
+- Return ONLY the JSON object, no other text.`;
 
     try {
       console.log('🤖 AI Agent: Calling OpenAI API...');
       console.log('🤖 AI Agent: Using model:', OPENAI_MODEL);
       
-      const { object: result } = await generateObject({
-        model: aiOpenAI(OPENAI_MODEL),
-        system: this.SYSTEM_PROMPT,
-        schema: SectionAnalysisSchema,
-        prompt: userPrompt,
-        temperature: 0.1, // Very low temperature for more consistent output
-      });
+      // Try with retry logic for schema validation errors
+      let result;
+      let attempts = 0;
+      const maxAttempts = 1;
+      
+      while (attempts < maxAttempts) {
+        try {
+          attempts++;
+          console.log(`🤖 AI Agent: Attempt ${attempts}/${maxAttempts}`);
+          
+          const response = await generateObject({
+            model: aiOpenAI(OPENAI_MODEL),
+            system: this.SYSTEM_PROMPT,
+            schema: SectionAnalysisSchema,
+            prompt: userPrompt,
+            temperature: 0.3, // Increased temperature for better JSON generation
+          });
+          
+          result = response.object;
+          console.log('🤖 AI Agent: OpenAI API call successful');
+          
+          // Manual validation of the response structure
+          if (!result.sections || !Array.isArray(result.sections)) {
+            throw new Error('Invalid response: missing or invalid sections array');
+          }
+          
+          // Validate each section has required fields
+          for (const section of result.sections) {
+            if (!section.sectionType || typeof section.currentScore !== 'number' || !section.recommendations) {
+              throw new Error(`Invalid section: missing required fields`);
+            }
+          }
+          
+          break;
+        } catch (schemaError) {
+          console.error(`❌ AI Agent: Schema validation failed on attempt ${attempts}:`, schemaError);
+          
+          if (attempts === maxAttempts) {
+            console.log('🔄 AI Agent: All attempts failed, falling back to simplified generation...');
+            return this.generateFallbackRecommendations(pageContent, analysisData);
+          }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
+      }
 
-      console.log('🤖 AI Agent: OpenAI API call successful');
       console.log('📊 AI Agent: Generated sections:', result.sections?.length || 0);
       console.log('📊 AI Agent: Result structure:', JSON.stringify(result, null, 2).substring(0, 500) + '...');
 
@@ -150,8 +203,56 @@ REQUIREMENTS:
       console.error('❌ AI Agent: OpenAI API call failed:', error);
       console.error('❌ AI Agent: Error details:', error instanceof Error ? error.message : 'Unknown error');
       console.error('❌ AI Agent: Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      throw new Error(`Failed to generate AI recommendations: ${error}`);
+      
+      // Fallback to basic recommendations if all else fails
+      console.log('🔄 AI Agent: Falling back to basic recommendations...');
+      return this.generateFallbackRecommendations(pageContent, analysisData);
     }
+  }
+
+  /**
+   * Generate fallback recommendations when AI generation fails
+   */
+  private static generateFallbackRecommendations(pageContent: any, analysisData: any): PageAnalysisResult {
+    console.log('🔄 Generating fallback recommendations...');
+    
+    const sections = [
+      'title', 'description', 'headings', 'content', 'schema', 'images', 'links'
+    ].map(sectionType => {
+      const currentScore = analysisData.sectionRatings?.[sectionType] || 5;
+      const pointsNeeded = Math.max(0, 10 - currentScore);
+      
+      // Generate 1-3 recommendations based on how many points are needed
+      const recommendationCount = Math.min(Math.max(1, Math.ceil(pointsNeeded / 3)), 3);
+      const pointsPerRec = Math.floor(pointsNeeded / recommendationCount);
+      const remainder = pointsNeeded % recommendationCount;
+      
+      const recommendations = Array.from({ length: recommendationCount }, (_, i) => ({
+        priority: i === 0 ? 'high' as const : 'medium' as const,
+        category: 'SEO',
+        title: `Improve ${sectionType} ${i + 1}`,
+        description: `Enhance ${sectionType} for better SEO performance`,
+        expectedImpact: pointsPerRec + (i < remainder ? 1 : 0),
+        implementation: `Review and optimize ${sectionType}`
+      }));
+      
+      return {
+        sectionType: sectionType as any,
+        currentScore,
+        issues: [`${sectionType} needs improvement`],
+        recommendations,
+        overallAssessment: `${sectionType} section needs optimization`,
+        estimatedImprovement: pointsNeeded
+      };
+    });
+
+    return {
+      sections,
+      overallPageAssessment: 'Page needs optimization across multiple sections',
+      criticalIssues: ['Multiple sections need improvement'],
+      quickWins: ['Optimize meta tags', 'Improve content structure'],
+      longTermStrategy: ['Develop comprehensive SEO strategy']
+    };
   }
 
   /**
@@ -168,10 +269,11 @@ REQUIREMENTS:
       const pointsNeeded = Math.max(0, 10 - currentScore);
       
       console.log(`📊 Section ${section.sectionType}: Current ${currentScore}/10, needs ${pointsNeeded} points`);
+      console.log(`📊 AI provided ${recommendations.length} recommendations`);
       
       if (recommendations.length > 0 && pointsNeeded > 0) {
         // Calculate current total from AI recommendations
-        const currentTotal = recommendations.reduce((sum: number, rec: any) => sum + (rec.expectedImpact || 0), 0);
+        const currentTotal = recommendations.reduce((sum: number, rec: any) => sum + (rec.expectedImpact || 0), 0) as number;
         
         console.log(`📊 AI gave ${currentTotal} points total, but we need exactly ${pointsNeeded} points`);
         
@@ -180,10 +282,26 @@ REQUIREMENTS:
         
         const newTotal = adjustedRecommendations.reduce((sum: number, rec: any) => sum + rec.expectedImpact, 0);
         console.log(`✅ Adjusted to ${newTotal} points (should equal ${pointsNeeded})`);
+        console.log(`📊 Final recommendation distribution:`, adjustedRecommendations.map((r: any) => `${r.title}: ${r.expectedImpact} points`));
         
         return {
           ...section,
           recommendations: adjustedRecommendations,
+          estimatedImprovement: pointsNeeded
+        };
+      } else if (recommendations.length === 0 && pointsNeeded > 0) {
+        console.log(`⚠️ No recommendations provided for ${section.sectionType}, but ${pointsNeeded} points needed`);
+        // Add a generic recommendation if none provided
+        return {
+          ...section,
+          recommendations: [{
+            priority: 'medium',
+            category: 'SEO',
+            title: `Improve ${section.sectionType}`,
+            description: `${section.sectionType} section needs optimization`,
+            expectedImpact: pointsNeeded,
+            implementation: `Review and optimize ${section.sectionType}`
+          }],
           estimatedImprovement: pointsNeeded
         };
       }
@@ -204,6 +322,8 @@ REQUIREMENTS:
   private static redistributePoints(recommendations: any[], targetTotal: number): any[] {
     if (recommendations.length === 0) return recommendations;
     
+    console.log(`🔄 Redistributing ${targetTotal} points among ${recommendations.length} recommendations`);
+    
     // Sort recommendations by priority (high priority gets more points)
     const sorted = [...recommendations].sort((a, b) => {
       const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -215,10 +335,14 @@ REQUIREMENTS:
     const basePoints = Math.floor(targetTotal / sorted.length);
     const remainder = targetTotal % sorted.length;
     
-    return sorted.map((rec, index) => ({
+    const result = sorted.map((rec, index) => ({
       ...rec,
       expectedImpact: basePoints + (index < remainder ? 1 : 0)
     }));
+    
+    console.log(`📊 Point distribution:`, result.map((r, i) => `${r.title}: ${r.expectedImpact} points (${r.priority})`));
+    
+    return result;
   }
 
   /**
@@ -235,7 +359,7 @@ REQUIREMENTS:
       throw new Error('OpenAI API key not configured');
     }
 
-  const userPrompt = `Focus on the ${sectionType} section. Use only the provided content and return a single JSON object matching RecommendationSchema.
+  const userPrompt = `Focus on the ${sectionType} section. Use only the provided content and return a single JSON object.
 
 SECTION CONTENT:
 """
@@ -249,9 +373,10 @@ PAGE CONTEXT:
 
 REQUEST:
 1) currentScore: 0-10
-2) issues: list 3 short items with an evidence excerpt (<=140 chars) and sentence index
-3) recommendations: 3 items with {title, description <=50 words, implementation (<=3 steps), expectedImpact (int), priority, category}
-4) estimatedImprovement: sum(expectedImpact)
+2) issues: list 1-5 items based on problems found (with evidence excerpts <=140 chars)
+3) recommendations: 1-5 items with {title, description <=50 words, implementation (<=3 steps), expectedImpact (int), priority, category}
+4) IMPORTANT: currentScore + sum(expectedImpact) must equal exactly 10
+5) estimatedImprovement: sum(expectedImpact)
 
 Output exactly the JSON object only.`;
 
@@ -259,7 +384,21 @@ Output exactly the JSON object only.`;
       const { object: result } = await generateObject({
         model: aiOpenAI(OPENAI_MODEL),
         system: this.SYSTEM_PROMPT,
-        schema: RecommendationSchema,
+        schema: z.object({
+          sectionType: z.string(),
+          currentScore: z.number(),
+          issues: z.array(z.string()),
+          recommendations: z.array(z.object({
+            priority: z.string(),
+            category: z.string(),
+            title: z.string(),
+            description: z.string(),
+            expectedImpact: z.number(),
+            implementation: z.string()
+          })),
+          overallAssessment: z.string(),
+          estimatedImprovement: z.number()
+        }),
         prompt: userPrompt,
         temperature: 0.3,
       });
@@ -286,7 +425,10 @@ Output exactly the JSON object only.`;
     }
     console.log(`🤖 AI Content Suggestion: Generating ${count} ${contentType}(s) for ${pageContent.url}${pageSummary}`);
   // Derive a brand hint to ensure titles stay on-brand
-  const brandHint = pageContent.brand || pageContent.siteName || (pageContent.title ? pageContent.title.split(' - ').slice(-1)[0].trim() : new URL(pageContent.url).hostname);
+  const brandHint = pageContent.brand || 
+                   pageContent.siteName || 
+                   (pageContent.title ? pageContent.title.split(' - ').slice(-1)[0].trim() : 
+                   (pageContent.url && pageContent.url.trim() ? new URL(pageContent.url).hostname : 'website'));
   
   // Choose temperature: deterministic for titles to avoid off-brand creativity
   const temperatureSetting = contentType === 'title' ? 0.0 : 0.7;

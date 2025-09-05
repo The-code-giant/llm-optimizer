@@ -4,17 +4,19 @@ import {
   users,
   sites,
   pages,
-  analysisResults,
+  contentAnalysis,
   pageContent,
   trackerData,
 } from "../db/schema";
-import { eq, count, desc } from "drizzle-orm";
+import { eq, count, desc, and, sql } from "drizzle-orm";
 import { authenticateJWT } from "../middleware/auth";
 import { z } from "zod";
 
 // Extend Express Request type to include user
 import type { Request } from "express";
 import { clerkClient } from "../lib/clerk-client";
+import { EnhancedRatingService } from "../utils/enhancedRatingService";
+import { ScoreUpdateService } from "../services/scoreUpdateService";
 
 interface AuthenticatedRequest extends Request {
   user?: { userId: string; email: string };
@@ -128,8 +130,8 @@ router.get(
 
       const [analysisCountResult] = await db
         .select({ count: count() })
-        .from(analysisResults)
-        .innerJoin(pages, eq(analysisResults.pageId, pages.id))
+        .from(contentAnalysis)
+        .innerJoin(pages, eq(contentAnalysis.pageId, pages.id))
         .innerJoin(sites, eq(pages.siteId, sites.id))
         .where(eq(sites.userId, req.user!.userId));
 
@@ -323,6 +325,117 @@ router.put(
       });
 
       res.json(updatedUser);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * @openapi
+ * /api/v1/users/dashboard-metrics:
+ *   get:
+ *     summary: Get dashboard metrics including average LLM readiness score
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Dashboard metrics
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 totalSites:
+ *                   type: number
+ *                   description: Total number of sites for the user
+ *                 avgLLMReadiness:
+ *                   type: number
+ *                   description: Average LLM readiness score across all sites (0-100)
+ *                 totalPages:
+ *                   type: number
+ *                   description: Total number of pages across all sites
+ *                 pagesWithScores:
+ *                   type: number
+ *                   description: Number of pages that have been analyzed
+ *                 improvements:
+ *                   type: number
+ *                   description: Number of pages with score > 60
+ *       401:
+ *         description: Unauthorized
+ */
+// Get dashboard metrics for a user
+router.get(
+  "/dashboard-metrics",
+  authenticateJWT,
+  async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+      const userId = req.user!.userId;
+
+      // Get all active (non-deleted) sites for the user
+      const userSites = await db
+        .select()
+        .from(sites)
+        .where(and(eq(sites.userId, userId), sql`${sites.deletedAt} IS NULL`));
+
+      if (userSites.length === 0) {
+        res.json({
+          totalSites: 0,
+          avgLLMReadiness: 0,
+          totalPages: 0,
+          pagesWithScores: 0,
+          improvements: 0,
+        });
+        return;
+      }
+
+      // Use cached metrics for much better performance
+      let totalScore = 0;
+      let totalPages = 0;
+      let pagesWithScores = 0;
+      let improvements = 0;
+
+      // Get cached metrics from each site
+      for (const site of userSites) {
+        const siteMetrics = await ScoreUpdateService.getSiteMetrics(site.id);
+        
+        totalPages += siteMetrics.totalPages;
+        pagesWithScores += siteMetrics.pagesWithScores;
+        
+        // Weight the site's average by the number of pages with scores
+        if (siteMetrics.pagesWithScores > 0) {
+          totalScore += siteMetrics.averageLLMScore * siteMetrics.pagesWithScores;
+        }
+
+        // Count improvements from pages with cached scores > 60
+        const sitePages = await db
+          .select({
+            pageScore: pages.pageScore,
+            llmReadinessScore: pages.llmReadinessScore
+          })
+          .from(pages)
+          .where(eq(pages.siteId, site.id));
+
+        for (const page of sitePages) {
+          const score = page.pageScore ?? page.llmReadinessScore;
+          if (score != null && score > 60) {
+            improvements++;
+          }
+        }
+      }
+
+      const avgLLMReadiness = pagesWithScores > 0 
+        ? Math.round(totalScore / pagesWithScores)
+        : 0;
+
+      res.json({
+        totalSites: userSites.length,
+        avgLLMReadiness,
+        totalPages,
+        pagesWithScores,
+        improvements,
+      });
     } catch (err) {
       next(err);
     }

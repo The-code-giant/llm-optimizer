@@ -5,6 +5,7 @@ import { eq, desc, and } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { AnalysisService } from '../utils/analysisService';
 import { EnhancedRatingService } from '../utils/enhancedRatingService';
+import { ScoreUpdateService } from '../services/scoreUpdateService';
 import OpenAI from 'openai';
 import cache from '../utils/cache';
 
@@ -277,11 +278,9 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
       // Check if forced refresh is requested
       const forceRefresh = req.body?.forceRefresh === true || req.query?.forceRefresh === 'true';
       
-      // Perform the actual analysis
+      // Perform the actual analysis (always fresh, no cache)
       const analysisResult = await AnalysisService.analyzePage({
-        url: page.url,
-        contentSnapshot: page.contentSnapshot || undefined,
-        forceRefresh
+        url: page.url
       }) as any; // Type assertion to avoid TypeScript issues
 
       // Calculate section-based score if section ratings are available
@@ -298,10 +297,16 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
           contentSnapshot: JSON.stringify(analysisResult.content),
           title: analysisResult.content.title || page.title,
           llmReadinessScore: finalScore,
+          pageScore: finalScore, // Also update the cached page score
+          lastScoreUpdate: new Date(),
           lastAnalysisAt: new Date(),
           lastScannedAt: new Date()
         })
         .where(eq(pages.id, page.id));
+
+      // 📊 UPDATE SITE METRICS: Update site-level cached metrics after analysis
+      console.log(`🔄 Updating site metrics after page analysis...`);
+      await ScoreUpdateService.updateSiteMetrics(page.siteId);
 
       // Store analysis results in database (normalized structure)
       const newAnalysis = await db.insert(contentAnalysis).values({
@@ -936,6 +941,14 @@ router.post('/:pageId/content', authenticateJWT, async (req: AuthenticatedReques
     if (deployImmediately) {
       console.log(`🗑️  Invalidating cache for deployed content: ${site.trackerId}:${page.url}`);
       await cache.invalidateTrackerContent(site.trackerId, page.url);
+      
+      // 📊 UPDATE PAGE SCORE: Recalculate score after immediate deployment
+      console.log(`🔄 Recalculating page score after immediate ${contentType} deployment...`);
+      const newScore = await ScoreUpdateService.updatePageScore(req.params.pageId);
+      
+      if (newScore !== null) {
+        console.log(`✅ Updated page score to ${newScore}% after immediate deployment`);
+      }
     }
 
     res.json({
@@ -1171,37 +1184,22 @@ router.put('/:pageId/content/:contentType/deploy', authenticateJWT, async (req: 
     console.log(`🗑️  Invalidating cache for deployed content: ${site.trackerId}:${page.url} (${contentType})`);
     await cache.invalidateTrackerContent(site.trackerId, page.url);
 
-    // 📊 UPDATE PAGE SCORE: Add improvement points based on content type deployed
-    const scoreImprovements: Record<string, number> = {
-      'title': 5,        // Title optimization typically improves score by 5 points
-      'description': 4,  // Meta description improvement
-      'faq': 8,          // FAQ sections have high impact on LLM readiness
-      'paragraph': 6,    // Content improvements
-      'keywords': 3,     // Keyword optimization
-      'schema': 4        // Schema markup improvement
-    };
-
-    const improvement = scoreImprovements[contentType] || 3; // Default 3 points for unknown types
-    const currentScore = page.llmReadinessScore || 0;
-    const newScore = Math.min(100, currentScore + improvement); // Cap at 100
-
-    await db.update(pages)
-      .set({
-        llmReadinessScore: newScore,
-        lastAnalysisAt: new Date(),
-        updatedAt: new Date()
-      })
-      .where(eq(pages.id, pageId));
-
-    console.log(`✅ Updated LLM readiness score: ${currentScore} → ${newScore} (+${improvement} for ${contentType})`);
+    // 📊 UPDATE PAGE SCORE: Recalculate score from section ratings (much more accurate)
+    console.log(`🔄 Recalculating page score after ${contentType} deployment...`);
+    const newScore = await ScoreUpdateService.updatePageScore(pageId);
+    
+    if (newScore !== null) {
+      console.log(`✅ Updated page score to ${newScore}% after ${contentType} deployment`);
+    } else {
+      console.log(`⚠️ Could not calculate new score for page ${pageId}, section ratings may not be available yet`);
+    }
 
     res.json({
       message: `${contentType} content deployed successfully`,
       pageId,
       contentType,
       deployedAt: new Date(),
-      scoreImprovement: improvement,
-      newScore: newScore
+      newScore: newScore ?? page.llmReadinessScore ?? 0
     });
 
   } catch (err) {
@@ -1267,10 +1265,19 @@ router.delete('/:pageId/content/:contentType/undeploy', authenticateJWT, async (
     console.log(`🗑️  Invalidating cache for undeployed content: ${site.trackerId}:${page.url} (${contentType})`);
     await cache.invalidateTrackerContent(site.trackerId, page.url);
 
+    // 📊 UPDATE PAGE SCORE: Recalculate score after undeployment
+    console.log(`🔄 Recalculating page score after ${contentType} undeployment...`);
+    const newScore = await ScoreUpdateService.updatePageScore(pageId);
+    
+    if (newScore !== null) {
+      console.log(`✅ Updated page score to ${newScore}% after ${contentType} undeployment`);
+    }
+
     res.json({
       message: `${contentType} content undeployed successfully`,
       pageId,
-      contentType
+      contentType,
+      newScore: newScore ?? 0
     });
 
   } catch (err) {
@@ -1434,14 +1441,14 @@ router.get('/:pageId/original-content', authenticateJWT, async (req: Authenticat
       const analysis = analysisArr[0];
       try {
                 const recommendations = {}; // No longer stored in analysis table
-        pageSummary = recommendations.pageSummary || null;
+        pageSummary = null; // Will be generated fresh when needed
         
         analysisContext = {
           score: analysis.overallScore,
-          summary: recommendations.summary,
-          keywordAnalysis: recommendations.keywordAnalysis,
-          issues: recommendations.issues?.slice(0, 3), // First 3 issues
-          recommendations: recommendations.recommendations?.slice(0, 5), // First 5 recommendations
+          summary: null, // Will be generated fresh when needed
+          keywordAnalysis: null, // Will be generated fresh when needed
+          issues: [], // Will be generated fresh when needed
+          recommendations: [], // Will be generated fresh when needed
           lastAnalyzedAt: analysis.createdAt
         };
       } catch (error) {
@@ -1796,11 +1803,20 @@ router.post('/:pageId/section-ratings', authenticateJWT, async (req: Authenticat
       req.user!.userId
     );
 
+    // 📊 UPDATE PAGE SCORE: Recalculate overall score after section rating update
+    console.log(`🔄 Recalculating page score after ${sectionType} section update...`);
+    const updatedPageScore = await ScoreUpdateService.updatePageScore(req.params.pageId);
+    
+    if (updatedPageScore !== null) {
+      console.log(`✅ Updated page score to ${updatedPageScore}% after ${sectionType} section improvement`);
+    }
+
     res.json({
       message: `${sectionType} section rating updated successfully`,
       sectionType,
       previousScore,
       newScore,
+      pageScore: updatedPageScore,
       scoreImprovement: newScore - previousScore
     });
 
