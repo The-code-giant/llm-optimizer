@@ -282,18 +282,34 @@ export default function SiteDetailsPage() {
     }
   };
 
-  // Calculate metrics
+  // Calculate metrics using new scoring system
   const totalPages = pages.length;
-  const pagesWithScores = pages.filter(page => page.llmReadinessScore != null && page.llmReadinessScore > 0);
+  const pagesWithScores = pages.filter(page => 
+    (page.sectionRatings && Object.values(page.sectionRatings).some(score => score > 0)) || 
+    (page.llmReadinessScore != null && page.llmReadinessScore > 0)
+  );
+  
+  // Utility function to calculate overall score from section ratings
+  const calculateOverallScore = (page: any): number => {
+    if (page.sectionRatings) {
+      const scores = Object.values(page.sectionRatings) as number[];
+      const total = scores.reduce((sum: number, score: number) => sum + score, 0);
+      const maxPossible = scores.length * 10; // 7 sections * 10 = 70
+      return Math.round((total / maxPossible) * 100); // Convert to percentage
+    }
+    // Fallback to legacy score
+    return page.llmReadinessScore || 0;
+  };
+  
   const averageLLMScore =
     pagesWithScores.length > 0
       ? Math.round(
-          pagesWithScores.reduce((sum, page) => sum + (page.llmReadinessScore || 0), 0) /
+          pagesWithScores.reduce((sum, page) => sum + calculateOverallScore(page), 0) /
             pagesWithScores.length
         )
       : 0;
   const pagesAbove80 = pages.filter(
-    (page) => page.llmReadinessScore >= 80
+    (page) => calculateOverallScore(page) >= 80
   ).length;
   const recentlyScanned = pages.filter((page) => {
     const lastScan = new Date(page.lastScannedAt);
@@ -308,13 +324,14 @@ export default function SiteDetailsPage() {
         page.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         page.url.toLowerCase().includes(searchTerm.toLowerCase());
 
+      const pageScore = calculateOverallScore(page);
       const matchesScore =
         scoreFilter === "all" ||
-        (scoreFilter === "high" && page.llmReadinessScore >= 80) ||
+        (scoreFilter === "high" && pageScore >= 80) ||
         (scoreFilter === "medium" &&
-          page.llmReadinessScore >= 60 &&
-          page.llmReadinessScore < 80) ||
-        (scoreFilter === "low" && page.llmReadinessScore < 60);
+          pageScore >= 60 &&
+          pageScore < 80) ||
+        (scoreFilter === "low" && pageScore < 60);
 
       return matchesSearch && matchesScore;
     })
@@ -331,8 +348,8 @@ export default function SiteDetailsPage() {
           bValue = b.url;
           break;
         case "score":
-          aValue = a.llmReadinessScore;
-          bValue = b.llmReadinessScore;
+          aValue = calculateOverallScore(a);
+          bValue = calculateOverallScore(b);
           break;
         case "lastScanned":
           aValue = new Date(a.lastScannedAt).getTime();
@@ -815,20 +832,23 @@ export default function SiteDetailsPage() {
                                                   {page.title ||
                                                     "Untitled Page"}
                                                 </h3>
-                                                <Badge
-                                                  variant={
-                                                    page.llmReadinessScore >= 80
-                                                      ? "default"
-                                                      : page.llmReadinessScore >=
-                                                        60
-                                                      ? "secondary"
-                                                      : "destructive"
-                                                  }
-                                                  className="w-fit"
-                                                >
-                                                  {page.llmReadinessScore}% LLM
-                                                  Ready
-                                                </Badge>
+                                                {(() => {
+                                                  const pageScore = calculateOverallScore(page);
+                                                  return (
+                                                    <Badge
+                                                      variant={
+                                                        pageScore >= 80
+                                                          ? "default"
+                                                          : pageScore >= 60
+                                                          ? "secondary"
+                                                          : "destructive"
+                                                      }
+                                                      className="w-fit"
+                                                    >
+                                                      {pageScore}% LLM Ready
+                                                    </Badge>
+                                                  );
+                                                })()}
                                               </div>
                                               <p className="text-sm text-muted-foreground truncate mb-2">
                                                 {page.url}

@@ -1,12 +1,14 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/client";
-import { sites, users, pages, pageAnalytics, pageContent, trackerData, analysisResults, contentSuggestions } from "../db/schema";
+import { sites, users, pages, pageAnalytics, pageContent, trackerData, contentAnalysis, contentSuggestions } from "../db/schema";
 import { z } from "zod";
 import { eq, and, sql } from "drizzle-orm";
-import { sitemapImportQueue } from "../utils/queue";
+import { sitemapImportQueue, analysisQueue } from "../utils/queue";
 import { randomUUID } from "crypto";
 import cache from "../utils/cache";
 import { AnalysisService } from "../utils/analysisService";
+import { EnhancedRatingService } from "../utils/enhancedRatingService";
+import { ScoreUpdateService } from "../services/scoreUpdateService";
 
 // Extend Express Request type to include user
 interface AuthenticatedRequest extends Request {
@@ -175,8 +177,7 @@ router.post(
       try {
         console.log(`🔎 Validating and analyzing site before creation: ${url}`);
         analysisResult = await AnalysisService.analyzePage({
-          url,
-          forceRefresh: true,
+          url
         });
       } catch (analysisError) {
         console.error(`❌ Analysis failed during site creation for ${url}:`, analysisError);
@@ -205,46 +206,35 @@ router.post(
       // Invalidate user sites cache
       await cache.invalidateUserSites(req.user!.userId);
 
-      // Create a default page for the site URL with analysis data
+      // Create a default page for the site URL with basic info
       const [defaultPage] = await db
         .insert(pages)
         .values({
           siteId: site.id,
           url: url,
           title: analysisResult?.content?.title || name,
-          llmReadinessScore: analysisResult?.score || 0,
           contentSnapshot: analysisResult?.content
             ? JSON.stringify(analysisResult.content)
             : undefined,
-          lastAnalysisAt: new Date(),
           lastScannedAt: new Date(),
         })
         .returning();
 
-      // Store analysis results in database
+      // Run the same analysis process as manual trigger (synchronous)
       try {
-        await db.insert(analysisResults).values({
-          pageId: defaultPage.id,
-          analyzedAt: new Date(),
-          llmModelUsed: 'gpt-4o-mini',
-          score: analysisResult.score,
-          recommendations: JSON.stringify({
-            issues: analysisResult.issues,
-            recommendations: analysisResult.recommendations,
-            summary: analysisResult.summary,
-            pageSummary: analysisResult.pageSummary,
-            contentQuality: analysisResult.contentQuality,
-            technicalSEO: analysisResult.technicalSEO,
-            keywordAnalysis: analysisResult.keywordAnalysis,
-            llmOptimization: analysisResult.llmOptimization,
-          }),
-          rawLlmOutput: JSON.stringify(analysisResult),
-        });
-      } catch (contentError) {
-        console.error(`❌ Failed to persist analysis results for new site ${url}:`, contentError);
+        console.log(`🔍 Running full analysis with AI recommendations for ${url}`);
+        
+        // Import and call the same analyzePage function used by the worker
+        const { analyzePage } = await import('../utils/analysisWorker');
+        
+        // This will do the complete analysis including AI recommendations
+        await analyzePage(defaultPage.id);
+        
+        console.log(`✅ Site created with complete analysis and AI recommendations for ${url}`);
+      } catch (fullAnalysisError) {
+        console.error(`❌ Full analysis failed for ${url}:`, fullAnalysisError);
+        console.log(`⚠️ Site created but analysis incomplete for ${url}`);
       }
-
-      console.log(`✅ Site created and analysis succeeded for ${url} - Score: ${analysisResult.score}/100`);
 
       res.status(201).json(site);
     } catch (err) {
@@ -616,7 +606,38 @@ router.get(
         .select()
         .from(pages)
         .where(eq(pages.siteId, req.params.siteId));
-      res.json(sitePages);
+      
+      // Enhance pages with section ratings and use cached scores when available
+      const enhancedPages = await Promise.all(
+        sitePages.map(async (page) => {
+          try {
+            const sectionRatings = await EnhancedRatingService.getCurrentSectionRatings(page.id);
+            
+            // Use cached pageScore if available, otherwise fallback to llmReadinessScore
+            const effectiveScore = page.pageScore ?? page.llmReadinessScore ?? 0;
+            
+            return {
+              ...page,
+              sectionRatings,
+              // Override llmReadinessScore with cached pageScore for consistency
+              llmReadinessScore: effectiveScore
+            };
+          } catch (error) {
+            console.warn(`Failed to get section ratings for page ${page.id}:`, error);
+            
+            // Still use cached score even if section ratings fail
+            const effectiveScore = page.pageScore ?? page.llmReadinessScore ?? 0;
+            
+            return {
+              ...page,
+              sectionRatings: null,
+              llmReadinessScore: effectiveScore
+            };
+          }
+        })
+      );
+      
+      res.json(enhancedPages);
     } catch (err) {
       next(err);
     }

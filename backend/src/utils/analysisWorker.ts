@@ -74,8 +74,7 @@ async function analyzePage(pageId: string) {
     // Use the new AnalysisService for comprehensive analysis
     console.log('🔍 About to call AnalysisService.analyzePage...');
     const analysisResult = await AnalysisService.analyzePage({
-      url: page.url,
-      contentSnapshot: page.contentSnapshot || undefined
+      url: page.url
     });
     console.log('✅ AnalysisService.analyzePage completed successfully');
 
@@ -221,3 +220,6 @@ analysisWorker.on('failed', (job, err) => {
 
 // Log when worker starts
 logger.info('🔄 Analysis worker started and ready to process jobs'); 
+
+// Export the analyzePage function for direct use
+export { analyzePage }; 

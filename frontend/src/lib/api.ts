@@ -29,11 +29,33 @@ export interface Page {
   siteId: string;
   url: string;
   title: string;
-  llmReadinessScore: number;
+  llmReadinessScore: number; // Legacy field for compatibility
   lastScannedAt: string;
   lastAnalysisAt: string;
   createdAt: string;
   updatedAt: string;
+  // New section-based ratings
+  sectionRatings?: {
+    title: number;        // 0-10 score
+    description: number;  // 0-10 score
+    headings: number;     // 0-10 score
+    content: number;      // 0-10 score
+    schema: number;       // 0-10 score
+    images: number;       // 0-10 score
+    links: number;        // 0-10 score
+  };
+}
+
+// Utility function to calculate overall score from section ratings
+export function calculateOverallScore(page: Page): number {
+  if (page.sectionRatings) {
+    const scores = Object.values(page.sectionRatings);
+    const total = scores.reduce((sum, score) => sum + score, 0);
+    const maxPossible = scores.length * 10; // 7 sections * 10 = 70
+    return Math.round((total / maxPossible) * 100); // Convert to percentage
+  }
+  // Fallback to legacy score
+  return page.llmReadinessScore || 0;
 }
 
 export interface AnalysisResult {
@@ -90,6 +112,14 @@ export interface UserProfile {
       timestamp: string;
     }>;
   };
+}
+
+export interface DashboardMetrics {
+  totalSites: number;
+  avgLLMReadiness: number;
+  totalPages: number;
+  pagesWithScores: number;
+  improvements: number;
 }
 
 export interface TeamMember {
@@ -151,16 +181,16 @@ export async function getSitesWithMetrics(
         // Get pages for this site
         const pages = await getPages(token, site.id);
 
-        // Calculate metrics
+        // Calculate metrics using new scoring system
         const totalPages = pages.length;
         const pagesWithScores = pages.filter(
-          (p) => p.llmReadinessScore != null
+          (p) => p.sectionRatings || p.llmReadinessScore != null
         );
         const avgLLMReadiness =
           pagesWithScores.length > 0
             ? Math.round(
                 pagesWithScores.reduce(
-                  (sum, p) => sum + (p.llmReadinessScore || 0),
+                  (sum, p) => sum + calculateOverallScore(p),
                   0
                 ) / pagesWithScores.length
               )
@@ -184,7 +214,7 @@ export async function getSitesWithMetrics(
 
         // Count improvements (pages with score > 60 as improvement indicator)
         const improvements = pagesWithScores.filter(
-          (p) => (p.llmReadinessScore || 0) > 60
+          (p) => calculateOverallScore(p) > 60
         ).length;
 
         return {
@@ -977,6 +1007,22 @@ export async function generateSectionContent(
 
   if (!response.ok) {
     throw new Error('Failed to generate section content');
+  }
+
+  return response.json();
+}
+
+// Get dashboard metrics (optimized backend calculation)
+export async function getDashboardMetrics(token: string): Promise<DashboardMetrics> {
+  const response = await fetch(`${API_BASE}/users/dashboard-metrics`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch dashboard metrics');
   }
 
   return response.json();

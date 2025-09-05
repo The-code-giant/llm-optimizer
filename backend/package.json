@@ -14,6 +14,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio --port 4983",
     "db:seed": "ts-node --transpile-only src/db/seed.ts",
+    "populate-scores": "ts-node --transpile-only src/scripts/populateInitialScores.ts",
     "lint": "eslint src --ext .ts,.tsx --fix",
     "type-check": "tsc --noEmit",
     "test": "jest",

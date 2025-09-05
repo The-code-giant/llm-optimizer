@@ -12,7 +12,22 @@ interface GettingStartedChecklistProps {
   site: {
     trackerId?: string;
   } | null;
-  pages: Array<{ id: string; title?: string; url: string; llmReadinessScore?: number; lastScannedAt: string }>;
+  pages: Array<{ 
+    id: string; 
+    title?: string; 
+    url: string; 
+    llmReadinessScore?: number; 
+    lastScannedAt: string;
+    sectionRatings?: {
+      title: number;
+      description: number;
+      headings: number;
+      content: number;
+      schema: number;
+      images: number;
+      links: number;
+    };
+  }>;
   recentlyScanned: number;
   onShowTrackerScript: () => void;
   onShowPageManagement: () => void;
