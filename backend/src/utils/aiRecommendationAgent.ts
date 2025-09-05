@@ -155,9 +155,11 @@ REQUIREMENTS:
           attempts++;
           console.log(`🤖 AI Agent: Attempt ${attempts}/${maxAttempts}`);
           
+          // @ts-ignore - AI SDK type instantiation depth issue
           const response = await generateObject({
             model: aiOpenAI(OPENAI_MODEL),
             system: this.SYSTEM_PROMPT,
+            // @ts-ignore - Complex schema type inference
             schema: SectionAnalysisSchema,
             prompt: userPrompt,
             temperature: 0.3, // Increased temperature for better JSON generation
@@ -381,13 +383,16 @@ REQUEST:
 Output exactly the JSON object only.`;
 
     try {
+      // @ts-ignore - AI SDK type instantiation depth issue
       const { object: result } = await generateObject({
         model: aiOpenAI(OPENAI_MODEL),
         system: this.SYSTEM_PROMPT,
+        // @ts-ignore - Complex schema type inference
         schema: z.object({
           sectionType: z.string(),
           currentScore: z.number(),
           issues: z.array(z.string()),
+          // @ts-ignore - Nested schema type depth
           recommendations: z.array(z.object({
             priority: z.string(),
             category: z.string(),
