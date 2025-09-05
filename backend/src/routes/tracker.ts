@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, injectedContent, pages, pageInjectedContent, pageContent, trackerData, pageAnalytics } from '../db/schema';
+import { sites, pages, pageContent, trackerData, pageAnalytics } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import cache from '../utils/cache';
@@ -223,12 +223,15 @@ router.get('/tracker/:trackerId/content',
         return;
       }
 
-      // Find active injected content for this page
+      // Find active deployed content for this page
       const content = await db
-        .select({ id: injectedContent.id, type: injectedContent.type, content: injectedContent.content })
-        .from(pageInjectedContent)
-        .leftJoin(injectedContent, eq(pageInjectedContent.injectedContentId, injectedContent.id))
-        .where(and(eq(pageInjectedContent.pageId, page.id), eq(injectedContent.status, 'active')));
+        .select({ 
+          id: pageContent.id, 
+          type: pageContent.contentType, 
+          content: pageContent.optimizedContent 
+        })
+        .from(pageContent)
+        .where(and(eq(pageContent.pageId, page.id), eq(pageContent.isActive, 1)));
 
       // Cache the response for 5 minutes
       await cache.setTrackerContent(trackerId, pageUrl, content);

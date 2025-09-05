@@ -74,7 +74,7 @@ export class UnifiedContentService {
       pageUrl: data.pageUrl,
       deployedAt: data.deployedAt,
       deployedBy: data.deployedBy
-    }).returning({ id: pageContent.id });
+    }).returning();
     
     return result.id;
   }
@@ -159,7 +159,7 @@ export class UnifiedContentService {
       deployedContent: data.deployedContent,
       aiModel: data.aiModel,
       deployedBy: data.deployedBy
-    }).returning({ id: contentDeployments.id });
+    }).returning();
 
     return deployment.id;
   }
@@ -178,7 +178,7 @@ export class UnifiedContentService {
       previousScore: null, // Will be updated on next analysis
       improvementCount: 0,
       lastImprovedAt: null
-    }).returning({ id: contentRatings.id });
+    }).returning();
 
     // Also save to content_recommendations for backward compatibility
     for (const recommendation of data.recommendations) {
@@ -218,7 +218,7 @@ export class UnifiedContentService {
     try {
       // Generate content using AI agent
       const suggestions = await AIRecommendationAgent.generateContentSuggestions(
-        contentType,
+        contentType as 'title' | 'description' | 'faq' | 'paragraph' | 'keywords' | 'schema',
         { url: '', title: '', metaDescription: '', headings: [], bodyText: '', images: [], links: [], schemaMarkup: [] },
         { score: 0, contentQuality: {}, technicalSEO: {}, keywordAnalysis: {}, llmOptimization: {}, sectionRatings: {}, sectionRecommendations: {} },
         context,
@@ -245,15 +245,16 @@ export class UnifiedContentService {
    * Get content suggestions for a page
    */
   static async getContentSuggestions(pageId: string, contentType?: string) {
-    let query = db.select()
-      .from(contentSuggestions)
-      .where(eq(contentSuggestions.pageId, pageId));
-
+    const whereConditions = [eq(contentSuggestions.pageId, pageId)];
+    
     if (contentType) {
-      query = query.where(eq(contentSuggestions.contentType, contentType));
+      whereConditions.push(eq(contentSuggestions.contentType, contentType));
     }
 
-    return await query.orderBy(desc(contentSuggestions.generatedAt));
+    return await db.select()
+      .from(contentSuggestions)
+      .where(and(...whereConditions))
+      .orderBy(desc(contentSuggestions.generatedAt));
   }
 
   /**
