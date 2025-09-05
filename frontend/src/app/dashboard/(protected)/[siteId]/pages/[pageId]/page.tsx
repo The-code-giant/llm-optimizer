@@ -13,6 +13,7 @@ import {
   PageContentData,
   undeployPageContent,
   getOriginalPageContent,
+  updateSectionRating,
 } from "@/lib/api";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import {
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator"; // Commented out with Content tab
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -35,31 +36,36 @@ import {
   ArrowLeft,
   Globe,
   BarChart3,
-  FileText,
+  // FileText, // Commented out with Content tab
   ExternalLink,
   Play,
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  Clock,
+  // Clock, // Commented out with Content tab
   Target,
-  Edit3,
-  Plus,
-  MessageSquare,
+  // Edit3, // Commented out with Content tab
+  // Plus, // Commented out with Content tab
+  // MessageSquare, // Commented out with Content tab
   Type,
-  Hash,
-  PenTool,
-  Trash2,
+  FileText,
+  Database,
+  // Hash, // Commented out with Content tab
+  // PenTool, // Commented out with Content tab
+  // Trash2, // Commented out with Content tab
 } from "lucide-react";
 import Link from "next/link";
 import Toast from "@/components/Toast";
 import ContentEditorModal from "@/components/content-editor-modal";
-import {
-  Accordion,
-  AccordionItem,
-  AccordionTrigger,
-  AccordionContent,
-} from "@/components/ui/accordion";
+import SectionRatingDisplay from "@/components/SectionRatingDisplay";
+import SectionImprovementModal from "@/components/SectionImprovementModal";
+// Commented out with Content tab
+// import {
+//   Accordion,
+//   AccordionItem,
+//   AccordionTrigger,
+//   AccordionContent,
+// } from "@/components/ui/accordion";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +77,7 @@ import {
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+
 export default function PageAnalysisPage() {
   const router = useRouter();
   const { siteId, pageId } = useParams() as { siteId: string; pageId: string };
@@ -95,19 +102,28 @@ export default function PageAnalysisPage() {
     description: string;
   } | null>(null);
 
+  // Modal state
+  const [improvementModal, setImprovementModal] = useState<{
+    isOpen: boolean;
+    sectionType: string;
+    recommendations: string[];
+    currentScore: number;
+  } | null>(null);
+
   // Content state (this would normally be persisted in a database)
-  const [contentData] = useState({
-    title: "",
-    description: "",
-    faqs: [] as string[],
-    paragraphs: [] as string[],
-    keywords: {
-      primary: [] as string[],
-      longTail: [] as string[],
-      semantic: [] as string[],
-      missing: [] as string[],
-    },
-  });
+  // Commented out with Content tab
+  // const [contentData] = useState({
+  //   title: "",
+  //   description: "",
+  //   faqs: [] as string[],
+  //   paragraphs: [] as string[],
+  //   keywords: {
+  //     primary: [] as string[],
+  //     longTail: [] as string[],
+  //     semantic: [] as string[],
+  //     missing: [] as string[],
+  //   },
+  // });
 
   // Add state for original meta description
   const [originalMetaDescription, setOriginalMetaDescription] =
@@ -130,6 +146,23 @@ export default function PageAnalysisPage() {
       | null;
   }>({ open: false, contentType: null });
   const [undeploying, setUndeploying] = useState(false);
+
+  // Add scroll functionality
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
+  };
+
+  // Check if content is deployed for a section
+  const isContentDeployed = (contentType: string) => {
+    return contentVersions[contentType]?.some(content => content.isActive === 1) || false;
+  };
 
   // Move fetchData to top-level scope so it can be called from handleUndeploy
   const fetchData = useCallback(async () => {
@@ -154,7 +187,12 @@ export default function PageAnalysisPage() {
           originalContentResult.value.originalContent?.metaDescription || ""
         );
       }
-      console.log({pageDetails, analysisData, savedContent, originalContentResult})
+      console.log({
+        pageDetails,
+        analysisData,
+        savedContent,
+        originalContentResult,
+      });
       if (pageDetails.status === "fulfilled") {
         setPageData(pageDetails.value);
       } else {
@@ -204,7 +242,7 @@ export default function PageAnalysisPage() {
     }
 
     fetchData();
-  }, [isLoaded, isSignedIn, router, fetchData]);
+  }, [isLoaded, isSignedIn, router, fetchData, pageId]);
 
   async function handleTriggerAnalysis() {
     setTriggering(true);
@@ -244,36 +282,38 @@ export default function PageAnalysisPage() {
     }
   }
 
-  const getScoreBadge = (score: number) => {
-    if (score >= 80)
-      return (
-        <Badge variant="default" className="bg-green-500">
-          High ({score}%)
-        </Badge>
-      );
-    if (score >= 60)
-      return (
-        <Badge variant="secondary" className="bg-yellow-500">
-          Medium ({score}%)
-        </Badge>
-      );
-    return <Badge variant="destructive">Low ({score}%)</Badge>;
-  };
+  // Commented out with Content tab
+  // const getScoreBadge = (score: number) => {
+  //   if (score >= 80)
+  //     return (
+  //       <Badge variant="default" className="bg-green-500">
+  //         High ({score}%)
+  //       </Badge>
+  //     );
+  //   if (score >= 60)
+  //     return (
+  //       <Badge variant="secondary" className="bg-yellow-500">
+  //         Medium ({score}%)
+  //       </Badge>
+  //     );
+  //   return <Badge variant="destructive">Low ({score}%)</Badge>;
+  // };
 
-  const openEditor = (
-    contentType: "title" | "description" | "faq" | "paragraph" | "keywords",
-    currentContent: string,
-    title: string,
-    description: string
-  ) => {
-    setEditorModal({
-      isOpen: true,
-      contentType,
-      currentContent,
-      title,
-      description,
-    });
-  };
+  // Commented out with Content tab
+  // const openEditor = (
+  //   contentType: "title" | "description" | "faq" | "paragraph" | "keywords",
+  //   currentContent: string,
+  //   title: string,
+  //   description: string
+  // ) => {
+  //   setEditorModal({
+  //     isOpen: true,
+  //     contentType,
+  //     currentContent,
+  //     title,
+  //     description,
+  //   });
+  // };
 
   const handleContentSave = async (
     content: string,
@@ -332,7 +372,9 @@ export default function PageAnalysisPage() {
       const message =
         error instanceof Error
           ? error.message
-          : `Failed to save${deployImmediately ? " and deploy" : ""} ${contentType}`;
+          : `Failed to save${
+              deployImmediately ? " and deploy" : ""
+            } ${contentType}`;
       setToast({ message, type: "error" });
     }
   };
@@ -354,7 +396,8 @@ export default function PageAnalysisPage() {
         type: "success",
       });
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to undeploy content";
+      const message =
+        error instanceof Error ? error.message : "Failed to undeploy content";
       setToast({ message, type: "error" });
     } finally {
       setUndeploying(false);
@@ -374,7 +417,7 @@ export default function PageAnalysisPage() {
       </DashboardLayout>
     );
   }
-
+  console.log({ pageData, analysis });
   if (error || !pageData) {
     return (
       <DashboardLayout>
@@ -393,19 +436,7 @@ export default function PageAnalysisPage() {
       </DashboardLayout>
     );
   }
-  let analysisJson = null;
-  if (analysis?.summary && typeof analysis.summary === "string") {
-    try {
-      analysisJson = JSON.parse(analysis.summary);
-    } catch (e) {
-      console.error(
-        "Failed to parse analysis.summary as JSON:",
-        analysis.summary,
-        e
-      );
-      analysisJson = null;
-    }
-  }
+
 
   // In the render logic for each content type (e.g., title, description):
   const deployedTitle = (contentVersions.title || []).find(
@@ -419,13 +450,15 @@ export default function PageAnalysisPage() {
   const deployedFAQ = (contentVersions.faq || []).find((c) => c.isActive === 1);
 
   // Find deployed paragraph
-  const deployedParagraph = (contentVersions.paragraph || []).find((c) => c.isActive === 1);
+  const deployedParagraph = (contentVersions.paragraph || []).find(
+    (c) => c.isActive === 1
+  );
   console.log(contentVersions);
   const hasAnyDeployed = Boolean(
     deployedTitle || deployedDescription || deployedFAQ || deployedParagraph
   );
   return (
- <SidebarProvider
+    <SidebarProvider
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -459,11 +492,20 @@ export default function PageAnalysisPage() {
                       </Link>
                       <div>
                         <div className="flex items-center gap-3">
-                          <h1 className="text-xl md:text-2xl font-semibold">Page Details</h1>
+                          <h1 className="text-xl md:text-2xl font-semibold">
+                            Page Details
+                          </h1>
                           {hasAnyDeployed ? (
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Deployed</Badge>
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                              Deployed
+                            </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-muted-foreground">Draft</Badge>
+                            <Badge
+                              variant="outline"
+                              className="text-muted-foreground"
+                            >
+                              Draft
+                            </Badge>
                           )}
                         </div>
                         <div className="text-muted-foreground text-sm flex items-center gap-2">
@@ -483,11 +525,13 @@ export default function PageAnalysisPage() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="w-full sm:w-auto">
-                            <Button 
-                              onClick={handleTriggerAnalysis} 
-                              disabled={triggering || Boolean(analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0))} 
+                            <Button
+                              onClick={handleTriggerAnalysis}
+                              // disabled={triggering || Boolean(analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0))}
                               className={`w-full sm:w-auto whitespace-nowrap ${
-                                analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0)
+                                analysis &&
+                                (analysis.recommendations.length > 0 ||
+                                  analysis.issues.length > 0)
                                   ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                   : ""
                               }`}
@@ -499,20 +543,31 @@ export default function PageAnalysisPage() {
                               )}
                               <span className="sm:hidden">Analyze</span>
                               <span className="hidden sm:inline">
-                                {analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0) 
-                                  ? "Already Analyzed" 
-                                  : analysis 
-                                    ? "Run Analysis Again" 
-                                    : "Run First Analysis"
-                                }
+                                {analysis &&
+                                (analysis.recommendations.length > 0 ||
+                                  analysis.issues.length > 0)
+                                  ? "Already Analyzed"
+                                  : analysis
+                                  ? "Run Analysis Again"
+                                  : "Run First Analysis"}
                               </span>
                             </Button>
                           </div>
                         </TooltipTrigger>
-                        <TooltipContent>Analyze the page and refresh insights</TooltipContent>
+                        <TooltipContent>
+                          Analyze the page and refresh insights
+                        </TooltipContent>
                       </Tooltip>
-                      <a href={pageData.url} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
-                        <Button variant="outline" className="gap-2 w-full sm:w-auto whitespace-nowrap">
+                      <a
+                        href={pageData.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full sm:w-auto"
+                      >
+                        <Button
+                          variant="outline"
+                          className="gap-2 w-full sm:w-auto whitespace-nowrap"
+                        >
                           <ExternalLink className="h-4 w-4" /> View Live
                         </Button>
                       </a>
@@ -520,65 +575,138 @@ export default function PageAnalysisPage() {
                   </div>
 
                   {/* Onboarding / Next-step helper */}
-                  <Card className="mt-2">
-                    <CardContent className="py-4">
-                      {!analysis ? (
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                          <div>
-                            <div className="font-medium">Getting started</div>
-                            <div className="text-sm text-muted-foreground">1) Run an analysis → 2) Review suggestions → 3) Edit and deploy content</div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        How to Improve Your Score
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3 text-sm">
+                        <p className="text-muted-foreground">
+                          Each section is scored from 0-10. Click &quot;Improve
+                          This Section&quot; to see AI-generated content
+                          suggestions that can boost your scores.
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                          <div className="text-center p-3 bg-green-50 rounded-lg">
+                            <div className="text-green-600 font-semibold">
+                              8-10
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Excellent
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button 
-                              aria-label="Run analysis" 
-                              onClick={handleTriggerAnalysis} 
-                              disabled={triggering || Boolean(analysis?.recommendations?.length > 0 || analysis?.issues?.length > 0)}
-                              className={
-                                analysis?.recommendations?.length > 0 || analysis?.issues?.length > 0
-                                  ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
-                                  : ""
-                              }
-                            >
-                              {triggering ? (
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              ) : (
-                                <Play className="h-4 w-4 mr-2" />
-                              )}
-                              {analysis?.recommendations?.length > 0 || analysis?.issues?.length > 0
-                                ? "Already Analyzed" 
-                                : "Run Analysis"
-                              }
-                            </Button>
-                            <Button aria-label="Skip to content" variant="outline" onClick={() => document.querySelector('[data-value=content]')?.dispatchEvent(new Event('click', { bubbles: true }))}>
-                              Edit Content
-                            </Button>
+                          <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                            <div className="text-yellow-600 font-semibold">
+                              6-7
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Good
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                          <div>
-                            <div className="font-medium">Next step</div>
-                            <div className="text-sm text-muted-foreground">Use the Content tab to apply AI suggestions, then review details in Analysis</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button aria-label="Go to content" variant="outline" onClick={() => document.querySelector('[data-value=content]')?.dispatchEvent(new Event('click', { bubbles: true }))}>Content</Button>
-                            <Button aria-label="Go to analysis" variant="outline" onClick={() => document.querySelector('[data-value=analysis]')?.dispatchEvent(new Event('click', { bubbles: true }))}>Analysis</Button>
+                          <div className="text-center p-3 bg-red-50 rounded-lg">
+                            <div className="text-red-600 font-semibold">
+                              0-5
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Needs Work
+                            </div>
                           </div>
                         </div>
-                      )}
+                      </div>
                     </CardContent>
                   </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        Your Tasks
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <p className="text-muted-foreground text-xs">
+                          Click any task to jump to that section.
+                        </p>
+                        <div className="space-y-2">
+                          {/* Title Task */}
+                          <div 
+                            className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => scrollToSection('title-section')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Type className="h-3 w-3 text-blue-500" />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">Optimize Page Title</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {analysis?.sectionRatings?.title || 0}/10
+                                </span>
+                              </div>
+                            </div>
+                            {isContentDeployed('title') ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                            )}
+                          </div>
 
+                          {/* Description Task */}
+                          <div 
+                            className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => scrollToSection('description-section')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-3 w-3 text-green-500" />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">Improve Meta Description</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {analysis?.sectionRatings?.description || 0}/10
+                                </span>
+                              </div>
+                            </div>
+                            {isContentDeployed('description') ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                            )}
+                          </div>
+
+                          {/* Schema Task */}
+                          <div 
+                            className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => scrollToSection('schema-section')}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Database className="h-3 w-3 text-red-500" />
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">Add Schema Markup</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {analysis?.sectionRatings?.schema || 0}/10
+                                </span>
+                              </div>
+                            </div>
+                            {isContentDeployed('schema') ? (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  </div>
                   {/* Tabs */}
-                  <Tabs defaultValue="content" className="w-full">
+                  <Tabs defaultValue="Content" className="w-full">
                     <TabsList className="mt-2">
-                      <TabsTrigger value="content">Content</TabsTrigger>
-                      <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="analysis">Analysis</TabsTrigger>
+                      <TabsTrigger value="Content">Content</TabsTrigger>
+                      <TabsTrigger value="Overview">Overview</TabsTrigger>
                     </TabsList>
 
                     {/* Overview Tab */}
-                    <TabsContent value="overview" className="mt-4 space-y-6">
+                    <TabsContent value="Overview" className="mt-4 space-y-6">
                       <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center space-x-2">
@@ -589,10 +717,16 @@ export default function PageAnalysisPage() {
                         <CardContent className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                              <label className="text-sm font-medium text-muted-foreground">URL</label>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                URL
+                              </label>
                               <div className="flex items-center space-x-2 mt-1">
                                 <p className="break-all">{pageData.url}</p>
-                                <a href={pageData.url} target="_blank" rel="noopener noreferrer">
+                                <a
+                                  href={pageData.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
                                   <Button variant="ghost" size="sm">
                                     <ExternalLink className="h-4 w-4" />
                                   </Button>
@@ -600,31 +734,48 @@ export default function PageAnalysisPage() {
                               </div>
                             </div>
                             <div>
-                              <label className="text-sm font-medium text-muted-foreground">Original Title</label>
-                              <p className="mt-1">{pageData.title || "No title"}</p>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                Original Title
+                              </label>
+                              <p className="mt-1">
+                                {pageData.title || "No title"}
+                              </p>
                             </div>
                             <div>
-                              <label className="text-sm font-medium text-muted-foreground">LLM Readiness Score</label>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                LLM Readiness Score
+                              </label>
                               <div className="mt-1 flex items-center gap-2">
-                                {pageData.llmReadinessScore && pageData.llmReadinessScore > 0 ? (
-                                  getScoreBadge(Math.round(pageData.llmReadinessScore))
-                                ) : (
-                                  <Badge variant="outline">Not analyzed</Badge>
-                                )}
+                                {analysis?.summary ? (() => {
+                                  try {
+                                    return JSON.parse(analysis.summary).score || 0;
+                                  } catch {
+                                    return analysis?.score || 0;
+                                  }
+                                })() : (analysis?.score || 0)}
                                 <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <span className="text-xs text-muted-foreground underline decoration-dotted cursor-help">What is this?</span>
+                                    <span className="text-xs text-muted-foreground underline decoration-dotted cursor-help">
+                                      What is this?
+                                    </span>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    An estimate of how well the page content is structured for AI assistants.
+                                    An estimate of how well the page content is
+                                    structured for AI assistants.
                                   </TooltipContent>
                                 </Tooltip>
                               </div>
                             </div>
                             <div>
-                              <label className="text-sm font-medium text-muted-foreground">Last Scanned</label>
+                              <label className="text-sm font-medium text-muted-foreground">
+                                Last Scanned
+                              </label>
                               <p className="mt-1">
-                                {pageData.lastScannedAt ? new Date(pageData.lastScannedAt).toLocaleDateString() : "Never"}
+                                {pageData.lastScannedAt
+                                  ? new Date(
+                                      pageData.lastScannedAt
+                                    ).toLocaleDateString()
+                                  : "Never"}
                               </p>
                             </div>
                           </div>
@@ -633,615 +784,776 @@ export default function PageAnalysisPage() {
                     </TabsContent>
 
                     {/* Content Tab */}
-                    <TabsContent value="content" className="mt-4 space-y-6">
+                    {/* <TabsContent value="content" className="mt-4 space-y-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Left Column - Content Editors */}
+                        // Left Column - Content Editors
                         <div className="space-y-6">
-                          {/* Title Editor */}
+                          // Title Editor
                           <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Type className="h-5 w-5" />
-                              <span>Page Title</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  openEditor(
-                                    "title",
-                                    contentData.title || pageData.title || "",
-                                    "Edit Page Title",
-                                    "Generate optimized title suggestions for better SEO and click-through rates"
-                                  )
-                                }
-                                disabled={!analysis}
-                                className={
-                                  !analysis
-                                    ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
-                                    : ""
-                                }
-                              >
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                              {deployedTitle && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setUndeployDialog({
-                                      open: true,
-                                      contentType: "title",
-                                    })
-                                  }
-                                  disabled={undeploying}
-                                  className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Undeploy
-                                </Button>
-                              )}
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="p-4 bg-muted rounded-lg flex flex-col gap-2">
-                            <p className="font-medium">
-                              {deployedTitle
-                                ? deployedTitle.optimizedContent
-                                : pageData?.title ||
-                                  "No title set - click Edit to generate suggestions"}
-                            </p>
-                            {!analysis && (
-                              <div className="text-xs text-muted-foreground mt-2">
-                                Run analysis to enable editing.
-                              </div>
-                            )}
-                            <div className="mt-2 flex items-center gap-2">
-                              <Badge
-                                className={
-                                  (deployedTitle
-                                    ? deployedTitle.optimizedContent.length
-                                    : pageData?.title?.length || 0) >= 50 &&
-                                  (deployedTitle
-                                    ? deployedTitle.optimizedContent.length
-                                    : pageData?.title?.length || 0) <= 60
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }
-                              >
-                                {deployedTitle
-                                  ? deployedTitle.optimizedContent.length
-                                  : pageData?.title?.length || 0}{" "}
-                                characters
-                              </Badge>
-                              {deployedTitle ? (
-                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                                  Deployed
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="text-muted-foreground border-muted"
-                                >
-                                  Not Deployed
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* Description Editor */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <FileText className="h-5 w-5" />
-                              <span>Meta Description</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  openEditor(
-                                    "description",
-                                    contentData.description ||
-                                      originalMetaDescription ||
-                                      "",
-                                    "Edit Meta Description",
-                                    "Generate compelling meta descriptions that improve search result click-through rates"
-                                  )
-                                }
-                                disabled={!analysis}
-                                className={
-                                  !analysis
-                                    ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
-                                    : ""
-                                }
-                              >
-                                <Edit3 className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                              {deployedDescription && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setUndeployDialog({
-                                      open: true,
-                                      contentType: "description",
-                                    })
-                                  }
-                                  disabled={undeploying}
-                                  className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Undeploy
-                                </Button>
-                              )}
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="p-4 bg-muted rounded-lg">
-                            <p className="">
-                              {deployedDescription
-                                ? deployedDescription.optimizedContent
-                                : originalMetaDescription ||
-                                  "No meta description set - click Edit to generate suggestions"}
-                            </p>
-                            <div className="mt-2 flex items-center gap-2">
-                              <Badge
-                                className={
-                                  deployedDescription &&
-                                  deployedDescription.optimizedContent.length >=
-                                    150 &&
-                                  deployedDescription.optimizedContent.length <=
-                                    160
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
-                                }
-                              >
-                                {deployedDescription
-                                  ? deployedDescription.optimizedContent.length
-                                  : originalMetaDescription?.length || 0}{" "}
-                                characters
-                              </Badge>
-                              {deployedDescription ? (
-                                <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
-                                  Deployed
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="text-muted-foreground border-muted"
-                                >
-                                  Not Deployed
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      {/* FAQ Section */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <MessageSquare className="h-5 w-5" />
-                              <span>FAQ Section</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  openEditor(
-                                    "faq",
-                                    contentData.faqs[
-                                      contentData.faqs.length - 1
-                                    ] || "",
-                                    "Add FAQ",
-                                    "Generate frequently asked questions based on page content and user intent"
-                                  )
-                                }
-                                disabled={!analysis}
-                                className={
-                                  !analysis
-                                    ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
-                                    : ""
-                                }
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add FAQ
-                              </Button>
-                              {deployedFAQ && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    setUndeployDialog({
-                                      open: true,
-                                      contentType: "faq",
-                                    })
-                                  }
-                                  disabled={undeploying}
-                                  className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Undeploy
-                                </Button>
-                              )}
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {deployedFAQ ? (
-                            <Accordion type="multiple" className="w-full">
-                              {(() => {
-                                let faqs: {
-                                  question: string;
-                                  answer: string;
-                                }[] = [];
-                                try {
-                                  faqs = JSON.parse(
-                                    deployedFAQ.optimizedContent
-                                  );
-                                } catch {}
-                                return faqs.map((item, i) => (
-                                  <AccordionItem
-                                    key={i}
-                                    value={`faq-${i}`}
-                                    className="mb-2"
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <Type className="h-5 w-5" />
+                                  <span>Page Title</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      openEditor(
+                                        "title",
+                                        contentData.title ||
+                                          pageData.title ||
+                                          "",
+                                        "Edit Page Title",
+                                        "Generate optimized title suggestions for better SEO and click-through rates"
+                                      )
+                                    }
+                                    disabled={!analysis}
+                                    className={
+                                      !analysis
+                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        : ""
+                                    }
                                   >
-                                    <AccordionTrigger className="px-4 py-2 text-left font-semibold">
-                                      {item.question}
-                                    </AccordionTrigger>
-                                    <AccordionContent className="px-4 pb-4 flex flex-col gap-2">
-                                      <p className="text-gray-700 whitespace-pre-line">
-                                        {item.answer}
-                                      </p>
-                                    </AccordionContent>
-                                  </AccordionItem>
-                                ));
-                              })()}
-                            </Accordion>
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                              <p>
-                                No FAQs added yet - click &quot;Add FAQ&quot; to generate
-                                suggestions
-                              </p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Content Paragraphs */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <PenTool className="h-5 w-5" />
-                              <span>Content Paragraphs</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  openEditor(
-                                    "paragraph",
-                                    deployedParagraph ? deployedParagraph.optimizedContent : "",
-                                    "Add Content Paragraph",
-                                    "Generate optimized content paragraphs to improve page depth and keyword coverage"
-                                  )
-                                }
-                                disabled={!analysis}
-                                className={
-                                  !analysis
-                                    ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
-                                    : ""
-                                }
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Paragraph
-                              </Button>
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          {deployedParagraph ? (
-                            (() => {
-                              let paragraphs: Array<string | { heading?: string; content: string }> = [];
-                              try {
-                                paragraphs = JSON.parse(deployedParagraph.optimizedContent);
-                              } catch {
-                                paragraphs = [deployedParagraph.optimizedContent];
-                              }
-                              return (
-                                <div className="space-y-4">
-                                  {paragraphs.map((para: string | { heading?: string; content: string }, idx: number) =>
-                                    typeof para === "object" && para !== null ? (
-                                      <div key={idx} className="p-4 bg-muted rounded-lg">
-                                        {para.heading && <div className="font-semibold mb-1">{para.heading}</div>}
-                                        <div className="whitespace-pre-line">{(para as { content: string }).content}</div>
-                                      </div>
-                                    ) : (
-                                      <div key={idx} className="p-4 bg-muted rounded-lg whitespace-pre-line">{para}</div>
-                                    )
+                                    <Edit3 className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                  {deployedTitle && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setUndeployDialog({
+                                          open: true,
+                                          contentType: "title",
+                                        })
+                                      }
+                                      disabled={undeploying}
+                                      className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Undeploy
+                                    </Button>
                                   )}
                                 </div>
-                              );
-                            })()
-                          ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                              <PenTool className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                              <p>No paragraphs deployed yet - click &quot;Add Paragraph&quot; to generate suggestions</p>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    {/* Right Column - Keywords */}
-                    <div className="space-y-6">
-                      {/* Keywords Section */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Hash className="h-5 w-5" />
-                              <span>Keyword Analysis</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() =>
-                                  openEditor(
-                                    "keywords",
-                                    JSON.stringify(
-                                      contentData.keywords,
-                                      null,
-                                      2
-                                    ),
-                                    "Keyword Analysis",
-                                    "Generate comprehensive keyword analysis including primary, long-tail, semantic, and missing keywords"
-                                  )
-                                }
-                                disabled={Boolean(analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0))}
-                                className={
-                                  analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0)
-                                    ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
-                                    : ""
-                                }
-                              >
-                                <RefreshCw className="h-4 w-4 mr-2" />
-                                {analysis && (analysis.recommendations.length > 0 || analysis.issues.length > 0) ? "Already Analyzed" : "Analyze"}
-                              </Button>
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-semibold mb-2">
-                                Primary Keywords
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {contentData.keywords.primary.length > 0 ? (
-                                  contentData.keywords.primary.map(
-                                    (keyword, index) => (
-                                      <Badge
-                                        key={index}
-                                        variant="default"
-                                        className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
-                                      >
-                                        {keyword}
-                                      </Badge>
-                                    )
-                                  )
-                                ) : (
-                                  <p className="text-muted-foreground text-sm">
-                                    No primary keywords analyzed yet
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div>
-                              <h4 className="font-semibold mb-2">
-                                Long-Tail Keywords
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {contentData.keywords.longTail.length > 0 ? (
-                                  contentData.keywords.longTail.map(
-                                    (keyword, index) => (
-                                      <Badge
-                                        key={index}
-                                        variant="secondary"
-                                        className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                                      >
-                                        {keyword}
-                                      </Badge>
-                                    )
-                                  )
-                                ) : (
-                                  <p className="text-muted-foreground text-sm">
-                                    No long-tail keywords analyzed yet
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div>
-                              <h4 className="font-semibold mb-2">
-                                Semantic Keywords
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {contentData.keywords.semantic.length > 0 ? (
-                                  contentData.keywords.semantic.map(
-                                    (keyword, index) => (
-                                      <Badge
-                                        key={index}
-                                        variant="outline"
-                                        className="border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-300"
-                                      >
-                                        {keyword}
-                                      </Badge>
-                                    )
-                                  )
-                                ) : (
-                                  <p className="text-muted-foreground text-sm">
-                                    No semantic keywords analyzed yet
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div>
-                              <h4 className="font-semibold mb-2">
-                                Missing Opportunities
-                              </h4>
-                              <div className="flex flex-wrap gap-2">
-                                {contentData.keywords.missing.length > 0 ? (
-                                  contentData.keywords.missing.map(
-                                    (keyword, index) => (
-                                      <Badge
-                                        key={index}
-                                        variant="destructive"
-                                        className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
-                                      >
-                                        {keyword}
-                                      </Badge>
-                                    )
-                                  )
-                                ) : (
-                                  <p className="text-muted-foreground text-sm">
-                                    No missing keywords identified yet
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                    </div>
-                    {/* Close grid wrapper */}
-                    </div>
-                    </TabsContent>
-
-                    {/* Analysis Tab */}
-                    <TabsContent value="analysis" className="mt-4 space-y-6">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="flex items-center space-x-2">
-                            <BarChart3 className="h-5 w-5" />
-                            <span>Analysis Results</span>
-                          </CardTitle>
-                          <CardDescription>
-                            Latest AI-powered analysis and optimization recommendations
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          {analysis ? (
-                            <div className="space-y-6">
-                              {/* Summary */}
-                              <div>
-                                <h3 className="text-lg font-semibold mb-3 flex items-center">
-                                  <FileText className="h-5 w-5 mr-2" />
-                                  Summary
-                                </h3>
-                                <div className="bg-muted rounded-lg p-4">
-                                  <p className="text-foreground">{analysisJson?.summary}</p>
-                                </div>
-                              </div>
-
-                              <Separator />
-
-                              {/* Issues */}
-                              <div>
-                                <h3 className="text-lg font-semibold mb-3 flex items-center">
-                                  <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
-                                  Issues Found
-                                </h3>
-                                {analysis.issues.length > 0 ? (
-                                  <ul className="space-y-2">
-                                    {analysis.issues.map((issue, i) => (
-                                      <li key={i} className="flex items-start space-x-3">
-                                        <div className="w-2 h-2 bg-destructive rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-foreground">{issue}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <div className="flex items-center space-x-2 text-green-600">
-                                    <CheckCircle className="h-5 w-5" />
-                                    <span>No issues found!</span>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="p-4 bg-muted rounded-lg flex flex-col gap-2">
+                                <p className="font-medium">
+                                  {deployedTitle
+                                    ? deployedTitle.optimizedContent
+                                    : pageData?.title ||
+                                      "No title set - click Edit to generate suggestions"}
+                                </p>
+                                {!analysis && (
+                                  <div className="text-xs text-muted-foreground mt-2">
+                                    Run analysis to enable editing.
                                   </div>
                                 )}
+                                <div className="mt-2 flex items-center gap-2">
+                                  <Badge
+                                    className={
+                                      (deployedTitle
+                                        ? deployedTitle.optimizedContent.length
+                                        : pageData?.title?.length || 0) >= 50 &&
+                                      (deployedTitle
+                                        ? deployedTitle.optimizedContent.length
+                                        : pageData?.title?.length || 0) <= 60
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }
+                                  >
+                                    {deployedTitle
+                                      ? deployedTitle.optimizedContent.length
+                                      : pageData?.title?.length || 0}{" "}
+                                    characters
+                                  </Badge>
+                                  {deployedTitle ? (
+                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                      Deployed
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-muted-foreground border-muted"
+                                    >
+                                      Not Deployed
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
+                            </CardContent>
+                          </Card>
 
-                              <Separator />
-
-                              {/* Recommendations */}
-                              <div>
-                                <h3 className="text-lg font-semibold mb-3 flex items-center">
-                                  <Target className="h-5 w-5 mr-2 text-primary" />
-                                  Recommendations
-                                </h3>
-                                {analysis.recommendations.length > 0 ? (
-                                  <ul className="space-y-2">
-                                    {analysis.recommendations.map((rec, i) => (
-                                      <li key={i} className="flex items-start space-x-3">
-                                        <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                                        <span className="text-foreground">{rec}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-muted-foreground">No specific recommendations at this time.</p>
-                                )}
-                              </div>
-
-                              {/* Analysis Metadata */}
-                              <div className="pt-4 border-t border-border">
-                                <p className="text-xs text-muted-foreground flex items-center">
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  Analysis generated: {new Date(analysis.createdAt).toLocaleString()}
+                          // Description Editor
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <FileText className="h-5 w-5" />
+                                  <span>Meta Description</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      openEditor(
+                                        "description",
+                                        contentData.description ||
+                                          originalMetaDescription ||
+                                          "",
+                                        "Edit Meta Description",
+                                        "Generate compelling meta descriptions that improve search result click-through rates"
+                                      )
+                                    }
+                                    disabled={!analysis}
+                                    className={
+                                      !analysis
+                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <Edit3 className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                  {deployedDescription && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setUndeployDialog({
+                                          open: true,
+                                          contentType: "description",
+                                        })
+                                      }
+                                      disabled={undeploying}
+                                      className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Undeploy
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="p-4 bg-muted rounded-lg">
+                                <p className="">
+                                  {deployedDescription
+                                    ? deployedDescription.optimizedContent
+                                    : originalMetaDescription ||
+                                      "No meta description set - click Edit to generate suggestions"}
                                 </p>
+                                <div className="mt-2 flex items-center gap-2">
+                                  <Badge
+                                    className={
+                                      deployedDescription &&
+                                      deployedDescription.optimizedContent
+                                        .length >= 150 &&
+                                      deployedDescription.optimizedContent
+                                        .length <= 160
+                                        ? "bg-green-100 text-green-800"
+                                        : "bg-red-100 text-red-800"
+                                    }
+                                  >
+                                    {deployedDescription
+                                      ? deployedDescription.optimizedContent
+                                          .length
+                                      : originalMetaDescription?.length ||
+                                        0}{" "}
+                                    characters
+                                  </Badge>
+                                  {deployedDescription ? (
+                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                      Deployed
+                                    </Badge>
+                                  ) : (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-muted-foreground border-muted"
+                                    >
+                                      Not Deployed
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ) : (
-                            <div className="text-center py-8">
-                              <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                              <h3 className="text-lg font-semibold mb-2">No Analysis Yet</h3>
-                              <p className="text-muted-foreground mb-4">
-                                Run an analysis to get AI-powered insights and optimization recommendations for this page.
-                              </p>
-                              <Button onClick={handleTriggerAnalysis} disabled={triggering}>
-                                {triggering ? (
-                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                ) : (
-                                  <Play className="h-4 w-4 mr-2" />
-                                )}
-                                Run First Analysis
-                              </Button>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
+                            </CardContent>
+                          </Card>
 
+                          // FAQ Section
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <MessageSquare className="h-5 w-5" />
+                                  <span>FAQ Section</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      openEditor(
+                                        "faq",
+                                        contentData.faqs[
+                                          contentData.faqs.length - 1
+                                        ] || "",
+                                        "Add FAQ",
+                                        "Generate frequently asked questions based on page content and user intent"
+                                      )
+                                    }
+                                    disabled={!analysis}
+                                    className={
+                                      !analysis
+                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add FAQ
+                                  </Button>
+                                  {deployedFAQ && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setUndeployDialog({
+                                          open: true,
+                                          contentType: "faq",
+                                        })
+                                      }
+                                      disabled={undeploying}
+                                      className="text-destructive border-destructive/20 hover:bg-destructive hover:text-destructive-foreground"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Undeploy
+                                    </Button>
+                                  )}
+                                </div>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {deployedFAQ ? (
+                                <Accordion type="multiple" className="w-full">
+                                  {(() => {
+                                    let faqs: {
+                                      question: string;
+                                      answer: string;
+                                    }[] = [];
+                                    try {
+                                      faqs = JSON.parse(
+                                        deployedFAQ.optimizedContent
+                                      );
+                                    } catch {}
+                                    return faqs.map((item, i) => (
+                                      <AccordionItem
+                                        key={i}
+                                        value={`faq-${i}`}
+                                        className="mb-2"
+                                      >
+                                        <AccordionTrigger className="px-4 py-2 text-left font-semibold">
+                                          {item.question}
+                                        </AccordionTrigger>
+                                        <AccordionContent className="px-4 pb-4 flex flex-col gap-2">
+                                          <p className="text-gray-700 whitespace-pre-line">
+                                            {item.answer}
+                                          </p>
+                                        </AccordionContent>
+                                      </AccordionItem>
+                                    ));
+                                  })()}
+                                </Accordion>
+                              ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                                  <p>
+                                    No FAQs added yet - click &quot;Add
+                                    FAQ&quot; to generate suggestions
+                                  </p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+
+                          // Content Paragraphs
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <PenTool className="h-5 w-5" />
+                                  <span>Content Paragraphs</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      openEditor(
+                                        "paragraph",
+                                        deployedParagraph
+                                          ? deployedParagraph.optimizedContent
+                                          : "",
+                                        "Add Content Paragraph",
+                                        "Generate optimized content paragraphs to improve page depth and keyword coverage"
+                                      )
+                                    }
+                                    disabled={!analysis}
+                                    className={
+                                      !analysis
+                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Paragraph
+                                  </Button>
+                                </div>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              {deployedParagraph ? (
+                                (() => {
+                                  let paragraphs: Array<
+                                    | string
+                                    | { heading?: string; content: string }
+                                  > = [];
+                                  try {
+                                    paragraphs = JSON.parse(
+                                      deployedParagraph.optimizedContent
+                                    );
+                                  } catch {
+                                    paragraphs = [
+                                      deployedParagraph.optimizedContent,
+                                    ];
+                                  }
+                                  return (
+                                    <div className="space-y-4">
+                                      {paragraphs.map(
+                                        (
+                                          para:
+                                            | string
+                                            | {
+                                                heading?: string;
+                                                content: string;
+                                              },
+                                          idx: number
+                                        ) =>
+                                          typeof para === "object" &&
+                                          para !== null ? (
+                                            <div
+                                              key={idx}
+                                              className="p-4 bg-muted rounded-lg"
+                                            >
+                                              {para.heading && (
+                                                <div className="font-semibold mb-1">
+                                                  {para.heading}
+                                                </div>
+                                              )}
+                                              <div className="whitespace-pre-line">
+                                                {
+                                                  (para as { content: string })
+                                                    .content
+                                                }
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div
+                                              key={idx}
+                                              className="p-4 bg-muted rounded-lg whitespace-pre-line"
+                                            >
+                                              {para}
+                                            </div>
+                                          )
+                                      )}
+                                    </div>
+                                  );
+                                })()
+                              ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                  <PenTool className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                                  <p>
+                                    No paragraphs deployed yet - click &quot;Add
+                                    Paragraph&quot; to generate suggestions
+                                  </p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+
+                        // Right Column - Keywords
+                        <div className="space-y-6">
+                          // Keywords Section
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2">
+                                  <Hash className="h-5 w-5" />
+                                  <span>Keyword Analysis</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      openEditor(
+                                        "keywords",
+                                        JSON.stringify(
+                                          contentData.keywords,
+                                          null,
+                                          2
+                                        ),
+                                        "Keyword Analysis",
+                                        "Generate comprehensive keyword analysis including primary, long-tail, semantic, and missing keywords"
+                                      )
+                                    }
+                                    disabled={Boolean(
+                                      analysis &&
+                                        (analysis.recommendations.length > 0 ||
+                                          analysis.issues.length > 0)
+                                    )}
+                                    className={
+                                      analysis &&
+                                      (analysis.recommendations.length > 0 ||
+                                        analysis.issues.length > 0)
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
+                                        : ""
+                                    }
+                                  >
+                                    <RefreshCw className="h-4 w-4 mr-2" />
+                                    {analysis &&
+                                    (analysis.recommendations.length > 0 ||
+                                      analysis.issues.length > 0)
+                                      ? "Already Analyzed"
+                                      : "Analyze"}
+                                  </Button>
+                                </div>
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-4">
+                                <div>
+                                  <h4 className="font-semibold mb-2">
+                                    Primary Keywords
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {contentData.keywords.primary.length > 0 ? (
+                                      contentData.keywords.primary.map(
+                                        (keyword, index) => (
+                                          <Badge
+                                            key={index}
+                                            variant="default"
+                                            className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+                                          >
+                                            {keyword}
+                                          </Badge>
+                                        )
+                                      )
+                                    ) : (
+                                      <p className="text-muted-foreground text-sm">
+                                        No primary keywords analyzed yet
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-semibold mb-2">
+                                    Long-Tail Keywords
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {contentData.keywords.longTail.length >
+                                    0 ? (
+                                      contentData.keywords.longTail.map(
+                                        (keyword, index) => (
+                                          <Badge
+                                            key={index}
+                                            variant="secondary"
+                                            className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                                          >
+                                            {keyword}
+                                          </Badge>
+                                        )
+                                      )
+                                    ) : (
+                                      <p className="text-muted-foreground text-sm">
+                                        No long-tail keywords analyzed yet
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-semibold mb-2">
+                                    Semantic Keywords
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {contentData.keywords.semantic.length >
+                                    0 ? (
+                                      contentData.keywords.semantic.map(
+                                        (keyword, index) => (
+                                          <Badge
+                                            key={index}
+                                            variant="outline"
+                                            className="border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-300"
+                                          >
+                                            {keyword}
+                                          </Badge>
+                                        )
+                                      )
+                                    ) : (
+                                      <p className="text-muted-foreground text-sm">
+                                        No semantic keywords analyzed yet
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <h4 className="font-semibold mb-2">
+                                    Missing Opportunities
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {contentData.keywords.missing.length > 0 ? (
+                                      contentData.keywords.missing.map(
+                                        (keyword, index) => (
+                                          <Badge
+                                            key={index}
+                                            variant="destructive"
+                                            className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+                                          >
+                                            {keyword}
+                                          </Badge>
+                                        )
+                                      )
+                                    ) : (
+                                      <p className="text-muted-foreground text-sm">
+                                        No missing keywords identified yet
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                        // Close grid wrapper
+                      </div>
+                    </TabsContent> */}
+
+                    {/* Analysis Tab */}
+                    <TabsContent value="Content" className="mt-4 space-y-6">
+                      {analysis ? (
+                        <>
+                          {/* Section Ratings */}
+                          {analysis.sectionRatings && (
+                            <Card>
+                              <CardHeader>
+                                <CardTitle className="flex items-center space-x-2">
+                                  <Target className="h-5 w-5" />
+                                  <span>Section Ratings</span>
+                                </CardTitle>
+                                <CardDescription>
+                                  Detailed scores for each SEO section with AI
+                                  recommendations
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <SectionRatingDisplay
+                                  pageId={pageId}
+                                  sectionRatings={analysis.sectionRatings}
+                                  sectionRecommendations={
+                                    analysis.sectionRecommendations
+                                  }
+                                  onImproveSection={(
+                                    sectionType,
+                                    recommendations
+                                  ) => {
+                                    setImprovementModal({
+                                      isOpen: true,
+                                      sectionType,
+                                      recommendations,
+                                      currentScore:
+                                        analysis.sectionRatings?.[
+                                          sectionType as keyof typeof analysis.sectionRatings
+                                        ] || 0,
+                                    });
+                                  }}
+                                />
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {/* Section Improvement Modal */}
+                          {improvementModal && (
+                            <SectionImprovementModal
+                              isOpen={improvementModal.isOpen}
+                              pageId={pageId}
+                              sectionType={improvementModal.sectionType}
+                              recommendations={improvementModal.recommendations}
+                              currentScore={improvementModal.currentScore}
+                              onClose={() => setImprovementModal(null)}
+                              onContentGenerated={async (
+                                content: string,
+                                newScore: number
+                              ) => {
+                                try {
+                                  const token = await getToken();
+                                  if (!token) {
+                                    setToast({
+                                      message: "Authentication error",
+                                      type: "error",
+                                    });
+                                    return;
+                                  }
+
+                                  // Update section rating in backend
+                                  await updateSectionRating(
+                                    token,
+                                    pageId,
+                                    improvementModal.sectionType,
+                                    newScore,
+                                    content,
+                                    "gpt-4o-mini"
+                                  );
+
+                                  setToast({
+                                    message: `${improvementModal.sectionType} section improved from ${improvementModal.currentScore}/10 to ${newScore}/10!`,
+                                    type: "success",
+                                  });
+
+                                  // Update ratings locally instead of full page refresh
+                                  if (analysis && analysis.sectionRatings) {
+                                    const updatedAnalysis = {
+                                      ...analysis,
+                                      sectionRatings: {
+                                        ...analysis.sectionRatings,
+                                        [improvementModal.sectionType]: newScore
+                                      }
+                                    };
+                                    setAnalysis(updatedAnalysis);
+                                  }
+                                  
+                                  setImprovementModal(null);
+                                } catch (error) {
+                                  const message =
+                                    error instanceof Error
+                                      ? error.message
+                                      : "Failed to update section rating";
+                                  setToast({ message, type: "error" });
+                                }
+                              }}
+                            />
+                          )}
+
+                          {/* Analysis Results */}
+                          {/* <Card>
+                            <CardHeader>
+                              <CardTitle className="flex items-center space-x-2">
+                                <BarChart3 className="h-5 w-5" />
+                                <span>Analysis Results</span>
+                              </CardTitle>
+                              <CardDescription>
+                                Latest AI-powered analysis and optimization recommendations
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-6">
+                                <div>
+                                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                                    <FileText className="h-5 w-5 mr-2" />
+                                    Summary
+                                  </h3>
+                                  <div className="bg-muted rounded-lg p-4">
+                                    <p className="text-foreground">{analysisJson?.summary}</p>
+                                  </div>
+                                </div>
+
+                                <Separator />
+
+                                <div>
+                                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                                    <AlertCircle className="h-5 w-5 mr-2 text-destructive" />
+                                    Issues Found
+                                  </h3>
+                                  {analysis.issues.length > 0 ? (
+                                    <ul className="space-y-2">
+                                      {analysis.issues.map((issue, i) => (
+                                        <li key={i} className="flex items-start space-x-3">
+                                          <div className="w-2 h-2 bg-destructive rounded-full mt-2 flex-shrink-0"></div>
+                                          <span className="text-foreground">{issue}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <div className="flex items-center space-x-2 text-green-600">
+                                      <CheckCircle className="h-5 w-5" />
+                                      <span>No issues found!</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                <Separator />
+
+                                <div>
+                                  <h3 className="text-lg font-semibold mb-3 flex items-center">
+                                    <Target className="h-5 w-5 mr-2 text-primary" />
+                                    Recommendations
+                                  </h3>
+                                  {analysis.recommendations.length > 0 ? (
+                                    <ul className="space-y-2">
+                                      {analysis.recommendations.map((rec, i) => (
+                                        <li key={i} className="flex items-start space-x-3">
+                                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+                                          <span className="text-foreground">{rec}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-muted-foreground">No specific recommendations at this time.</p>
+                                  )}
+                                </div>
+
+                                <div className="pt-4 border-t border-border">
+                                  <p className="text-xs text-muted-foreground flex items-center">
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    Analysis generated: {new Date(analysis.createdAt).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card> */}
+                        </>
+                      ) : (
+                        <Card>
+                          <CardContent className="text-center py-8">
+                            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold mb-2">
+                              No Analysis Yet
+                            </h3>
+                            <p className="text-muted-foreground mb-4">
+                              Run an analysis to get AI-powered insights and
+                              optimization recommendations for this page.
+                            </p>
+                            <Button
+                              onClick={handleTriggerAnalysis}
+                              disabled={triggering}
+                            >
+                              {triggering ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Play className="h-4 w-4 mr-2" />
+                              )}
+                              Run First Analysis
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </TabsContent>
                   </Tabs>
                 </div>
 
@@ -1262,26 +1574,34 @@ export default function PageAnalysisPage() {
                 {/* Undeploy Confirmation Dialog */}
                 <Dialog
                   open={undeployDialog.open}
-                  onOpenChange={(open) => setUndeployDialog((d) => ({ ...d, open }))}
+                  onOpenChange={(open) =>
+                    setUndeployDialog((d) => ({ ...d, open }))
+                  }
                 >
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Confirm Undeploy</DialogTitle>
                       <DialogDescription>
-                        Are you sure you want to undeploy this {undeployDialog.contentType}? This will revert to the original version.
+                        Are you sure you want to undeploy this{" "}
+                        {undeployDialog.contentType}? This will revert to the
+                        original version.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                       <Button
                         variant="outline"
-                        onClick={() => setUndeployDialog({ open: false, contentType: null })}
+                        onClick={() =>
+                          setUndeployDialog({ open: false, contentType: null })
+                        }
                         disabled={undeploying}
                       >
                         Cancel
                       </Button>
                       <Button
                         variant="destructive"
-                        onClick={() => handleUndeploy(undeployDialog.contentType!)}
+                        onClick={() =>
+                          handleUndeploy(undeployDialog.contentType!)
+                        }
                         disabled={undeploying}
                       >
                         {undeploying ? "Undeploying..." : "Confirm Undeploy"}

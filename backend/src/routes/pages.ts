@@ -1,9 +1,10 @@
 import { Router, Response, NextFunction } from 'express';
 import { db } from '../db/client';
-import { sites, pages, analysisResults, pageContent, contentSuggestions, pageInjectedContent, pageAnalytics } from '../db/schema';
+import { sites, pages, contentAnalysis, pageContent, contentSuggestions, pageAnalytics, contentRatings, contentRecommendations, contentDeployments } from '../db/schema';
 import { eq, desc, and } from 'drizzle-orm';
 import { authenticateJWT } from '../middleware/auth';
 import { AnalysisService } from '../utils/analysisService';
+import { EnhancedRatingService } from '../utils/enhancedRatingService';
 import OpenAI from 'openai';
 import cache from '../utils/cache';
 
@@ -118,9 +119,9 @@ router.get('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReques
     
     // Get the latest analysis result for this page
     const analysisArr = await db.select()
-      .from(analysisResults)
-      .where(eq(analysisResults.pageId, req.params.pageId))
-      .orderBy(desc(analysisResults.createdAt))
+      .from(contentAnalysis)
+      .where(eq(contentAnalysis.pageId, req.params.pageId))
+      .orderBy(desc(contentAnalysis.createdAt))
       .limit(1);
     
     if (analysisArr.length === 0) {
@@ -134,29 +135,80 @@ router.get('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReques
     let recommendations: string[] = [];
     let issues: string[] = [];
     
-    if (analysis.recommendations) {
-      // Handle different possible formats of recommendations JSON
-      try {
-        const recsData = analysis.recommendations as any;
-        if (Array.isArray(recsData)) {
-          recommendations = recsData;
-        } else if (recsData.recommendations && Array.isArray(recsData.recommendations)) {
-          recommendations = recsData.recommendations;
-        } else if (recsData.issues && Array.isArray(recsData.issues)) {
-          issues = recsData.issues;
-          recommendations = recsData.recommendations || [];
-        }
-      } catch (e) {
-        recommendations = ['Analysis data could not be parsed'];
+    // Get recommendations from content_recommendations table
+    const contentRecs = await db.select()
+      .from(contentRecommendations)
+      .where(eq(contentRecommendations.analysisResultId, analysis.id));
+    
+    // Extract recommendations from the normalized structure
+    for (const rec of contentRecs) {
+      if (Array.isArray(rec.recommendations)) {
+        recommendations.push(...rec.recommendations);
       }
     }
     
+    // Get section ratings and recommendations
+    let sectionRatings = null;
+    let sectionRecommendationsData: any = {};
+    
+    try {
+      sectionRatings = await EnhancedRatingService.getCurrentSectionRatings(req.params.pageId);
+      
+      if (sectionRatings) {
+        const sectionTypes = ['title', 'description', 'headings', 'content', 'schema', 'images', 'links'];
+        
+        for (const sectionType of sectionTypes) {
+          sectionRecommendationsData[sectionType] = await EnhancedRatingService.getSectionRecommendations(
+            req.params.pageId, 
+            sectionType
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Failed to get section ratings:', error);
+    }
+
+    // Create a structured summary object that matches frontend expectations
+    const structuredSummary = {
+      summary: analysis.analysisSummary || 'No summary available',
+      score: analysis.overallScore || 0,
+      contentQuality: {
+        clarity: analysis.contentClarity || 0,
+        structure: analysis.contentStructure || 0,
+        completeness: analysis.contentCompleteness || 0,
+      },
+      technicalSEO: {
+        titleOptimization: analysis.titleOptimization || 0,
+        metaDescription: analysis.metaDescription || 0,
+        headingStructure: analysis.headingStructure || 0,
+        schemaMarkup: analysis.schemaMarkup || 0,
+      },
+      keywordAnalysis: {
+        primaryKeywords: analysis.primaryKeywords || [],
+        longTailKeywords: analysis.longTailKeywords || [],
+        semanticKeywords: analysis.semanticKeywords || [],
+        keywordDensity: analysis.keywordDensity || 0,
+      },
+      llmOptimization: {
+        definitionsPresent: analysis.definitionsPresent || 0,
+        faqsPresent: analysis.faqsPresent || 0,
+        structuredData: analysis.structuredData || 0,
+        citationFriendly: analysis.citationFriendly || 0,
+        topicCoverage: analysis.topicCoverage || 0,
+        answerableQuestions: analysis.answerableQuestions || 0,
+      },
+      recommendations: sectionRecommendationsData || {},
+    };
+
     const result = {
       id: analysis.id,
       pageId: analysis.pageId,
-      summary: analysis.rawLlmOutput || 'No summary available',
+      summary: JSON.stringify(structuredSummary),
       issues: issues,
       recommendations: recommendations,
+      score: analysis.overallScore || 0,
+      sectionRatings,
+      sectionRecommendations: sectionRecommendationsData,
       createdAt: analysis.createdAt?.toISOString() || '',
     };
     
@@ -230,39 +282,228 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
         url: page.url,
         contentSnapshot: page.contentSnapshot || undefined,
         forceRefresh
-      });
+      }) as any; // Type assertion to avoid TypeScript issues
+
+      // Calculate section-based score if section ratings are available
+      let finalScore = analysisResult.score; // Default to AI analysis score
+      if (analysisResult.sectionRatings) {
+        const sectionBasedScore = EnhancedRatingService.calculateTotalScore(analysisResult.sectionRatings);
+        console.log(`📊 Section-based score: ${sectionBasedScore}% (from 7 sections), AI analysis score: ${analysisResult.score}%`);
+        finalScore = sectionBasedScore; // Use section-based score as primary
+      }
 
       // Always update the content snapshot after analysis (especially if it was refreshed)
       await db.update(pages)
         .set({ 
           contentSnapshot: JSON.stringify(analysisResult.content),
           title: analysisResult.content.title || page.title,
-          llmReadinessScore: analysisResult.score,
+          llmReadinessScore: finalScore,
           lastAnalysisAt: new Date(),
           lastScannedAt: new Date()
         })
         .where(eq(pages.id, page.id));
 
-      // Store analysis results in database (including AI page summary)
-      const newAnalysis = await db.insert(analysisResults).values({
+      // Store analysis results in database (normalized structure)
+      const newAnalysis = await db.insert(contentAnalysis).values({
         pageId: page.id,
-        analyzedAt: new Date(),
+        overallScore: finalScore,
         llmModelUsed: 'gpt-4o-mini',
-        score: analysisResult.score,
-        recommendations: JSON.stringify({
-          issues: analysisResult.issues,
-          recommendations: analysisResult.recommendations,
-          summary: analysisResult.summary,
-          pageSummary: analysisResult.pageSummary, // Store AI page summary
-          contentQuality: analysisResult.contentQuality,
-          technicalSEO: analysisResult.technicalSEO,
-          keywordAnalysis: analysisResult.keywordAnalysis,
-          llmOptimization: analysisResult.llmOptimization
-        }),
-        rawLlmOutput: JSON.stringify(analysisResult),
+        pageSummary: (analysisResult as any).pageSummary,
+        analysisSummary: (analysisResult as any).summary,
+        
+        // Content quality metrics
+        contentClarity: analysisResult.contentQuality?.clarity || 0,
+        contentStructure: analysisResult.contentQuality?.structure || 0,
+        contentCompleteness: analysisResult.contentQuality?.completeness || 0,
+        
+        // Technical SEO metrics
+        titleOptimization: analysisResult.technicalSEO?.titleOptimization || 0,
+        metaDescription: analysisResult.technicalSEO?.metaDescription || 0,
+        headingStructure: analysisResult.technicalSEO?.headingStructure || 0,
+        schemaMarkup: analysisResult.technicalSEO?.schemaMarkup || 0,
+        
+        // Keyword analysis
+        primaryKeywords: analysisResult.keywordAnalysis?.primaryKeywords || [],
+        longTailKeywords: analysisResult.keywordAnalysis?.longTailKeywords || [],
+        keywordDensity: analysisResult.keywordAnalysis?.keywordDensity || 0,
+        semanticKeywords: analysisResult.keywordAnalysis?.semanticKeywords || [],
+        
+        // LLM optimization metrics
+        definitionsPresent: analysisResult.llmOptimization?.definitionsPresent ? 1 : 0,
+        faqsPresent: analysisResult.llmOptimization?.faqsPresent ? 1 : 0,
+        structuredData: analysisResult.llmOptimization?.structuredData ? 1 : 0,
+        citationFriendly: analysisResult.llmOptimization?.citationFriendly ? 1 : 0,
+        topicCoverage: analysisResult.llmOptimization?.topicCoverage || 0,
+        answerableQuestions: analysisResult.llmOptimization?.answerableQuestions || 0,
+        
+        confidence: 0.8,
+        analysisVersion: '2.0'
       }).returning();
 
-      console.log(`✅ Analysis completed for ${page.url} - Score: ${analysisResult.score}/100`);
+      // Clear existing section ratings and recommendations for this page
+      console.log(`🗑️ Clearing existing section ratings and recommendations for page: ${page.id}`);
+      
+      // Delete existing content ratings for this page
+      await db.delete(contentRatings)
+        .where(eq(contentRatings.pageId, page.id));
+      
+      // Delete existing content recommendations for this page
+      await db.delete(contentRecommendations)
+        .where(eq(contentRecommendations.pageId, page.id));
+
+      // Generate AI-powered recommendations instead of static ones
+      console.log('🤖 Generating AI-powered recommendations...');
+      let aiRecommendations;
+      try {
+                 aiRecommendations = await AnalysisService.generateAIRecommendations(
+           analysisResult.content,
+           analysisResult as any,
+           analysisResult.pageSummary || ''
+         );
+        console.log('✅ AI recommendations generated successfully');
+      } catch (aiError) {
+        console.error('❌ AI recommendation generation failed, falling back to basic recommendations:', aiError);
+        // Fallback to basic recommendations if AI fails
+        aiRecommendations = {
+          sections: [
+            {
+              sectionType: 'title',
+              currentScore: Math.round(analysisResult.technicalSEO.titleOptimization / 10),
+              recommendations: analysisResult.technicalSEO.titleOptimization < 70 ? [{
+                priority: 'high',
+                category: 'SEO',
+                title: 'Optimize page title',
+                description: 'Improve title for better SEO and click-through rates',
+                expectedImpact: 2,
+                implementation: 'Include primary keywords and keep length 50-60 characters'
+              }] : [],
+              overallAssessment: 'Title needs optimization',
+              estimatedImprovement: 2
+            },
+            {
+              sectionType: 'description',
+              currentScore: Math.round(analysisResult.technicalSEO.metaDescription / 10),
+              recommendations: analysisResult.technicalSEO.metaDescription < 70 ? [{
+                priority: 'high',
+                category: 'SEO',
+                title: 'Optimize meta description',
+                description: 'Improve meta description for better click-through rates',
+                expectedImpact: 2,
+                implementation: 'Include primary keywords and keep length 150-160 characters'
+              }] : [],
+              overallAssessment: 'Meta description needs optimization',
+              estimatedImprovement: 2
+            },
+            {
+              sectionType: 'headings',
+              currentScore: Math.round(analysisResult.technicalSEO.headingStructure / 10),
+              recommendations: analysisResult.technicalSEO.headingStructure < 70 ? [{
+                priority: 'medium',
+                category: 'SEO',
+                title: 'Improve heading structure',
+                description: 'Enhance heading hierarchy for better content organization',
+                expectedImpact: 1.5,
+                implementation: 'Use proper H1-H6 hierarchy with descriptive headings'
+              }] : [],
+              overallAssessment: 'Heading structure needs improvement',
+              estimatedImprovement: 1.5
+            },
+            {
+              sectionType: 'content',
+              currentScore: Math.round(analysisResult.contentQuality.completeness / 10),
+              recommendations: analysisResult.contentQuality.completeness < 70 ? [{
+                priority: 'medium',
+                category: 'Content',
+                title: 'Enhance content quality',
+                description: 'Improve content comprehensiveness and structure',
+                expectedImpact: 2,
+                implementation: 'Add more detailed information, examples, and structured content'
+              }] : [],
+              overallAssessment: 'Content quality needs improvement',
+              estimatedImprovement: 2
+            },
+            {
+              sectionType: 'schema',
+              currentScore: Math.round(analysisResult.technicalSEO.schemaMarkup / 10),
+              recommendations: analysisResult.technicalSEO.schemaMarkup < 70 ? [{
+                priority: 'medium',
+                category: 'Technical',
+                title: 'Implement structured data',
+                description: 'Add schema markup for better search engine understanding',
+                expectedImpact: 1.5,
+                implementation: 'Add JSON-LD structured data markup'
+              }] : [],
+              overallAssessment: 'Schema markup needs implementation',
+              estimatedImprovement: 1.5
+            },
+            {
+              sectionType: 'images',
+              currentScore: Math.round(analysisResult.contentQuality.structure / 10),
+              recommendations: analysisResult.contentQuality.structure < 70 ? [{
+                priority: 'low',
+                category: 'UX',
+                title: 'Optimize images',
+                description: 'Improve image optimization and accessibility',
+                expectedImpact: 1,
+                implementation: 'Add alt text and optimize image file sizes'
+              }] : [],
+              overallAssessment: 'Image optimization needed',
+              estimatedImprovement: 1
+            },
+            {
+              sectionType: 'links',
+              currentScore: Math.round(analysisResult.contentQuality.structure / 10),
+              recommendations: analysisResult.contentQuality.structure < 70 ? [{
+                priority: 'low',
+                category: 'SEO',
+                title: 'Improve internal linking',
+                description: 'Enhance internal link structure',
+                expectedImpact: 1,
+                implementation: 'Add relevant internal links with descriptive anchor text'
+              }] : [],
+              overallAssessment: 'Internal linking needs improvement',
+              estimatedImprovement: 1
+            }
+          ]
+        };
+      }
+
+      // Convert AI recommendations to the format expected by EnhancedRatingService
+      const contentRecommendationsData = {
+        title: aiRecommendations.sections.find(s => s.sectionType === 'title')?.recommendations.map(r => r.title) || [],
+        description: aiRecommendations.sections.find(s => s.sectionType === 'description')?.recommendations.map(r => r.title) || [],
+        headings: aiRecommendations.sections.find(s => s.sectionType === 'headings')?.recommendations.map(r => r.title) || [],
+        content: aiRecommendations.sections.find(s => s.sectionType === 'content')?.recommendations.map(r => r.title) || [],
+        schema: aiRecommendations.sections.find(s => s.sectionType === 'schema')?.recommendations.map(r => r.title) || [],
+        images: aiRecommendations.sections.find(s => s.sectionType === 'images')?.recommendations.map(r => r.title) || [],
+        links: aiRecommendations.sections.find(s => s.sectionType === 'links')?.recommendations.map(r => r.title) || []
+      };
+
+      // Generate section ratings from AI recommendations
+      const sectionRatings = {
+        title: aiRecommendations.sections.find(s => s.sectionType === 'title')?.currentScore || Math.round(analysisResult.technicalSEO.titleOptimization / 10),
+        description: aiRecommendations.sections.find(s => s.sectionType === 'description')?.currentScore || Math.round(analysisResult.technicalSEO.metaDescription / 10),
+        headings: aiRecommendations.sections.find(s => s.sectionType === 'headings')?.currentScore || Math.round(analysisResult.technicalSEO.headingStructure / 10),
+        content: aiRecommendations.sections.find(s => s.sectionType === 'content')?.currentScore || Math.round(analysisResult.contentQuality.completeness / 10),
+        schema: aiRecommendations.sections.find(s => s.sectionType === 'schema')?.currentScore || Math.round(analysisResult.technicalSEO.schemaMarkup / 10),
+        images: aiRecommendations.sections.find(s => s.sectionType === 'images')?.currentScore || Math.round(analysisResult.contentQuality.structure / 10),
+        links: aiRecommendations.sections.find(s => s.sectionType === 'links')?.currentScore || Math.round(analysisResult.contentQuality.structure / 10)
+      };
+
+      // Save fresh section ratings and recommendations
+      await EnhancedRatingService.saveSectionRatings(
+        page.id,
+        newAnalysis[0].id,
+        sectionRatings
+      );
+
+      await EnhancedRatingService.saveSectionRecommendations(
+        page.id,
+        newAnalysis[0].id,
+        contentRecommendationsData
+      );
+
+      console.log(`✅ Analysis completed for ${page.url} - Score: ${finalScore}/100`);
 
       // Return the analysis results immediately
       res.json({
@@ -270,10 +511,12 @@ router.post('/:pageId/analysis', authenticateJWT, async (req: AuthenticatedReque
         analysis: {
           id: newAnalysis[0].id,
           pageId: page.id,
-          summary: analysisResult.summary,
-          issues: analysisResult.issues,
-          recommendations: analysisResult.recommendations,
-          score: analysisResult.score,
+                  summary: (analysisResult as any).summary,
+        issues: (analysisResult as any).issues,
+        recommendations: (analysisResult as any).recommendations,
+          score: finalScore,
+          sectionRatings,
+          contentRecommendations: contentRecommendationsData,
           createdAt: newAnalysis[0].createdAt?.toISOString(),
         }
       });
@@ -440,9 +683,9 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
 
     // Get latest analysis for context
     const analysisArr = await db.select()
-      .from(analysisResults)
-      .where(eq(analysisResults.pageId, req.params.pageId))
-      .orderBy(desc(analysisResults.createdAt))
+      .from(contentAnalysis)
+      .where(eq(contentAnalysis.pageId, req.params.pageId))
+      .orderBy(desc(contentAnalysis.createdAt))
       .limit(1);
 
     const analysis = analysisArr[0];
@@ -451,15 +694,11 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
       // Get page summary for better context
       let pageSummary = '';
       try {
-        // Prefer structured text from rawLlmOutput if present
-        if (analysis?.rawLlmOutput) {
-          // Attempt to parse JSON, else use raw text
-          try {
-            const parsed = JSON.parse(analysis.rawLlmOutput);
-            pageSummary = parsed?.summary || analysis.rawLlmOutput;
-          } catch {
-            pageSummary = analysis.rawLlmOutput;
-          }
+        // Use page summary from normalized structure
+        if (analysis?.pageSummary) {
+          pageSummary = analysis.pageSummary;
+        } else if (analysis?.analysisSummary) {
+          pageSummary = analysis.analysisSummary;
         }
       } catch {
         pageSummary = '';
@@ -469,7 +708,7 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
       // Prefer the page title; use currentContent only as a fallback for fields being edited
       const pageContentObj = {
         title: page.title || '',
-        metaDescription: currentContent && contentType === 'description' ? currentContent : (analysis?.rawLlmOutput || ''),
+        metaDescription: currentContent && contentType === 'description' ? currentContent : (analysis?.analysisSummary || ''),
         url: page.url
       };
 
@@ -478,8 +717,8 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
        try {
          // Create a minimal AnalysisResult object for the function
          const analysisResult = {
-           score: analysis?.score || 0,
-           summary: analysis?.rawLlmOutput || '',
+           score: analysis?.overallScore || 0,
+           summary: analysis?.analysisSummary || '',
            issues: [],
            recommendations: [],
            contentQuality: { 
@@ -509,6 +748,24 @@ router.post('/:pageId/content-suggestions', authenticateJWT, async (req: Authent
              citationFriendly: false,
              topicCoverage: 0,
              answerableQuestions: 0
+           },
+           sectionRatings: {
+             title: 0,
+             description: 0,
+             headings: 0,
+             content: 0,
+             schema: 0,
+             images: 0,
+             links: 0
+           },
+           contentRecommendations: {
+             title: [],
+             description: [],
+             headings: [],
+             content: [],
+             schema: [],
+             images: [],
+             links: []
            }
          };
 
@@ -914,11 +1171,37 @@ router.put('/:pageId/content/:contentType/deploy', authenticateJWT, async (req: 
     console.log(`🗑️  Invalidating cache for deployed content: ${site.trackerId}:${page.url} (${contentType})`);
     await cache.invalidateTrackerContent(site.trackerId, page.url);
 
+    // 📊 UPDATE PAGE SCORE: Add improvement points based on content type deployed
+    const scoreImprovements: Record<string, number> = {
+      'title': 5,        // Title optimization typically improves score by 5 points
+      'description': 4,  // Meta description improvement
+      'faq': 8,          // FAQ sections have high impact on LLM readiness
+      'paragraph': 6,    // Content improvements
+      'keywords': 3,     // Keyword optimization
+      'schema': 4        // Schema markup improvement
+    };
+
+    const improvement = scoreImprovements[contentType] || 3; // Default 3 points for unknown types
+    const currentScore = page.llmReadinessScore || 0;
+    const newScore = Math.min(100, currentScore + improvement); // Cap at 100
+
+    await db.update(pages)
+      .set({
+        llmReadinessScore: newScore,
+        lastAnalysisAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(pages.id, pageId));
+
+    console.log(`✅ Updated LLM readiness score: ${currentScore} → ${newScore} (+${improvement} for ${contentType})`);
+
     res.json({
       message: `${contentType} content deployed successfully`,
       pageId,
       contentType,
-      deployedAt: new Date()
+      deployedAt: new Date(),
+      scoreImprovement: improvement,
+      newScore: newScore
     });
 
   } catch (err) {
@@ -1142,21 +1425,19 @@ router.get('/:pageId/original-content', authenticateJWT, async (req: Authenticat
 
     // Get latest analysis for page summary and context
     const analysisArr = await db.select()
-      .from(analysisResults)
-      .where(eq(analysisResults.pageId, req.params.pageId))
-      .orderBy(desc(analysisResults.createdAt))
+      .from(contentAnalysis)
+      .where(eq(contentAnalysis.pageId, req.params.pageId))
+      .orderBy(desc(contentAnalysis.createdAt))
       .limit(1);
 
     if (analysisArr.length > 0) {
       const analysis = analysisArr[0];
       try {
-        const recommendations = typeof analysis.recommendations === 'string' 
-          ? JSON.parse(analysis.recommendations) 
-          : (analysis.recommendations || {});
+                const recommendations = {}; // No longer stored in analysis table
         pageSummary = recommendations.pageSummary || null;
         
         analysisContext = {
-          score: analysis.score,
+          score: analysis.overallScore,
           summary: recommendations.summary,
           keywordAnalysis: recommendations.keywordAnalysis,
           issues: recommendations.issues?.slice(0, 3), // First 3 issues
@@ -1247,34 +1528,46 @@ router.delete('/:pageId', authenticateJWT, async (req: AuthenticatedRequest, res
 
     // Delete related data in correct order (respecting foreign key constraints)
     const deletedData = {
-      analysisResults: 0,
-      pageInjectedContent: 0,
+      contentRatings: 0,
+      contentRecommendations: 0,
+      contentDeployments: 0,
+      contentAnalysis: 0,
       pageContent: 0,
       contentSuggestions: 0,
       pageAnalytics: 0
     };
 
-    // 1. Delete analysis results
-    const analysisRes = await db.delete(analysisResults).where(eq(analysisResults.pageId, pageId));
-    deletedData.analysisResults = analysisRes.rowCount || 0;
+    // 1. Delete content ratings (references both pages and analysis_results)
+    const contentRatingsRes = await db.delete(contentRatings).where(eq(contentRatings.pageId, pageId));
+    deletedData.contentRatings = contentRatingsRes.rowCount || 0;
 
-    // 2. Delete page-injected content relationships
-    const pageInjectedRes = await db.delete(pageInjectedContent).where(eq(pageInjectedContent.pageId, pageId));
-    deletedData.pageInjectedContent = pageInjectedRes.rowCount || 0;
+    // 2. Delete content recommendations (references pages)
+    const contentRecommendationsRes = await db.delete(contentRecommendations).where(eq(contentRecommendations.pageId, pageId));
+    deletedData.contentRecommendations = contentRecommendationsRes.rowCount || 0;
 
-    // 3. Delete page content (optimized content)
+    // 3. Delete content deployments (references pages)
+    const contentDeploymentsRes = await db.delete(contentDeployments).where(eq(contentDeployments.pageId, pageId));
+    deletedData.contentDeployments = contentDeploymentsRes.rowCount || 0;
+
+    // 4. Delete content analysis (now safe to delete since content_ratings are gone)
+    const analysisRes = await db.delete(contentAnalysis).where(eq(contentAnalysis.pageId, pageId));
+    deletedData.contentAnalysis = analysisRes.rowCount || 0;
+
+  // NOTE: page_injected_content was removed from the schema; no related delete step needed
+
+    // 6. Delete page content (optimized content)
     const pageContentRes = await db.delete(pageContent).where(eq(pageContent.pageId, pageId));
     deletedData.pageContent = pageContentRes.rowCount || 0;
 
-    // 4. Delete content suggestions
+    // 7. Delete content suggestions
     const contentSuggestionsRes = await db.delete(contentSuggestions).where(eq(contentSuggestions.pageId, pageId));
     deletedData.contentSuggestions = contentSuggestionsRes.rowCount || 0;
 
-    // 5. Delete page analytics by URL (since it references pageUrl, not pageId)
+    // 8. Delete page analytics by URL (since it references pageUrl, not pageId)
     const pageAnalyticsRes = await db.delete(pageAnalytics).where(eq(pageAnalytics.pageUrl, page.url));
     deletedData.pageAnalytics = pageAnalyticsRes.rowCount || 0;
 
-    // 6. Finally, delete the page itself
+    // 9. Finally, delete the page itself
     await db.delete(pages).where(eq(pages.id, pageId));
 
     console.log(`✅ Successfully deleted page ${pageId} and related data:`, deletedData);
@@ -1287,6 +1580,538 @@ router.delete('/:pageId', authenticateJWT, async (req: AuthenticatedRequest, res
 
   } catch (err) {
     console.error(`❌ Failed to delete page ${req.params.pageId}:`, err);
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/section-ratings:
+ *   get:
+ *     summary: Get section ratings for a page
+ *     tags: [Section Ratings]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Section ratings retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 pageId:
+ *                   type: string
+ *                 sectionRatings:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: number
+ *                     description:
+ *                       type: number
+ *                     headings:
+ *                       type: number
+ *                     content:
+ *                       type: number
+ *                     schema:
+ *                       type: number
+ *                     images:
+ *                       type: number
+ *                     links:
+ *                       type: number
+ *                 contentRecommendations:
+ *                   type: object
+ *                   properties:
+ *                     title:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     description:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     headings:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     content:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     schema:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     images:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     links:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       404:
+ *         description: Page not found or no ratings available
+ */
+// Get section ratings for a page
+router.get('/:pageId/section-ratings', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    // Get current section ratings
+    const sectionRatings = await EnhancedRatingService.getCurrentSectionRatings(req.params.pageId);
+    
+    if (!sectionRatings) {
+      res.status(404).json({ message: 'No section ratings found for this page' });
+      return;
+    }
+
+    // Get content recommendations
+    const sectionRecommendationsData: any = {};
+    const sectionTypes = ['title', 'description', 'headings', 'content', 'schema', 'images', 'links'];
+    
+    for (const sectionType of sectionTypes) {
+      sectionRecommendationsData[sectionType] = await EnhancedRatingService.getSectionRecommendations(
+        req.params.pageId, 
+        sectionType
+      );
+    }
+
+    res.json({
+      pageId: req.params.pageId,
+      sectionRatings,
+      sectionRecommendations: sectionRecommendationsData
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/section-ratings:
+ *   post:
+ *     summary: Update section ratings for a page
+ *     tags: [Section Ratings]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sectionType:
+ *                 type: string
+ *                 enum: [title, description, headings, content, schema, images, links]
+ *               newScore:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 10
+ *               deployedContent:
+ *                 type: string
+ *               aiModel:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Section rating updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 sectionType:
+ *                   type: string
+ *                 previousScore:
+ *                   type: number
+ *                 newScore:
+ *                   type: number
+ *                 scoreImprovement:
+ *                   type: number
+ *       404:
+ *         description: Page not found or not authorized
+ */
+// Update section ratings for a page
+router.post('/:pageId/section-ratings', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { sectionType, newScore, deployedContent, aiModel } = req.body;
+    
+    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    // Get current section rating
+    const currentRatings = await EnhancedRatingService.getCurrentSectionRatings(req.params.pageId);
+    if (!currentRatings) {
+      res.status(404).json({ message: 'No section ratings found for this page' });
+      return;
+    }
+
+    const previousScore = currentRatings[sectionType as keyof typeof currentRatings] || 0;
+
+    // Record the content deployment and update section score
+    await EnhancedRatingService.recordContentDeployment(
+      req.params.pageId,
+      sectionType,
+      previousScore,
+      newScore,
+      deployedContent || '',
+      aiModel || 'gpt-4o-mini',
+      req.user!.userId
+    );
+
+    res.json({
+      message: `${sectionType} section rating updated successfully`,
+      sectionType,
+      previousScore,
+      newScore,
+      scoreImprovement: newScore - previousScore
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/section-improvements:
+ *   get:
+ *     summary: Get improvement history for a section
+ *     tags: [Section Ratings]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: sectionType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [title, description, headings, content, schema, images, links]
+ *     responses:
+ *       200:
+ *         description: Section improvement history retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 pageId:
+ *                   type: string
+ *                 sectionType:
+ *                   type: string
+ *                 improvements:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       previousScore:
+ *                         type: number
+ *                       newScore:
+ *                         type: number
+ *                       scoreImprovement:
+ *                         type: number
+ *                       deployedContent:
+ *                         type: string
+ *                       deployedAt:
+ *                         type: string
+ *       404:
+ *         description: Page not found or not authorized
+ */
+// Get improvement history for a section
+router.get('/:pageId/section-improvements', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { sectionType } = req.query;
+    
+    if (!sectionType || typeof sectionType !== 'string') {
+      res.status(400).json({ message: 'sectionType query parameter is required' });
+      return;
+    }
+
+    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    // Get improvement history for the section
+    const improvements = await EnhancedRatingService.getSectionImprovementHistory(
+      req.params.pageId, 
+      sectionType
+    );
+
+    res.json({
+      pageId: req.params.pageId,
+      sectionType,
+      improvements
+    });
+
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * @openapi
+ * /api/v1/pages/{pageId}/section-content:
+ *   post:
+ *     summary: Generate optimized content for selected section recommendations
+ *     tags: [Section Content Generation]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               sectionType:
+ *                 type: string
+ *                 enum: [title, description, headings, content, schema, images, links]
+ *               selectedRecommendations:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of selected recommendations to address
+ *               currentContent:
+ *                 type: string
+ *                 description: Current content for the section
+ *               additionalContext:
+ *                 type: string
+ *                 description: Additional context for content generation
+ *     responses:
+ *       200:
+ *         description: Generated content based on selected recommendations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 sectionType:
+ *                   type: string
+ *                 generatedContent:
+ *                   type: string
+ *                 keyPoints:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 recommendationsAddressed:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                 estimatedScoreImprovement:
+ *                   type: number
+ *                 generationContext:
+ *                   type: string
+ *       404:
+ *         description: Page not found or not authorized
+ *       500:
+ *         description: Content generation failed
+ */
+// Generate optimized content for selected section recommendations
+router.post('/:pageId/section-content', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+    const { sectionType, selectedRecommendations, currentContent, additionalContext } = req.body;
+    
+    if (!sectionType || !selectedRecommendations || !Array.isArray(selectedRecommendations)) {
+      res.status(400).json({ 
+        message: 'sectionType and selectedRecommendations array are required' 
+      });
+      return;
+    }
+    
+    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
+    const page = pageArr[0];
+    if (!page) {
+      res.status(404).json({ message: 'Page not found' });
+      return;
+    }
+    
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
+    const site = siteArr[0];
+    if (!site || site.userId !== req.user!.userId) {
+      res.status(404).json({ message: 'Not authorized' });
+      return;
+    }
+
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      res.status(500).json({ 
+        message: 'Content generation service not configured. Please add OPENAI_API_KEY to environment variables.' 
+      });
+      return;
+    }
+
+    // Get latest analysis for context
+    const analysisArr = await db.select()
+      .from(contentAnalysis)
+      .where(eq(contentAnalysis.pageId, req.params.pageId))
+      .orderBy(desc(contentAnalysis.createdAt))
+      .limit(1);
+
+    const analysis = analysisArr[0];
+    if (!analysis) {
+      res.status(404).json({ message: 'No analysis found for this page' });
+      return;
+    }
+
+    try {
+      // Construct proper analysisData from the contentAnalysis record
+      const analysisData = {
+        score: analysis.overallScore || 0,
+        summary: analysis.analysisSummary || '',
+        issues: [], // Could be populated from separate analysis
+        recommendations: [], // Could be populated from separate analysis
+        keywordAnalysis: {
+          primaryKeywords: Array.isArray(analysis.primaryKeywords) ? analysis.primaryKeywords : [],
+          longTailKeywords: Array.isArray(analysis.longTailKeywords) ? analysis.longTailKeywords : [],
+          semanticKeywords: Array.isArray(analysis.semanticKeywords) ? analysis.semanticKeywords : [],
+          keywordDensity: analysis.keywordDensity || 0,
+          missingKeywords: []
+        },
+        technicalSEO: {
+          titleOptimization: analysis.titleOptimization || 0,
+          metaDescription: analysis.metaDescription || 0,
+          headingStructure: analysis.headingStructure || 0,
+          schemaMarkup: analysis.schemaMarkup || 0,
+          semanticMarkup: 0,
+          contentDepth: 0
+        },
+        contentQuality: {
+          clarity: analysis.contentClarity || 0,
+          structure: analysis.contentStructure || 0,
+          completeness: analysis.contentCompleteness || 0
+        },
+        llmOptimization: {
+          definitionsPresent: Boolean(analysis.definitionsPresent),
+          faqsPresent: Boolean(analysis.faqsPresent),
+          structuredData: Boolean(analysis.structuredData),
+          citationFriendly: Boolean(analysis.citationFriendly),
+          topicCoverage: analysis.topicCoverage || 0,
+          answerableQuestions: 0
+        },
+        sectionRatings: {
+          title: Math.round((analysis.titleOptimization || 0) / 10),
+          description: Math.round((analysis.metaDescription || 0) / 10),
+          headings: Math.round((analysis.headingStructure || 0) / 10),
+          content: Math.round((analysis.contentClarity || 0) / 10),
+          schema: Math.round((analysis.schemaMarkup || 0) / 10),
+          images: 0,
+          links: 0
+        },
+        contentRecommendations: {
+          title: [],
+          description: [],
+          headings: [],
+          content: [],
+          schema: [],
+          images: [],
+          links: []
+        }
+      };
+      
+      // Construct proper pageContent object with all required fields for AI generation
+      const pageContent = {
+        url: page.url,
+        title: page.title || '',
+        metaDescription: '', // Not stored in pages table, could be extracted from contentSnapshot
+        bodyText: page.contentSnapshot || '',
+        summary: analysis.analysisSummary || '',
+        pageSummary: analysis.pageSummary || ''
+      };
+      
+      // Generate content based on selected recommendations
+      const generatedContent = await AnalysisService.generateSectionContent(
+        sectionType,
+        selectedRecommendations,
+        pageContent,
+        analysisData,
+        currentContent || '',
+        additionalContext || ''
+      );
+
+      // Calculate estimated score improvement
+      const estimatedImprovement = AnalysisService.estimateScoreImprovement(
+        sectionType,
+        selectedRecommendations,
+        analysisData
+      );
+
+      res.json({
+        sectionType,
+        generatedContent: generatedContent.content,
+        keyPoints: generatedContent.keyPoints,
+        recommendationsAddressed: selectedRecommendations,
+        estimatedScoreImprovement: estimatedImprovement,
+        generationContext: `Generated based on ${selectedRecommendations.length} selected recommendations for ${sectionType} optimization`,
+        pageUrl: page.url,
+        generatedAt: new Date().toISOString()
+      });
+
+    } catch (aiError: any) {
+      console.error(`❌ Section content generation failed for ${page.url}:`, aiError);
+      res.status(500).json({ 
+        message: 'Content generation failed', 
+        error: aiError.message || 'Unknown error occurred during content generation'
+      });
+    }
+  } catch (err) {
     next(err);
   }
 });

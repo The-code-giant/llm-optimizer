@@ -28,7 +28,7 @@ async function checkSubscriptionStatus() {
     );
 
     const subscriptionStatus = await response.json();
-
+    
     if (!subscriptionStatus.isActive) {
       return "/dashboard/billing"
     }

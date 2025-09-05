@@ -15,7 +15,6 @@ import {
   FileText,
   Globe,
   ListPlus,
-  Play,
   Plus,
   RefreshCw,
   Search,
@@ -35,6 +34,7 @@ import PageContentDeploymentModal from "@/components/content-deployment-modal";
 import Toast from "@/components/Toast";
 import TrackerAnalytics from "@/components/tracker-analytics";
 import TrackerScriptModal from "@/components/tracker-script-modal";
+import GettingStartedChecklist from "@/components/getting-started-checklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -95,6 +95,7 @@ export default function SiteDetailsPage() {
   const [showTrackerScript, setShowTrackerScript] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPageManagement, setShowPageManagement] = useState(false);
+  const [showAddPageModal, setShowAddPageModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [selectedPageForDeployment, setSelectedPageForDeployment] =
     useState<Page | null>(null);
@@ -175,15 +176,6 @@ export default function SiteDetailsPage() {
     } else {
       setSelectedPages(new Set(filteredAndSortedPages.map((page) => page.id)));
     }
-  };
-
-  const handleBulkAnalyze = async () => {
-    if (selectedPages.size === 0) return;
-    setToast({
-      message: `Starting analysis for ${selectedPages.size} pages...`,
-      type: "info",
-    });
-    // Here you would implement bulk analysis API call
   };
 
   const handleBulkDelete = async () => {
@@ -292,11 +284,12 @@ export default function SiteDetailsPage() {
 
   // Calculate metrics
   const totalPages = pages.length;
+  const pagesWithScores = pages.filter(page => page.llmReadinessScore != null && page.llmReadinessScore > 0);
   const averageLLMScore =
-    totalPages > 0
+    pagesWithScores.length > 0
       ? Math.round(
-          pages.reduce((sum, page) => sum + page.llmReadinessScore, 0) /
-            totalPages
+          pagesWithScores.reduce((sum, page) => sum + (page.llmReadinessScore || 0), 0) /
+            pagesWithScores.length
         )
       : 0;
   const pagesAbove80 = pages.filter(
@@ -458,6 +451,7 @@ export default function SiteDetailsPage() {
 
                   {/* Top Action Buttons */}
                   {site && activeTab === "overview" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card data-tour="quick-actions">
                       <CardHeader>
                         <CardTitle>Quick Actions</CardTitle>
@@ -535,6 +529,7 @@ export default function SiteDetailsPage() {
                                       <AddSinglePageForm
                                         siteId={siteId}
                                         siteUrl={site.url}
+                                        onCompleted={() => setShowPageManagement(false)}
                                         onToast={(t) => setToast(t)}
                                       />
                                     )}
@@ -556,6 +551,16 @@ export default function SiteDetailsPage() {
                         </div>
                       </CardContent>
                     </Card>
+                                        <GettingStartedChecklist
+                      site={site}
+                      pages={pages}
+                      recentlyScanned={recentlyScanned}
+                      onShowTrackerScript={() => setShowTrackerScript(true)}
+                      onShowPageManagement={() => setShowPageManagement(true)}
+                      onSetActiveTab={setActiveTab}
+                    />
+                    </div>
+
                   )}
 
                   {error && (
@@ -632,8 +637,8 @@ export default function SiteDetailsPage() {
                                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                     {/* Add New Page Button */}
                                     <Dialog
-                                      open={showPageManagement}
-                                      onOpenChange={setShowPageManagement}
+                                      open={showAddPageModal}
+                                      onOpenChange={setShowAddPageModal}
                                     >
                                       <DialogTrigger asChild>
                                         <Button
@@ -646,6 +651,24 @@ export default function SiteDetailsPage() {
                                           Add New Page
                                         </Button>
                                       </DialogTrigger>
+                                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                          <DialogTitle>Add New Page</DialogTitle>
+                                          <DialogDescription>
+                                            Add a new page to your site for analysis and optimization
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        {site && (
+                                          <AddSinglePageForm
+                                            siteId={siteId}
+                                            siteUrl={site.url}
+                                            onCompleted={() => {
+                                              setShowAddPageModal(false);
+                                              refreshData();
+                                            }}
+                                          />
+                                        )}
+                                      </DialogContent>
                                     </Dialog>
 
                                     {/* Bulk Actions */}
@@ -655,14 +678,6 @@ export default function SiteDetailsPage() {
                                           {selectedPages.size} selected
                                         </span>
                                         <div className="flex gap-2">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleBulkAnalyze}
-                                          >
-                                            <Play className="h-4 w-4 mr-1" />
-                                            Analyze
-                                          </Button>
                                           <Button
                                             variant="outline"
                                             size="sm"
