@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "nodemon --exec ts-node --transpile-only src/index.ts",
     "dev:debug": "nodemon --inspect=0.0.0.0:9229 --exec ts-node --transpile-only src/index.ts",
-    "start": "node dist/index.js",
-    "build": "tsc",
+    "start": "node --max-old-space-size=4096 node dist/index.js",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' tsc",
     "build:watch": "tsc --watch",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
