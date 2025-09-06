@@ -32,7 +32,7 @@ export function NavbarComponent() {
     { name: 'Features', link: '#features' },
     { name: 'How it Works', link: '#how-it-works' },
     { name: 'Pricing', link: '/pricing' },
-    { name: 'Resources', link: '#resources' },
+    { name: 'Resources', link: '/blog' },
   ];
 
   const handleNavClick = useCallback((link: string) => {
