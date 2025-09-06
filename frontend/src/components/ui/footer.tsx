@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { Button } from './button';
+import { LinkedinIcon } from 'lucide-react';
 export function Footer() {
   const footerSections = [
     {
@@ -17,28 +18,28 @@ export function Footer() {
         { name: "Features", href: "#features" },
         { name: "How it Works", href: "#how-it-works" },
         { name: "Pricing", href: "/pricing" },
-        { name: "API Documentation", href: "/docs" },
+        // { name: "API Documentation", href: "/docs" },
         // { name: "Integrations", href: "/integrations" },
         // { name: "Changelog", href: "/changelog" }
       ]
     },
-    {
-      title: "Solutions",
-      links: [
-        { name: "For Agencies", href: "/solutions/agencies" },
-        { name: "For Enterprise", href: "/solutions/enterprise" },
-        { name: "For E-commerce", href: "/solutions/ecommerce" },
-        { name: "For Publishers", href: "/solutions/publishers" },
-        { name: "For SaaS", href: "/solutions/saas" },
-        { name: "Case Studies", href: "/case-studies" }
-      ]
-    },
+    // {
+    //   title: "Solutions",
+    //   links: [
+    //     { name: "For Agencies", href: "/solutions/agencies" },
+    //     { name: "For Enterprise", href: "/solutions/enterprise" },
+    //     { name: "For E-commerce", href: "/solutions/ecommerce" },
+    //     { name: "For Publishers", href: "/solutions/publishers" },
+    //     { name: "For SaaS", href: "/solutions/saas" },
+    //     { name: "Case Studies", href: "/case-studies" }
+    //   ]
+    // },
     {
       title: "Resources",
       links: [
         { name: "Blog", href: "/blog" },
-        { name: "Documentation", href: "/docs" },
-        { name: "Help Center", href: "/help" },
+        // { name: "Documentation", href: "/docs" },
+        // { name: "Help Center", href: "/help" },
         // { name: "LLM Optimization Guide", href: "/guide" },
         // { name: "Templates", href: "/templates" }
       ]
@@ -58,7 +59,7 @@ export function Footer() {
 
   const socialLinks = [
     // { name: "Twitter", href: "https://twitter.com", icon: "𝕏" },
-    { name: "LinkedIn", href: "https://www.linkedin.com/company/clever-search-ai/", icon: "💼" },
+    { name: "LinkedIn", href: "https://www.linkedin.com/company/clever-search-ai/", icon: <LinkedinIcon /> },
     // { name: "GitHub", href: "https://github.com", icon: "🐙" },
     // { name: "YouTube", href: "https://youtube.com", icon: "📺" }
   ];
