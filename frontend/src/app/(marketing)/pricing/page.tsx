@@ -5,30 +5,59 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
-import { Check, ArrowRight, Sparkles, Shield, Globe, Zap, MessageSquare } from "lucide-react";
+import { Check, ArrowRight, Sparkles, Shield, Globe, Zap } from "lucide-react";
+import FAQsThree from "@/components/faqs-3";
+import { PRICING_FAQ_ITEMS } from "@/content/pricing-faq-constants";
 
 export const metadata: Metadata = {
-  title: "Pricing | Cleversearch",
+  title: "Pricing | Cleversearch - AI-SEO & Answer Engine Optimization Plans",
   description:
-    "Pricing built for the future of search! Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search.",
+    "Pricing built for the future of search! Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search. Pro plan starts at $79/month with 7-day free trial. Enterprise custom pricing available.",
+  keywords: [
+    "AI-SEO pricing",
+    "Answer Engine Optimization cost",
+    "LLM optimization pricing",
+    "ChatGPT optimization plans",
+    "AI search optimization pricing",
+    "Cleversearch pricing",
+    "AEO pricing plans",
+    "AI content optimization cost"
+  ],
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Cleversearch Pricing",
+    title: "Cleversearch Pricing - AI-SEO & Answer Engine Optimization Plans",
     description:
       "Pricing built for the future of search! Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search.",
     url: "/pricing",
     type: "website",
+    images: [
+      {
+        url: "/og-pricing.png",
+        width: 1200,
+        height: 630,
+        alt: "Cleversearch Pricing Plans - AI-SEO & Answer Engine Optimization",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Cleversearch Pricing - AI-SEO & Answer Engine Optimization Plans",
+    description:
+      "Pricing built for the future of search! Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search.",
+    images: ["/og-pricing.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
-
-const features = [
-  "AI-driven analysis and recommendations",
-  "AEO-first content guidance (titles, descriptions, FAQs)",
-  "GEO-ready setup for locations and services",
-  "LLM readiness score and improvements",
-  "Content deployment with safe rollback",
-  "Tracker and analytics for injected content",
-];
 
 const plans = [
   {
@@ -126,15 +155,11 @@ export default function PricingPage() {
                     ))}
                   </ul>
                   <div className="mt-6">
-                    {plan.name === "Enterprise" ? (
-                      <Button asChild className="w-full">
-                        <Link href={plan.cta.href}>{plan.cta.label} <ArrowRight className="h-4 w-4 ml-2" /></Link>
-                      </Button>
-                    ) : (
-                      <Button asChild variant={plan.highlight ? "default" : "outline"} className="w-full">
-                        <Link href={plan.cta.href}>{plan.cta.label} <ArrowRight className="h-4 w-4 ml-2" /></Link>
-                      </Button>
-                    )}
+                    <Button asChild className="w-full" variant={plan.highlight ? "default" : "outline"}>
+                      <Link href={plan.cta.href}>
+                        {plan.cta.label} <ArrowRight className="h-4 w-4 ml-2" />
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -161,7 +186,7 @@ export default function PricingPage() {
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5"/> Human + AI</CardTitle>
+                <CardTitle className="flex items-center gap-2"><Zap className="h-5 w-5"/> AI-Powered</CardTitle>
                 <CardDescription>Keep creative control while our AI does the heavy lifting. Review, edit, and deploy with one click.</CardDescription>
               </CardHeader>
             </Card>
@@ -176,26 +201,29 @@ export default function PricingPage() {
             Ready to optimize for Answer Engines?
           </h2>
           <p className="text-xl text-gray-300 mb-12 leading-relaxed">
-            Start free with Starter or scale with Pro. Enterprise teams can contact sales for a tailored plan.
+            Start with our 7-day free trial or scale with Pro. Enterprise teams can contact sales for a tailored plan.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
-              >
-                Get started free
-              </Button>
-            </Link>
-            <Link href="/contact">
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3"
-              >
-                Contact sales
-              </Button>
-            </Link>
+            <Button asChild size="lg" className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3">
+              <Link href="/register">Get started free</Link>
+            </Button>
+            <Button asChild size="lg" className="bg-white text-black hover:bg-gray-100 rounded-full px-8 py-3">
+              <Link href="/contact">Contact sales</Link>
+            </Button>
           </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <FAQsThree
+            title="Pricing Questions"
+            subtitle="Still have questions about our pricing? Contact our"
+            supportLink="/contact"
+            supportText="sales team"
+            items={PRICING_FAQ_ITEMS}
+          />
         </div>
       </section>
 
@@ -209,32 +237,86 @@ export default function PricingPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "FAQPage",
-            mainEntity: [
+            mainEntity: PRICING_FAQ_ITEMS.map(faq => ({
+              "@type": "Question",
+              name: faq.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: faq.answer,
+              },
+            })),
+          }),
+        }}
+      />
+
+      {/* Product Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: "Cleversearch AI-SEO Platform",
+            description: "AI-powered search engine optimization platform for Answer Engine Optimization (AEO) and Large Language Model Optimization (LLMO)",
+            brand: {
+              "@type": "Brand",
+              name: "Cleversearch"
+            },
+            offers: [
               {
-                "@type": "Question",
-                name: "Which plan is best for AEO?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Pro is ideal if you’re managing multiple locations or services and want advanced AI content generation and analytics.",
+                "@type": "Offer",
+                name: "Pro Plan",
+                price: "79",
+                priceCurrency: "USD",
+                priceSpecification: {
+                  "@type": "UnitPriceSpecification",
+                  price: "79",
+                  priceCurrency: "USD",
+                  billingIncrement: "P1M"
                 },
+                description: "Perfect for growing websites and businesses with up to 2 sites, 5,000 pages per month, and advanced LLM optimization",
+                availability: "https://schema.org/InStock",
+                validFrom: "2024-01-01"
               },
               {
-                "@type": "Question",
-                name: "Can I upgrade later?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Yes, you can upgrade from Starter to Pro at any time and keep your data and settings.",
-                },
-              },
-              {
-                "@type": "Question",
-                name: "How does Enterprise work?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Enterprise is custom-tailored with SSO, SLAs, and governance. Contact us through the form and our team will reach out.",
-                },
-              },
+                "@type": "Offer",
+                name: "Enterprise Plan",
+                price: "0",
+                priceCurrency: "USD",
+                description: "Custom pricing for large websites, agencies, and enterprises with unlimited sites, dedicated support, and custom AI models",
+                availability: "https://schema.org/InStock",
+                validFrom: "2024-01-01"
+              }
             ],
+            category: "Software",
+            applicationCategory: "BusinessApplication"
+          }),
+        }}
+      />
+
+      {/* Organization Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Cleversearch",
+            description: "Leading AI-SEO platform specializing in Answer Engine Optimization (AEO) and Large Language Model Optimization (LLMO)",
+            url: "https://cleversearch.ai",
+            logo: "https://cleversearch.ai/logo/clever-search-logo-black.png",
+            sameAs: [
+              "https://twitter.com/cleversearch",
+              "https://linkedin.com/company/cleversearch"
+            ],
+            contactPoint: {
+              "@type": "ContactPoint",
+              contactType: "customer service",
+              url: "https://cleversearch.ai/contact",
+              availableLanguage: "English"
+            },
+            areaServed: "Worldwide",
+            serviceType: "AI-SEO and Answer Engine Optimization"
           }),
         }}
       />
