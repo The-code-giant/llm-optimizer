@@ -15,7 +15,15 @@ export async function addPageWithRetry(
   url: string
 ): Promise<Page> {
   const client = createApiClient(getTokenFn);
-  return client.post(`/sites/${siteId}/pages`, { url }) as Promise<Page>;
+  const response = await client.post(`/sites/${siteId}/pages`, { url }) as any;
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as Page;
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return response as Page;
 }
 
 /**
@@ -37,7 +45,15 @@ export async function getPageAnalysisWithRetry(
   pageId: string
 ): Promise<AnalysisResult> {
   const client = createApiClient(getTokenFn);
-  return client.get(`/pages/${pageId}/analysis`) as Promise<AnalysisResult>;
+  const response = await client.get(`/pages/${pageId}/analysis`) as any;
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as AnalysisResult;
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return response as AnalysisResult;
 }
 
 /**

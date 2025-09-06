@@ -13,7 +13,7 @@ import {
   PageContentData,
   undeployPageContent,
   getOriginalPageContent,
-  updateSectionRating,
+  getSectionRatings,
 } from "@/lib/api";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
 import {
@@ -85,6 +85,27 @@ export default function PageAnalysisPage() {
   const { getToken } = useAuth();
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [pageData, setPageData] = useState<Page | null>(null);
+  const [sectionRatings, setSectionRatings] = useState<{
+    pageId: string;
+    sectionRatings: {
+      title: number;
+      description: number;
+      headings: number;
+      content: number;
+      schema: number;
+      images: number;
+      links: number;
+    };
+    sectionRecommendations: {
+      title: string[];
+      description: string[];
+      headings: string[];
+      content: string[];
+      schema: string[];
+      images: string[];
+      links: string[];
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
@@ -174,12 +195,13 @@ export default function PageAnalysisPage() {
         setError("Failed to get authentication token");
         return;
       }
-      // Fetch page details, analysis, saved content, and original meta description
-      const [pageDetails, analysisData, savedContent, originalContentResult] =
+      // Fetch page details, analysis, saved content, section ratings, and original meta description
+      const [pageDetails, analysisData, savedContent, sectionRatingsData, originalContentResult] =
         await Promise.allSettled([
           getPageDetails(token, pageId),
           getPageAnalysis(token, pageId),
           getPageContent(token, pageId),
+          getSectionRatings(token, pageId),
           getOriginalPageContent(token, pageId),
         ]);
       if (originalContentResult.status === "fulfilled") {
@@ -208,15 +230,25 @@ export default function PageAnalysisPage() {
           paragraph: [],
           keywords: [],
         };
-        content.forEach((item: PageContentData) => {
-          if (grouped[item.contentType]) grouped[item.contentType].push(item);
-        });
+        // Safety check: ensure content is an array before calling forEach
+        if (Array.isArray(content)) {
+          content.forEach((item: PageContentData) => {
+            if (grouped[item.contentType]) grouped[item.contentType].push(item);
+          });
+        }
         setContentVersions(grouped);
       }
       if (analysisData.status === "fulfilled") {
         setAnalysis(analysisData.value);
       } else {
         setAnalysis(null);
+      }
+      if (sectionRatingsData.status === "fulfilled") {
+        console.log("Section ratings data:", sectionRatingsData.value);
+        setSectionRatings(sectionRatingsData.value);
+      } else {
+        console.log("Section ratings failed:", sectionRatingsData.reason);
+        setSectionRatings(null);
       }
       setLoading(false);
     } catch (err: unknown) {
@@ -1350,7 +1382,7 @@ export default function PageAnalysisPage() {
                       {analysis ? (
                         <>
                           {/* Section Ratings */}
-                          {analysis.sectionRatings && (
+                          {sectionRatings && (
                             <Card>
                               <CardHeader>
                                 <CardTitle className="flex items-center space-x-2">
@@ -1365,10 +1397,9 @@ export default function PageAnalysisPage() {
                               <CardContent>
                                 <SectionRatingDisplay
                                   pageId={pageId}
-                                  sectionRatings={analysis.sectionRatings}
-                                  sectionRecommendations={
-                                    analysis.sectionRecommendations
-                                  }
+                                  sectionRatings={sectionRatings?.sectionRatings}
+                                  sectionRecommendations={sectionRatings?.sectionRecommendations}
+                                  overallScore={analysis?.score || 0}
                                   onImproveSection={(
                                     sectionType,
                                     recommendations
@@ -1377,10 +1408,9 @@ export default function PageAnalysisPage() {
                                       isOpen: true,
                                       sectionType,
                                       recommendations,
-                                      currentScore:
-                                        analysis.sectionRatings?.[
-                                          sectionType as keyof typeof analysis.sectionRatings
-                                        ] || 0,
+                                      currentScore: sectionRatings?.sectionRatings?.[
+                                        sectionType as keyof typeof sectionRatings.sectionRatings
+                                      ] || 0,
                                     });
                                   }}
                                 />
@@ -1411,31 +1441,19 @@ export default function PageAnalysisPage() {
                                     return;
                                   }
 
-                                  // Update section rating in backend
-                                  await updateSectionRating(
-                                    token,
-                                    pageId,
-                                    improvementModal.sectionType,
-                                    newScore,
-                                    content,
-                                    "gpt-4o-mini"
-                                  );
-
                                   setToast({
                                     message: `${improvementModal.sectionType} section improved from ${improvementModal.currentScore}/10 to ${newScore}/10!`,
                                     type: "success",
                                   });
 
-                                  // Update ratings locally instead of full page refresh
-                                  if (analysis && analysis.sectionRatings) {
-                                    const updatedAnalysis = {
-                                      ...analysis,
-                                      sectionRatings: {
-                                        ...analysis.sectionRatings,
-                                        [improvementModal.sectionType]: newScore
-                                      }
-                                    };
-                                    setAnalysis(updatedAnalysis);
+                                  // Refresh section ratings data to get updated scores
+                                  try {
+                                    const updatedSectionRatings = await getSectionRatings(token, pageId);
+                                    setSectionRatings(updatedSectionRatings);
+                                  } catch (error) {
+                                    console.error('Failed to refresh section ratings:', error);
+                                    // Fallback: refresh all data
+                                    await fetchData();
                                   }
                                   
                                   setImprovementModal(null);

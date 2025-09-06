@@ -10,11 +10,12 @@ import pagesRouter from "./routes/pages";
 import billingRouter from "./routes/billing";
 import webhooksRouter from "./routes/webhooks";
 import analysisRouter from "./routes/analysis";
-import injectedContentRouter from "./routes/injectedContent";
+import contentRouter from "./routes/content";
 import trackerRouter from "./routes/tracker";
 import usersRouter from "./routes/users";
 import toolsRouter from "./routes/tools";
 import leadsRouter from "./routes/leads";
+import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
 import winston from "winston";
@@ -265,7 +266,7 @@ app.use("/api/v1/auth", authRateLimit, authRouter);
 app.use("/api/v1/sites", dashboardRateLimit, sitesRouter);
 app.use("/api/v1/pages", dashboardRateLimit, pagesRouter);
 app.use("/api/v1/analysis", dashboardRateLimit, analysisRouter);
-app.use("/api/v1/injected-content", dashboardRateLimit, injectedContentRouter);
+app.use("/api/v1/content", dashboardRateLimit, contentRouter);
 app.use("/api/v1/users", dashboardRateLimit, usersRouter);
 app.use("/api/v1/billing", dashboardRateLimit, billingRouter);
 app.use("/api/v1/tools", generalRateLimit, toolsRouter);
@@ -273,10 +274,8 @@ app.use("/api/v1/leads", generalRateLimit, leadsRouter);
 app.use("/api/v1", trackerRouter);
 app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
 
-// Standard 404 for unknown routes
-app.use((req, res) => {
-  res.status(404).json({ message: "Not Found" });
-});
+// Use refactored error handling middleware
+app.use(notFoundHandler);
 // Error logging middleware - only for actual errors
 app.use(
   expressWinston.errorLogger({
@@ -300,33 +299,8 @@ if (sentryInitialized) {
   app.use(Sentry.Handlers.errorHandler());
 }
 
-// Global error handler
-app.use(
-  (
-    err: any,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    // Log error without sensitive information
-    console.error(
-      `❌ ERROR: ${err.message} - ${req.method} ${req.originalUrl}`
-    );
-
-    if (sentryInitialized) {
-      // @ts-ignore
-      Sentry.withScope((scope: any) => {
-        setSentryUser(scope, req);
-        setSentryRequest(scope, req);
-        Sentry.captureException(err);
-      });
-    }
-    res.status(err.status || 500).json({
-      message: err.message || "Internal Server Error",
-      error: process.env.NODE_ENV === "production" ? undefined : err.stack,
-    });
-  }
-);
+// Use refactored error handler (must be last)
+app.use(errorHandler);
 
 const PORT = process.env.BACKEND_PORT || 3001;
 app.listen(PORT, () => {

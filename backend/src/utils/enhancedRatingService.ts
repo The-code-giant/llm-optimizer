@@ -120,34 +120,42 @@ export class EnhancedRatingService {
         console.log(`📝 Processing record with recommendations:`, recommendations);
         
         if (Array.isArray(recommendations)) {
-          // If it's an array of strings, add them directly
-          if (typeof recommendations[0] === 'string') {
-            allRecommendations.push(...recommendations);
-          } else {
-            // If it's an array of objects, extract the title
-            for (const rec of recommendations) {
-              if (rec && typeof rec === 'object') {
-                // Extract the title from the recommendation object
-                if (rec.title) {
-                  allRecommendations.push(rec.title);
-                } else if (rec.description) {
-                  // If no title, use description but truncate it
-                  const desc = rec.description as string;
-                  allRecommendations.push(desc.length > 100 ? desc.substring(0, 100) + '...' : desc);
-                }
+          for (const rec of recommendations) {
+            if (typeof rec === 'string') {
+              // Direct string recommendation
+              allRecommendations.push(rec);
+            } else if (rec && typeof rec === 'object') {
+              // Object recommendation - extract meaningful text
+              if (rec.title) {
+                allRecommendations.push(rec.title);
+              } else if (rec.description) {
+                allRecommendations.push(rec.description);
+              } else if (rec.text) {
+                allRecommendations.push(rec.text);
+              } else if (rec.recommendation) {
+                allRecommendations.push(rec.recommendation);
+              } else {
+                // Fallback: convert object to string
+                allRecommendations.push(JSON.stringify(rec));
               }
             }
           }
+        } else if (typeof recommendations === 'string') {
+          // Single string recommendation
+          allRecommendations.push(recommendations);
         }
       } catch (error) {
         console.error('Error parsing recommendations:', error);
       }
     }
     
-    console.log(`✅ Final recommendations for ${sectionType}:`, allRecommendations);
+    // Remove duplicates, empty strings, and trim whitespace
+    const cleanRecommendations = [...new Set(allRecommendations)]
+      .filter(rec => rec && rec.trim().length > 0)
+      .map(rec => rec.trim());
     
-    // Remove duplicates and return
-    return [...new Set(allRecommendations)];
+    console.log(`✅ Returning ${cleanRecommendations.length} clean recommendations for ${sectionType}:`, cleanRecommendations);
+    return cleanRecommendations;
   }
 
   /**

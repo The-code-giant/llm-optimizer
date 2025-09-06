@@ -41,6 +41,7 @@ interface SectionRatingDisplayProps {
   pageId: string;
   sectionRatings?: SectionRating;
   sectionRecommendations?: SectionRecommendations;
+  overallScore?: number; // Add overall score from API
   onImproveSection: (sectionType: string, recommendations: string[]) => void;
 }
 
@@ -97,13 +98,15 @@ const sectionConfig = {
 };
 
 export default function SectionRatingDisplay({
-  pageId,
   sectionRatings,
   sectionRecommendations,
+  overallScore,
   onImproveSection,
 }: SectionRatingDisplayProps) {
   const [currentRatings, setCurrentRatings] = useState<SectionRating | null>(null);
-
+  console.log("sectionRecommendations", {  sectionRatings,
+    sectionRecommendations,
+    overallScore,});
   useEffect(() => {
     if (sectionRatings) {
       setCurrentRatings(sectionRatings);
@@ -126,14 +129,14 @@ export default function SectionRatingDisplay({
     );
   }
 
-  const calculateTotalScore = () => {
+  // Use the overall score from API if available, otherwise calculate from section ratings
+  const totalScore = overallScore !== undefined ? overallScore : (() => {
+    if (!currentRatings) return 0;
     const scores = Object.values(currentRatings);
     const total = scores.reduce((sum, score) => sum + score, 0);
     const maxPossible = scores.length * 10; // 7 sections * 10 = 70
     return Math.round((total / maxPossible) * 100); // Convert to percentage
-  };
-
-  const totalScore = calculateTotalScore();
+  })();
 
   const getScoreBadge = (score: number) => {
     if (score >= 8) return <Badge className="bg-green-500">{score}/10</Badge>;

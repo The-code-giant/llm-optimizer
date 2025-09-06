@@ -174,12 +174,26 @@ export default function SectionImprovementModal({
         selectedRecommendations
       );
 
-      setOriginalRawContent(result.generatedContent); // Store original for comparison
-      const cleanedContent = cleanSchemaContent(result.generatedContent);
+      // Handle the actual API response structure
+      // The API returns { success: true, data: { ... } }
+      const responseData = result.data || result;
+      const actualContent = responseData.generatedContent?.content || responseData.generatedContent || '';
+      const actualKeyPoints = responseData.generatedContent?.keyPoints || responseData.keyPoints || [];
+      const actualRecommendations = responseData.recommendations || responseData.recommendationsAddressed || [];
+      
+      console.log('🔍 Debug - Full API Response:', result);
+      console.log('🔍 Debug - Response Data:', responseData);
+      console.log('🔍 Debug - Extracted Content:', actualContent);
+      console.log('🔍 Debug - Extracted Key Points:', actualKeyPoints);
+      console.log('🔍 Debug - Extracted Recommendations:', actualRecommendations);
+      
+      setOriginalRawContent(actualContent); // Store original for comparison
+      const cleanedContent = cleanSchemaContent(actualContent);
+      console.log('🔍 Debug - Cleaned Content:', cleanedContent);
       setGeneratedContent(cleanedContent);
-      setAiKeyPoints(result.keyPoints);
-      setAiRecommendationsAddressed(result.recommendationsAddressed);
-      setAiGenerationContext(result.generationContext);
+      setAiKeyPoints(actualKeyPoints);
+      setAiRecommendationsAddressed(actualRecommendations);
+      setAiGenerationContext(responseData.generationContext || 'AI-generated content based on selected recommendations');
       setCurrentStep(2); // Move to step 2 (Review & Regenerate) instead of 3
     } catch (error) {
       console.error("Error generating content:", error);
@@ -340,7 +354,7 @@ export default function SectionImprovementModal({
                 </div>
 
                 {/* AI Improvements Made */}
-                {aiRecommendationsAddressed.length > 0 && (
+                {aiRecommendationsAddressed && aiRecommendationsAddressed.length > 0 && (
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                     <h4 className="font-medium text-blue-800 mb-3">🤖 AI Improvements Applied</h4>
                     <div className="space-y-2">
@@ -413,19 +427,26 @@ export default function SectionImprovementModal({
                     {sectionType === 'schema' ? 'Generated Schema JSON-LD:' : 'Generated Content:'}
                   </label>
                   <div className="bg-gray-50 p-4 rounded-lg border">
-                    {sectionType === 'schema' ? (
-                      <pre className="text-xs text-gray-800 overflow-x-auto">
-                        <code>{generatedContent}</code>
-                      </pre>
+                    {generatedContent ? (
+                      sectionType === 'schema' ? (
+                        <pre className="text-xs text-gray-800 overflow-x-auto">
+                          <code>{generatedContent}</code>
+                        </pre>
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
+                      )
                     ) : (
-                      <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
+                      <div className="text-center py-8">
+                        <p className="text-gray-500 mb-2">No content generated yet</p>
+                        <p className="text-xs text-gray-400">Click "Generate Content" to create AI-optimized content</p>
+                      </div>
                     )}
                   </div>
                   <div className="flex justify-between items-center mt-2">
                     <p className="text-xs text-muted-foreground">
                       {getCharacterCount()} characters
                     </p>
-                    {sectionType === 'schema' && (
+                    {sectionType === 'schema' && generatedContent && (
                       <p className="text-xs text-green-600">
                         ✓ Clean JSON-LD (HTML removed)
                       </p>
@@ -500,7 +521,7 @@ export default function SectionImprovementModal({
                 </div>
 
                 {/* Show applied improvements summary */}
-                {aiRecommendationsAddressed.length > 0 && (
+                {aiRecommendationsAddressed && aiRecommendationsAddressed.length > 0 && (
                   <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
                     <h4 className="font-medium text-blue-800 mb-2">✅ Improvements Applied</h4>
                     <p className="text-sm text-blue-700">
