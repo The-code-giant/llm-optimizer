@@ -11,13 +11,15 @@ export interface BlogMeta {
   title: string;
   excerpt: string;
   author: string;
-  avatar: string;
-  featuredImage: string;
+  avatar?: string;
+  featuredImage?: string;
   date: string;
   readTime: string;
   category: string;
   image?: string;
   href: string;
+  tags?: string[];
+  authorRole?: string;
 }
 
 interface BlogListClientProps {

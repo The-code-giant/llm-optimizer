@@ -1,5 +1,13 @@
 import { notFound } from 'next/navigation';
 import BlogPostClient from '../BlogPostClient';
+import { Metadata } from 'next';
+import { generateBlogMetadata } from '@/lib/metadata';
+
+// Function to generate metadata for blog posts
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const { slug } = await params;
+  return generateBlogMetadata(slug);
+}
 
 export default async function BlogPost({ params }: { params: { slug: string } }) {
   const { slug } = await params;
