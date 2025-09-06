@@ -37,16 +37,16 @@ const plans = [
     name: "Pro",
     price: "$79",
     period: "per month",
-    description: "Ideal for growing websites and businesses",
+    description: "Perfect for growing websites and businesses",
     features: [
-      "Up to 5 sites",
-      "10,000 pages per month",
+      "Up to 2 sites",
+      "5,000 pages per month",
       "Up to 100,000 monthly page views",
+      "1 seat",
       "Advanced LLM optimization",
-      "Advanced traffic analytics & AEO metrics",
+      "Advanced traffic analytics & GEO metrics",
       "Real-time performance monitoring",
       "Priority support",
-      "Custom reports",
     ],
     icon: Zap,
     current: false,
@@ -59,16 +59,14 @@ const plans = [
     period: "pricing",
     description: "For large websites, agencies, and enterprises",
     features: [
-      "Unlimited sites",
-      "Unlimited pages per month",
-      "Unlimited monthly page views",
-      "Custom LLM workflows",
-      "Traffic forecasting & predictive analytics",
-      "Advanced A/B testing & optimization",
-      "White-label solution",
-      "24/7 phone support",
-      "API access",
-      "Custom integrations",
+      "Unlimited sites & pages",
+      "Dedicated Customer Success Manager",
+      "Custom AI Models & Fine-Tuning",
+      "Multi-Geo Intelligence",
+      "Team Management & Roles",
+      "White-Glove Onboarding & Migration",
+      "Early Access to Beta Features",
+      "Custom Reporting & Strategy Sessions",
     ],
     icon: Crown,
     current: false,
@@ -367,7 +365,7 @@ export default function BillingPage() {
                                       ? "Current Plan"
                                       : plan.id === "enterprise"
                                       ? "Contact Sales"
-                                      : "Choose Plan"}
+                                      : "Contact sales"}
                                   </Button>
                                 </div>
                               </CardContent>

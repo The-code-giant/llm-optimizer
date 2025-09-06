@@ -10,12 +10,12 @@ import { Check, ArrowRight, Sparkles, Shield, Globe, Zap, MessageSquare } from "
 export const metadata: Metadata = {
   title: "Pricing | Cleversearch",
   description:
-    "Transparent pricing for Cleversearch. Choose Starter or Pro to optimize your site for Answer Engines (AEO) and local GEO presence. Enterprise? Contact us for a tailored plan.",
+    "Pricing built for the future of search! Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Cleversearch Pricing",
     description:
-      "Plans designed for AEO and GEO optimization. Get started with Starter, grow with Pro, or contact us for Enterprise.",
+      "Pricing built for the future of search! Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search.",
     url: "/pricing",
     type: "website",
   },
@@ -32,59 +32,39 @@ const features = [
 
 const plans = [
   {
-    name: "Starter",
-    tagline: "Perfect for small sites getting started with AEO",
-    price: "$19",
-    period: "/mo",
-    cta: { label: "Start 7 days for Free", href: "/register" },
-    highlight: false,
-    includes: [
-      "1 website",
-      "Up to 10,000 monthly page views",
-      "Up to 500 pages scanned",
-      "Title & Meta Description suggestions",
-      "Basic FAQ generator",
-      "Content deployment (manual)",
-      "Basic traffic analytics",
-      "Email support",
-    ],
-  },
-  {
     name: "Pro",
-    tagline: "Scale AEO + GEO across growing sites",
+    tagline: "Perfect for growing websites and businesses",
     price: "$79",
     period: "/mo",
-    cta: { label: "Upgrade to Pro", href: "/demo" },
+    cta: { label: "Start 7-Day Free Trial", href: "/register" },
     highlight: true,
     includes: [
-      "Up to 5 websites",
+      "Up to 2 sites",
+      "5,000 pages per month",
       "Up to 100,000 monthly page views",
-      "Up to 10,000 pages scanned",
-      "Advanced FAQ + Paragraph generation",
-      "Keyword analysis (primary, long-tail, semantic)",
-      "One-click deploy & versioning",
-      "Advanced traffic analytics & AEO metrics",
+      "1 seat",
+      "Advanced LLM optimization",
+      "Advanced traffic analytics & GEO metrics",
       "Real-time performance monitoring",
-      "Priority support + onboarding call",
+      "Priority support",
     ],
   },
   {
     name: "Enterprise",
-    tagline: "Custom needs, SSO, SLAs, and advanced governance",
+    tagline: "For large websites, agencies, and enterprises",
     price: "Custom",
-    period: "",
-    cta: { label: "Contact Us", href: "/contact" },
+    period: "pricing",
+    cta: { label: "Contact Sales", href: "/contact" },
     highlight: false,
     includes: [
-      "Unlimited websites and pages",
-      "Unlimited monthly page views",
-      "Custom LLM workflows and integrations",
-      "Role-based access control and audit logs",
-      "Custom trackers & private data connectors",
-      "Traffic forecasting & predictive analytics",
-      "Advanced A/B testing & optimization",
-      "Dedicated success manager & SLAs",
-      "Security reviews and procurement support",
+      "Unlimited sites & pages",
+      "Dedicated Customer Success Manager",
+      "Custom AI Models & Fine-Tuning",
+      "Multi-Geo Intelligence",
+      "Team Management & Roles",
+      "White-Glove Onboarding & Migration",
+      "Early Access to Beta Features",
+      "Custom Reporting & Strategy Sessions",
     ],
   },
 ];
@@ -101,12 +81,10 @@ export default function PricingPage() {
           <div className="text-center">
             <Badge className="mb-3 bg-primary/15 text-primary">Simple, transparent pricing</Badge>
             <h1 className="text-4xl md:text-6xl font-normal tracking-tight">
-              Pricing designed for
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-500"> AEO</span>
-              {" "}and local GEO success
+              Pricing built for the future of search!
             </h1>
-            <p className="mt-6 text-gray-600 text-lg max-w-2xl mx-auto">
-              Choose a plan that fits your growth. Each plan includes AI-powered analysis, Answer Engine Optimization guidance, and local-ready content tools.
+            <p className="mt-6 text-gray-600 text-lg max-w-3xl mx-auto">
+              Pick the plan that matches your ambition. Every tier comes with AI-driven insights, Answer Engine Optimization guidance, and local-first content tools designed to put you ahead in AI search.
             </p>
             <div className="mt-6 flex items-center justify-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2"><Sparkles className="h-4 w-4"/> AEO-first</div>
@@ -120,7 +98,7 @@ export default function PricingPage() {
       {/* Pricing Cards */}
       <section className="pb-20">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {plans.map((plan) => (
               <Card key={plan.name} className={`${plan.highlight ? "border-primary shadow-lg" : ""}`}>
                 <CardHeader>
