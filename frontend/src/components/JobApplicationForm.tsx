@@ -15,8 +15,8 @@ const jobApplicationSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   position: z.string().min(1, 'Please select a position'),
   coverLetter: z.string().min(50, 'Cover letter must be at least 50 characters'),
-  resume: z.instanceof(FileList).refine(
-    (files) => files.length > 0,
+  resume: z.any().refine(
+    (files) => files && files.length > 0,
     'Please upload your resume'
   ).refine(
     (files) => files[0]?.size <= 10 * 1024 * 1024,
@@ -42,6 +42,12 @@ export default function JobApplicationForm({ positions }: JobApplicationFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure we're on the client side
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const {
     register,
@@ -88,6 +94,26 @@ export default function JobApplicationForm({ positions }: JobApplicationFormProp
   };
 
   const selectedFile = watch('resume');
+
+  // Don't render until client-side hydration is complete
+  if (!isClient) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded mb-8"></div>
+          <div className="space-y-4">
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-32 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
