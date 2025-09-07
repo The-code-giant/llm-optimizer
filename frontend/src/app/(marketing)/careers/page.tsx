@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/ui/navbar";
 import { Footer } from "@/components/ui/footer";
+import JobApplicationForm from "@/components/JobApplicationForm";
 import { motion } from 'framer-motion';
 import Link from "next/link";
 import { 
@@ -25,14 +26,14 @@ export default function Careers() {
       salary: "$150k - $220k",
       description: "Build the next generation of LLM optimization algorithms and help shape the future of AI-driven content discovery."
     },
-    {
-      title: "Product Manager - AI",
-      department: "Product",
-      location: "New West Minster, BC",
-      type: "Full-time", 
-      salary: "$130k - $180k",
-      description: "Lead product strategy for our LLM optimization platform and drive features that help businesses succeed in the AI era."
-    },
+    // {
+    //   title: "Product Manager - AI",
+    //   department: "Product",
+    //   location: "New West Minster, BC",
+    //   type: "Full-time", 
+    //   salary: "$130k - $180k",
+    //   description: "Lead product strategy for our LLM optimization platform and drive features that help businesses succeed in the AI era."
+    // },
     {
       title: "Frontend Engineer",
       department: "Engineering",
@@ -49,22 +50,22 @@ export default function Careers() {
       salary: "$140k - $190k",
       description: "Analyze LLM citation patterns and develop insights that drive our optimization recommendations."
     },
-    {
-      title: "Marketing Manager",
-      department: "Marketing",
-      location: "Remote",
-      type: "Full-time",
-      salary: "$90k - $130k",
-      description: "Lead our content marketing efforts and help educate the market about LLM optimization best practices."
-    },
-    {
-      title: "Customer Success Manager",
-      department: "Customer Success",
-      location: "New West Minster, BC / Remote",
-      type: "Full-time",
-      salary: "$80k - $120k",
-      description: "Help our customers achieve their LLM optimization goals and drive product adoption."
-    }
+    // {
+    //   title: "Marketing Manager",
+    //   department: "Marketing",
+    //   location: "Remote",
+    //   type: "Full-time",
+    //   salary: "$90k - $130k",
+    //   description: "Lead our content marketing efforts and help educate the market about LLM optimization best practices."
+    // },
+    // {
+    //   title: "Customer Success Manager",
+    //   department: "Customer Success",
+    //   location: "New West Minster, BC / Remote",
+    //   type: "Full-time",
+    //   salary: "$80k - $120k",
+    //   description: "Help our customers achieve their LLM optimization goals and drive product adoption."
+    // }
   ];
 
   const benefits = [
@@ -132,11 +133,11 @@ export default function Careers() {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-4xl lg:text-6xl font-normal mb-8 leading-tight">
-              Join us in shaping the AI-driven future.
+            Our mission is to protect brands from digital extinction. 
+
             </h1>
             <p className="text-xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
-              Help businesses succeed in the age of AI-powered information discovery. 
-              We&apos;re looking for passionate individuals to join our mission.
+            We are an early-stage team helping businesses harness the power of large language models with confidence — by making AI discovery and automation workflows transparent, measurable, and scalable 
             </p>
             <Link href="#positions">
               <Button 
@@ -188,7 +189,7 @@ export default function Careers() {
       </section>
 
       {/* Benefits Section */}
-      <section className="py-20 bg-white">
+      {/* <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 60 }}
@@ -224,7 +225,7 @@ export default function Careers() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Open Positions Section */}
       <section id="positions" className="py-20 bg-gray-50">
@@ -285,6 +286,12 @@ export default function Careers() {
                     <Button 
                       size="lg" 
                       className="w-full lg:w-auto bg-black text-white hover:bg-gray-800 rounded-lg px-8 py-3"
+                      onClick={() => {
+                        document.getElementById('resume-section')?.scrollIntoView({ 
+                          behavior: 'smooth',
+                          block: 'start'
+                        });
+                      }}
                     >
                       Apply Now
                     </Button>
@@ -318,7 +325,7 @@ export default function Careers() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-black text-white">
+      {/* <section className="py-20 bg-black text-white">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <motion.div
             initial={{ opacity: 0, y: 60 }}
@@ -352,6 +359,27 @@ export default function Careers() {
               </Link>
             </div>
           </motion.div>
+        </div>
+      </section> */}
+
+      {/* Resume Submission Section */}
+      <section id="resume-section" className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-4xl lg:text-5xl font-normal mb-8 text-gray-900">
+              Ready to join our team?
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Send us your resume and tell us why you&apos;d be a great fit for our mission to revolutionize AI-powered content discovery.
+            </p>
+          </motion.div>
+
+          <JobApplicationForm positions={openPositions} />
         </div>
       </section>
 
