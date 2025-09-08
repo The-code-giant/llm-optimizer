@@ -38,6 +38,7 @@ export function Footer() {
       title: "Resources",
       links: [
         { name: "Blog", href: "/blog" },
+        { name: "AI Tools", href: "/tools" },
         // { name: "Documentation", href: "/docs" },
         // { name: "Help Center", href: "/help" },
         // { name: "LLM Optimization Guide", href: "/guide" },
