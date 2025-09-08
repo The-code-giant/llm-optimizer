@@ -39,6 +39,7 @@ export function Footer() {
         { name: "Blog", href: "/blog" },
         { name: "Documentation", href: "/docs" },
         { name: "Help Center", href: "/help" },
+        {name : "Tool", href: "/tools" },
         // { name: "LLM Optimization Guide", href: "/guide" },
         // { name: "Templates", href: "/templates" }
       ]
