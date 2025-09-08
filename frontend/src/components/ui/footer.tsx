@@ -102,7 +102,7 @@ export function Footer() {
                   </div>
                   <div className="flex items-center text-gray-600">
                     <MapPinIcon className="w-5 h-5 mr-3 text-blue-600" />
-                    <span>New West Minster, BC</span>
+                    <span>New Westminster, BC </span>
                   </div>
                 </div>
               </motion.div>
@@ -150,7 +150,7 @@ export function Footer() {
                 Get weekly insights on LLM citation strategies, content optimization, and platform updates.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4">
+            {/* <div className="flex flex-col sm:flex-row gap-4">
               <input
                 type="email"
                 placeholder="Enter your email"
@@ -160,7 +160,7 @@ export function Footer() {
                 Subscribe
               </Button>
        
-            </div>
+            </div> */}
           </div>
         </motion.div>
 
