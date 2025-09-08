@@ -14,6 +14,8 @@ import Image from 'next/image';
 import { SparklesIcon } from '@heroicons/react/24/outline';
 import { Bot, ShieldCheck, Search, Lock } from 'lucide-react';
 import { checkBotAccessibility, BotAccessResult, submitToolLead } from '@/lib/api';
+import FAQsThree from '@/components/faqs-3';
+import { type FAQItem } from '@/content/faq-constants';
 
 export default function BotAccessToolPage() {
   const [url, setUrl] = useState('');
@@ -253,6 +255,19 @@ export default function BotAccessToolPage() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4">
+          <FAQsThree
+            title="FAQ: LLM & Crawler Accessibility Checker"
+            subtitle="Have more questions? Contact our"
+            supportLink="/contact"
+            supportText="support team"
+            items={TOOLS_FAQ_ITEMS}
+          />
+        </div>
+      </section>
+
       {/* Modal for progress + lead form */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
         <DialogContent className="sm:max-w-lg">
@@ -409,8 +424,103 @@ export default function BotAccessToolPage() {
       </Dialog>
 
       <Footer />
+
+      {/* FAQ Schema (AEO) */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: TOOLS_FAQ_ITEMS.map((faq: FAQItem) => ({
+              "@type": "Question",
+              name: faq.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: faq.answer,
+              },
+            })),
+          }),
+        }}
+      />
+
+      {/* WebPage Schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "LLM & Crawler Accessibility Checker",
+            url: "https://cleversearch.ai/tools",
+            description:
+              "Free tool to check if Googlebot and AI crawlers (GPTBot, ClaudeBot, Perplexity, and more) can access your page.",
+            breadcrumb: {
+              "@type": "BreadcrumbList",
+              itemListElement: [
+                { "@type": "ListItem", position: 1, name: "Home", item: "https://cleversearch.ai" },
+                { "@type": "ListItem", position: 2, name: "Tools", item: "https://cleversearch.ai/tools" },
+              ],
+            },
+          }),
+        }}
+      />
     </div>
   );
 }
+
+const TOOLS_FAQ_ITEMS: FAQItem[] = [
+  {
+    id: 'what-does-it-check',
+    icon: 'search',
+    question: 'What does the LLM & crawler checker actually test?',
+    answer:
+      'It checks robots.txt permissions, HTTP status responses, and basic reachability for Googlebot and leading AI crawlers like GPTBot, ClaudeBot, and Perplexity.',
+    details: [
+      'Verifies robots.txt allow/disallow for each bot',
+      'Captures HTTP status codes to surface server errors',
+      'Summarizes whether each crawler can reach the URL',
+    ],
+    detailsType: 'ul',
+  },
+  {
+    id: 'how-to-fix-blockers',
+    icon: 'shield',
+    question: 'How do I fix blockers found by the tool?',
+    answer:
+      'Update your robots.txt rules and ensure your server returns 2xx responses for allowed crawlers. Our team can guide best practices for AI-SEO and AEO.',
+    details: [
+      'Allow important paths for AI crawlers in robots.txt',
+      'Remove accidental disallows for key sections',
+      'Resolve 4xx/5xx errors on critical pages',
+    ],
+    detailsType: 'ul',
+  },
+  {
+    id: 'which-bots',
+    icon: 'bot',
+    question: 'Which crawlers are included?',
+    answer:
+      'The tool checks a set of popular search and AI crawlers, including Googlebot and AI agents like GPTBot, ClaudeBot, and Perplexity crawlers.',
+    details: [
+      'Coverage may evolve as platforms update their crawler policies',
+      'Focuses on high-impact crawlers used by major AI systems',
+    ],
+    detailsType: 'ul',
+  },
+  {
+    id: 'llm-visibility',
+    icon: 'sparkles',
+    question: 'How does this help with LLM visibility and citations?',
+    answer:
+      'Ensuring reachability is step one. Combined with FAQs and structured data, your content becomes easier for LLMs to parse and cite.',
+    details: [
+      'Add clear, question-based FAQs on key pages',
+      'Use JSON-LD for FAQPage and WebPage metadata',
+      'Write concise, authoritative answers aligned with user intent',
+    ],
+    detailsType: 'ul',
+  },
+];
 
 
