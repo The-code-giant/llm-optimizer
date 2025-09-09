@@ -140,7 +140,7 @@ export interface BillingInfo {
 }
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1";
 
 async function handleResponse(res: Response) {
   if (!res.ok) {
@@ -163,7 +163,13 @@ export async function getSites(token: string): Promise<Site[]> {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  // Handle new paginated response format
+  if (response.success && response.data && response.data.sites) {
+    return response.data.sites;
+  }
+  // Fallback for direct array format (if any legacy endpoints still exist)
+  return Array.isArray(response) ? response : [];
 }
 
 export async function getSitesWithMetrics(
@@ -291,7 +297,15 @@ export async function getSiteDetails(
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  
+  // Handle new structured response format
+  if (response.success && response.data) {
+    return response.data;
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return response;
 }
 
 export async function deleteSite(
@@ -328,7 +342,13 @@ export async function getPages(token: string, siteId: string): Promise<Page[]> {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  // Handle new paginated response format
+  if (response.success && response.data && response.data.pages) {
+    return response.data.pages;
+  }
+  // Fallback for direct array format (if any legacy endpoints still exist)
+  return Array.isArray(response) ? response : [];
 }
 
 export async function getPageDetails(
@@ -339,7 +359,15 @@ export async function getPageDetails(
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  
+  // Handle new structured response format
+  if (response.success && response.data) {
+    return response.data;
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return response;
 }
 
 export async function getPageAnalysis(
@@ -350,7 +378,15 @@ export async function getPageAnalysis(
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  
+  // Handle new structured response format
+  if (response.success && response.data) {
+    return response.data;
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return response;
 }
 
 export async function triggerAnalysis(
@@ -369,7 +405,7 @@ export async function importSitemap(
   siteId: string,
   sitemapUrl: string
 ): Promise<void> {
-  const response = await fetch(`${API_BASE}/sites/${siteId}/import-sitemap`, {
+  const response = await fetch(`${API_BASE}/sites/${siteId}/sitemap/import`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -543,7 +579,16 @@ export async function generateContentSuggestions(
       additionalContext,
     }),
   });
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as ContentSuggestion;
+  }
+  
+  // Fallback for direct response format
+  return response as ContentSuggestion;
 }
 
 export interface PageContentData {
@@ -621,7 +666,26 @@ export async function deployPageContent(
       },
     }
   );
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as {
+      message: string;
+      pageId: string;
+      contentType: string;
+      deployedAt: string;
+    };
+  }
+  
+  // Fallback for direct response format
+  return response as {
+    message: string;
+    pageId: string;
+    contentType: string;
+    deployedAt: string;
+  };
 }
 
 // Undeploy specific content type for a page
@@ -645,7 +709,24 @@ export async function undeployPageContent(
       },
     }
   );
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as {
+      message: string;
+      pageId: string;
+      contentType: string;
+    };
+  }
+  
+  // Fallback for direct response format
+  return response as {
+    message: string;
+    pageId: string;
+    contentType: string;
+  };
 }
 
 export interface DeployedContent {
@@ -673,7 +754,24 @@ export async function getDeployedPageContent(
     },
     cache: "no-store",
   });
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as {
+      pageId: string;
+      pageUrl: string;
+      deployedContent: DeployedContent[];
+    };
+  }
+  
+  // Fallback for direct response format
+  return response as {
+    pageId: string;
+    pageUrl: string;
+    deployedContent: DeployedContent[];
+  };
 }
 
 export async function getPageContent(
@@ -692,7 +790,21 @@ export async function getPageContent(
     },
     cache: "no-store",
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  
+  // Handle new structured response format
+  if (response.success && response.data) {
+    return {
+      pageId: response.data.pageId,
+      content: response.data.content || []
+    };
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return {
+    pageId: response.pageId || pageId,
+    content: response.content || []
+  };
 }
 
 export async function getCachedContentSuggestions(
@@ -711,7 +823,16 @@ export async function getCachedContentSuggestions(
     },
     cache: "no-store",
   });
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as { pageId: string; suggestions: unknown[] };
+  }
+  
+  // Fallback for direct response format
+  return response as { pageId: string; suggestions: unknown[] };
 }
 
 export interface OriginalPageContent {
@@ -765,7 +886,26 @@ export async function refreshPageContent(
       "Content-Type": "application/json",
     },
   });
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as {
+      message: string;
+      content: unknown;
+      contentSnapshot: string;
+      refreshedAt: string;
+    };
+  }
+  
+  // Fallback for direct response format
+  return response as {
+    message: string;
+    content: unknown;
+    contentSnapshot: string;
+    refreshedAt: string;
+  };
 }
 
 // Add more API functions as needed (sites, pages, etc.)
@@ -784,7 +924,26 @@ export async function submitWebsiteUrl(url: string): Promise<{
     },
     body: JSON.stringify({ url }),
   });
-  return handleResponse(res);
+  
+  const response = await handleResponse(res);
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (response && response.success && response.data) {
+    return response.data as {
+      success: boolean;
+      message: string;
+      siteId?: string;
+      redirectUrl?: string;
+    };
+  }
+  
+  // Fallback for direct response format
+  return response as {
+    success: boolean;
+    message: string;
+    siteId?: string;
+    redirectUrl?: string;
+  };
 }
 
 export async function updateProfileName(
@@ -880,6 +1039,7 @@ export async function getSectionRatings(token: string, pageId: string): Promise<
   sectionRatings: {
     title: number;
     description: number;
+    headings: number;
     content: number;
     schema: number;
     images: number;
@@ -906,7 +1066,11 @@ export async function getSectionRatings(token: string, pageId: string): Promise<
     throw new Error('Failed to fetch section ratings');
   }
 
-  return response.json();
+  const result = await response.json();
+  if (result && result.success && result.data) {
+    return result.data;
+  }
+  return result;
 }
 
 export async function updateSectionRating(
@@ -971,7 +1135,37 @@ export async function getSectionImprovements(
     throw new Error('Failed to fetch section improvements');
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // Extract data from the response structure { success: true, data: {...}, message: "..." }
+  if (data && data.success && data.data) {
+    return data.data as {
+      pageId: string;
+      sectionType: string;
+      improvements: Array<{
+        id: string;
+        previousScore: number;
+        newScore: number;
+        scoreImprovement: number;
+        deployedContent: string;
+        deployedAt: string;
+      }>;
+    };
+  }
+  
+  // Fallback for direct response format
+  return data as {
+    pageId: string;
+    sectionType: string;
+    improvements: Array<{
+      id: string;
+      previousScore: number;
+      newScore: number;
+      scoreImprovement: number;
+      deployedContent: string;
+      deployedAt: string;
+    }>;
+  };
 }
 
 export async function generateSectionContent(
@@ -982,14 +1176,16 @@ export async function generateSectionContent(
   currentContent?: string,
   additionalContext?: string
 ): Promise<{
-  sectionType: string;
-  generatedContent: string;
-  keyPoints: string[];
-  recommendationsAddressed: string[];
-  estimatedScoreImprovement: number;
-  generationContext: string;
-  pageUrl: string;
-  generatedAt: string;
+  success: boolean;
+  data: {
+    sectionType: string;
+    generatedContent: {
+      content: string;
+      keyPoints: string[];
+    };
+    estimatedImprovement: number;
+    recommendations: string[];
+  };
 }> {
   const response = await fetch(`${API_BASE}/pages/${pageId}/section-content`, {
     method: 'POST',

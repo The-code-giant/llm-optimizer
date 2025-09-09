@@ -178,9 +178,10 @@ export default function TrackerAnalytics({
         performanceRes.json()
       ]);
 
-      setAnalytics(analyticsData);
-      setDemographics(demographicsData);
-      setPagePerformance(performanceData);
+      // Extract data from the response structure { success: true, data: {...}, message: "..." }
+      setAnalytics(analyticsData?.success ? analyticsData.data : analyticsData);
+      setDemographics(demographicsData?.success ? demographicsData.data : demographicsData);
+      setPagePerformance(performanceData?.success ? performanceData.data : performanceData);
       } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to load analytics';
     setToast({ 

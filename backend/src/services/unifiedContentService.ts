@@ -1,6 +1,5 @@
 import { db } from '../db/client';
 import { 
-  pageContent, 
   contentSuggestions,
   contentRatings,
   contentRecommendations,
@@ -58,31 +57,48 @@ export interface DeploymentData {
 
 export class UnifiedContentService {
   /**
-   * Create new content using existing page_content table
+   * Create new content using new content tables
    */
   static async createContent(data: ContentCreationData): Promise<string> {
-    const [result] = await db.insert(pageContent).values({
+    const [result] = await db.insert(contentSuggestions).values({
       pageId: data.pageId,
       contentType: data.contentType,
-      originalContent: data.originalContent,
-      optimizedContent: data.optimizedContent,
-      aiModel: data.aiModel,
-      generationContext: data.generationContext,
-      isActive: data.isActive ? 1 : 0,
-      version: data.version || 1,
-      metadata: data.metadata || {},
-      pageUrl: data.pageUrl,
-      deployedAt: data.deployedAt,
-      deployedBy: data.deployedBy
+      suggestions: [{
+        content: data.optimizedContent,
+        originalContent: data.originalContent || '',
+        generationContext: data.generationContext || '',
+        metadata: data.metadata || {},
+        createdAt: new Date().toISOString()
+      }],
+      requestContext: data.generationContext || '',
+      aiModel: data.aiModel || 'gpt-4o-mini'
     }).returning();
+
+    // If deploying immediately, create deployment record
+    if (data.isActive) {
+      await db.insert(contentDeployments).values({
+        pageId: data.pageId,
+        sectionType: data.contentType,
+        previousScore: 0, // Will be updated when we have analysis
+        newScore: 5, // Estimate
+        scoreImprovement: 5,
+        deployedContent: data.optimizedContent,
+        aiModel: data.aiModel || 'gpt-4o-mini',
+        deployedBy: data.deployedBy || ''
+      });
+    }
     
     return result.id;
   }
 
   /**
    * Update existing content
+   * TODO: Migrate to use contentSuggestions and contentDeployments tables
    */
   static async updateContent(contentId: string, data: Partial<ContentCreationData>): Promise<void> {
+    // TODO: Implement using new content tables
+    throw new Error('updateContent method needs to be migrated to use new content tables');
+    /*
     await db.update(pageContent)
       .set({
         contentType: data.contentType,
@@ -99,33 +115,48 @@ export class UnifiedContentService {
         updatedAt: new Date()
       })
       .where(eq(pageContent.id, contentId));
+    */
   }
 
   /**
    * Get content by ID
+   * TODO: Migrate to use contentSuggestions and contentDeployments tables
    */
   static async getContentById(contentId: string) {
+    // TODO: Implement using new content tables
+    throw new Error('getContentById method needs to be migrated to use new content tables');
+    /*
     const [content] = await db.select()
       .from(pageContent)
       .where(eq(pageContent.id, contentId));
     
     return content;
+    */
   }
 
   /**
    * Get all content for a page
+   * TODO: Migrate to use contentSuggestions and contentDeployments tables
    */
   static async getPageContent(pageId: string) {
+    // TODO: Implement using new content tables
+    throw new Error('getPageContent method needs to be migrated to use new content tables');
+    /*
     return await db.select()
       .from(pageContent)
       .where(eq(pageContent.pageId, pageId))
       .orderBy(desc(pageContent.createdAt));
+    */
   }
 
   /**
    * Get active content for a page
+   * TODO: Migrate to use contentSuggestions and contentDeployments tables
    */
   static async getActivePageContent(pageId: string) {
+    // TODO: Implement using new content tables
+    throw new Error('getActivePageContent method needs to be migrated to use new content tables');
+    /*
     return await db.select()
       .from(pageContent)
       .where(and(
@@ -133,12 +164,17 @@ export class UnifiedContentService {
         eq(pageContent.isActive, 1)
       ))
       .orderBy(desc(pageContent.createdAt));
+    */
   }
 
   /**
    * Deploy content and track deployment
+   * TODO: Migrate to use contentSuggestions and contentDeployments tables
    */
   static async deployContent(data: DeploymentData): Promise<string> {
+    // TODO: Implement using new content tables
+    throw new Error('deployContent method needs to be migrated to use new content tables');
+    /*
     // Update content as active
     await db.update(pageContent)
       .set({
@@ -148,6 +184,7 @@ export class UnifiedContentService {
         updatedAt: new Date()
       })
       .where(eq(pageContent.id, data.contentId));
+    */
 
     // Record deployment
     const [deployment] = await db.insert(contentDeployments).values({

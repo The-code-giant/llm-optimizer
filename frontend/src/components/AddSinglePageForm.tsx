@@ -15,7 +15,7 @@ interface AddSinglePageFormProps {
 
 export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToast }: AddSinglePageFormProps) {
   const router = useRouter();
-  const { addPage, triggerAnalysis, getPageAnalysis } = useEnhancedApi();
+  const { addPage, getPageAnalysis } = useEnhancedApi();
   
   // Form state
   const [adding, setAdding] = useState(false);
@@ -49,11 +49,8 @@ export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToas
       setProgress(50);
       setPhase("analyzing");
       
-      // Step 2: Trigger analysis (starts background job)
-      await triggerAnalysis(created.id);
-
+      // Analysis is now automatically triggered by the backend when creating a page
       setProgress(75);
-      setPhase("analyzing");
 
       // Robust polling with exponential backoff + timeout + automatic token refresh
       const waitForAnalysis = async (
