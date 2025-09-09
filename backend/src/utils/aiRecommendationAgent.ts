@@ -428,6 +428,7 @@ Output exactly the JSON object only.`;
     if (!process.env.OPENAI_API_KEY) {
       throw new Error('OpenAI API key not configured');
     }
+    console.log("lol this shit alwasy return errro", 'pageContent.url', pageContent.url, 'new URL(pageContent.url).origin', new URL(pageContent.url).origin)
     console.log(`🤖 AI Content Suggestion: Generating ${count} ${contentType}(s) for ${pageContent.url}${pageSummary}`);
   // Derive a brand hint to ensure titles stay on-brand
   const brandHint = pageContent.brand || 

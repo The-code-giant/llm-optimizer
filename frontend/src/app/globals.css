@@ -118,8 +118,37 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  /* Ensure modal backgrounds work properly */
+  .bg-background {
+    background-color: var(--background) !important;
+  }
+  
+  /* Prevent flash of white content */
+  html {
+    background-color: white !important;
+    color-scheme: light;
+  }
+  
+  html.dark {
+    background-color: oklch(0.145 0 0) !important;
+    color-scheme: dark;
+  }
+  
+  /* Force light theme for non-dashboard pages */
+  html:not(.dashboard-page) {
+    background-color: white !important;
+    color-scheme: light;
+  }
+  
+  html:not(.dashboard-page) * {
+    color-scheme: light;
+  }
+  
   body {
     @apply bg-background text-foreground font-sans text-base;
+    /* Ensure smooth transition */
+    transition: background-color 0s ease-in-out, color 0s ease-in-out;
   }
   
   /* Typography System */

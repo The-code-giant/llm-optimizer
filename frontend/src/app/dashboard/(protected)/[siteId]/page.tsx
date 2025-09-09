@@ -14,7 +14,6 @@ import {
   ExternalLink,
   FileText,
   Globe,
-  ListPlus,
   Plus,
   RefreshCw,
   Search,
@@ -495,63 +494,27 @@ export default function SiteDetailsPage() {
                                 className="flex items-center"
                                 data-tour="add-pages"
                               >
-                                <ListPlus className="h-4 w-4 mr-2" />
-                                Manage Pages
+                                <Upload className="h-4 w-4 mr-2" />
+                                Import Sitemap
                               </Button>
                             </DialogTrigger>
-                            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogContent className="max-w-2xl">
                               <DialogHeader>
-                                <DialogTitle>Manage Pages</DialogTitle>
+                                <DialogTitle className="flex items-center">
+                                  <Upload className="h-5 w-5 mr-2" />
+                                  Import Sitemap
+                                </DialogTitle>
                                 <DialogDescription>
-                                  Add pages to your site by importing from
-                                  sitemap or adding individual URLs
+                                  Bulk import pages from your website&apos;s sitemap
                                 </DialogDescription>
                               </DialogHeader>
 
-                              <div className="grid gap-6 md:grid-cols-2 mt-6">
-                                {/* Sitemap Import */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="flex items-center">
-                                      <Upload className="h-5 w-5 mr-2" />
-                                      Import Sitemap
-                                    </CardTitle>
-                                    <CardDescription>
-                                      Bulk import pages from your website&apos;s
-                                      sitemap
-                                    </CardDescription>
-                                  </CardHeader>
-                                  <CardContent className="space-y-4">
-                                    <ImportSitemapForm
-                                      siteId={siteId}
-                                      onPagesUpdated={(pagesData) => setPages(pagesData)}
-                                      onToast={(t) => setToast(t)}
-                                    />
-                                  </CardContent>
-                                </Card>
-
-                                {/* Manual Page Addition */}
-                                <Card>
-                                  <CardHeader>
-                                    <CardTitle className="flex items-center">
-                                      <Plus className="h-5 w-5 mr-2" />
-                                      Add Single Page
-                                    </CardTitle>
-                                    <CardDescription>
-                                      Manually add a specific page for analysis
-                                    </CardDescription>
-                                  </CardHeader>
-                                  <CardContent>
-                                    {site && (
-                                      <AddSinglePageForm
-                                        siteId={siteId}
-                                        siteUrl={site.url}
-                                        onCompleted={() => setShowPageManagement(false)}
-                                        onToast={(t) => setToast(t)}
-                                      />
-                                    )}
-                                  </CardContent>
-                                </Card>
+                              <div className="mt-6">
+                                <ImportSitemapForm
+                                  siteId={siteId}
+                                  onPagesUpdated={(pagesData) => setPages(pagesData)}
+                                  onToast={(t) => setToast(t)}
+                                />
                               </div>
                             </DialogContent>
                           </Dialog>
@@ -596,8 +559,8 @@ export default function SiteDetailsPage() {
                       {[1, 2, 3, 4].map((i) => (
                         <Card key={i} className="animate-pulse">
                           <CardContent className="pt-6">
-                            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                            <div className="h-8 bg-muted rounded w-1/2"></div>
                           </CardContent>
                         </Card>
                       ))}

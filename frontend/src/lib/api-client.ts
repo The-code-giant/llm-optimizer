@@ -4,7 +4,7 @@
 import { GetTokenOptions } from "@clerk/types";
 import { fetchWithTokenRefresh, handleResponseWithAuth } from "./token-manager";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api/v1";
 
 /**
  * API wrapper that handles token refresh automatically

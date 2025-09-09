@@ -44,12 +44,20 @@ interface TrackerScriptData {
   siteName: string;
   trackerId: string;
   nextJsScript: string;
-  universalScript: string;
-  config: Record<string, unknown>;
+  scriptHtml: string;
+  platform: string;
+  config: {
+    API_BASE: string;
+    SITE_ID: string;
+  };
   instructions: {
-    installation: string;
-    verification: string;
-    support: string;
+    nextjs: string;
+    react: string;
+    wordpress: string;
+    shopify: string;
+    wix: string;
+    squarespace: string;
+    other: string;
   };
 }
 
@@ -133,7 +141,14 @@ export default function TrackerScriptModal({
       }
 
       const data = await response.json();
-      setScriptData(data);
+      
+      // Extract data from the response structure { success: true, data: {...}, message: "..." }
+      if (data && data.success && data.data) {
+        setScriptData(data.data);
+      } else {
+        // Fallback for direct response format (if any legacy endpoints still exist)
+        setScriptData(data);
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load tracker script';
       setToast({ 
@@ -147,7 +162,7 @@ export default function TrackerScriptModal({
 
   const copyScript = async () => {
     if (!scriptData) return;
-    const scriptToCopy = selectedPlatform === 'nextjs' ? scriptData.nextJsScript : scriptData.universalScript;
+    const scriptToCopy = selectedPlatform === 'nextjs' ? scriptData.nextJsScript : scriptData.scriptHtml;
     try {
       await navigator.clipboard.writeText(scriptToCopy);
       setCopied(true);
@@ -160,7 +175,7 @@ export default function TrackerScriptModal({
 
   const getCurrentScript = () => {
     if (!scriptData) return '';
-    return selectedPlatform === 'nextjs' ? scriptData.nextJsScript : scriptData.universalScript;
+    return selectedPlatform === 'nextjs' ? scriptData.nextJsScript : scriptData.scriptHtml;
   };
 
   const features = [
@@ -327,7 +342,7 @@ export default function TrackerScriptModal({
                       <div>
                         <h4 className="font-medium">Paste in Your Website</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          <span dangerouslySetInnerHTML={{ __html: scriptData.instructions.installation }} />
+                          {scriptData.instructions[selectedPlatform as keyof typeof scriptData.instructions] || scriptData.instructions.other}
                         </p>
                         <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                           <p className="text-sm text-amber-800">
@@ -345,7 +360,7 @@ export default function TrackerScriptModal({
                       <div>
                         <h4 className="font-medium">Verify Installation</h4>
                         <p className="text-sm text-gray-600 mt-1">
-                          {scriptData.instructions.verification}
+                          After adding the script, visit your website and check the browser&apos;s developer console for &quot;Cleversearch tracker loaded&quot; message to confirm it&apos;s working.
                         </p>
                       </div>
                     </div>

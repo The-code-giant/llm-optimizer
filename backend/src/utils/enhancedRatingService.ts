@@ -96,7 +96,13 @@ export class EnhancedRatingService {
   static async getSectionRecommendations(
     pageId: string, 
     sectionType: string
-  ): Promise<string[]> {
+  ): Promise<Array<{
+    title: string;
+    priority: string;
+    description: string;
+    expectedImpact: number;
+    implementation: string;
+  }>> {
     console.log(`🔍 Getting recommendations for ${sectionType} section on page ${pageId}`);
     
     const result = await db.select()
@@ -112,7 +118,13 @@ export class EnhancedRatingService {
     if (result.length === 0) return [];
     
     // Aggregate all recommendations from all records
-    const allRecommendations: string[] = [];
+    const allRecommendations: Array<{
+      title: string;
+      priority: string;
+      description: string;
+      expectedImpact: number;
+      implementation: string;
+    }> = [];
     
     for (const record of result) {
       try {
@@ -120,34 +132,49 @@ export class EnhancedRatingService {
         console.log(`📝 Processing record with recommendations:`, recommendations);
         
         if (Array.isArray(recommendations)) {
-          // If it's an array of strings, add them directly
-          if (typeof recommendations[0] === 'string') {
-            allRecommendations.push(...recommendations);
-          } else {
-            // If it's an array of objects, extract the title
-            for (const rec of recommendations) {
-              if (rec && typeof rec === 'object') {
-                // Extract the title from the recommendation object
-                if (rec.title) {
-                  allRecommendations.push(rec.title);
-                } else if (rec.description) {
-                  // If no title, use description but truncate it
-                  const desc = rec.description as string;
-                  allRecommendations.push(desc.length > 100 ? desc.substring(0, 100) + '...' : desc);
-                }
-              }
+          for (const rec of recommendations) {
+            if (typeof rec === 'string') {
+              // Convert string to object format for backward compatibility
+              allRecommendations.push({
+                title: rec,
+                priority: 'medium',
+                description: rec,
+                expectedImpact: 1,
+                implementation: rec
+              });
+            } else if (rec && typeof rec === 'object') {
+              // Return the full recommendation object
+              allRecommendations.push({
+                title: rec.title || 'Untitled Recommendation',
+                priority: rec.priority || 'medium',
+                description: rec.description || rec.title || 'No description available',
+                expectedImpact: rec.expectedImpact || 1,
+                implementation: rec.implementation || rec.description || rec.title || 'No implementation details'
+              });
             }
           }
+        } else if (typeof recommendations === 'string') {
+          // Single string recommendation - convert to object format
+          allRecommendations.push({
+            title: recommendations,
+            priority: 'medium',
+            description: recommendations,
+            expectedImpact: 1,
+            implementation: recommendations
+          });
         }
       } catch (error) {
         console.error('Error parsing recommendations:', error);
       }
     }
     
-    console.log(`✅ Final recommendations for ${sectionType}:`, allRecommendations);
+    // Remove duplicates based on title
+    const uniqueRecommendations = allRecommendations.filter((rec, index, self) => 
+      index === self.findIndex(r => r.title === rec.title)
+    );
     
-    // Remove duplicates and return
-    return [...new Set(allRecommendations)];
+    console.log(`✅ Returning ${uniqueRecommendations.length} unique recommendations for ${sectionType}:`, uniqueRecommendations);
+    return uniqueRecommendations;
   }
 
   /**

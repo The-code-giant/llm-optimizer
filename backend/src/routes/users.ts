@@ -5,7 +5,7 @@ import {
   sites,
   pages,
   contentAnalysis,
-  pageContent,
+  contentDeployments,
   trackerData,
 } from "../db/schema";
 import { eq, count, desc, and, sql } from "drizzle-orm";
@@ -123,8 +123,8 @@ router.get(
 
       const [deploymentsCountResult] = await db
         .select({ count: count() })
-        .from(pageContent)
-        .innerJoin(pages, eq(pageContent.pageId, pages.id))
+        .from(contentDeployments)
+        .innerJoin(pages, eq(contentDeployments.pageId, pages.id))
         .innerJoin(sites, eq(pages.siteId, sites.id))
         .where(eq(sites.userId, req.user!.userId));
 

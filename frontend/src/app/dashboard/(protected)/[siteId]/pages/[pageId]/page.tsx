@@ -13,9 +13,11 @@ import {
   PageContentData,
   undeployPageContent,
   getOriginalPageContent,
-  updateSectionRating,
+  getSectionRatings,
 } from "@/lib/api";
-import { DashboardLayout } from "@/components/ui/dashboard-layout";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Card,
   CardContent,
@@ -74,9 +76,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function PageAnalysisPage() {
   const router = useRouter();
@@ -85,6 +84,27 @@ export default function PageAnalysisPage() {
   const { getToken } = useAuth();
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [pageData, setPageData] = useState<Page | null>(null);
+  const [sectionRatings, setSectionRatings] = useState<{
+    pageId: string;
+    sectionRatings: {
+      title: number;
+      description: number;
+      headings: number;
+      content: number;
+      schema: number;
+      images: number;
+      links: number;
+    };
+    sectionRecommendations: {
+      title: string[];
+      description: string[];
+      headings: string[];
+      content: string[];
+      schema: string[];
+      images: string[];
+      links: string[];
+    };
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
@@ -174,12 +194,13 @@ export default function PageAnalysisPage() {
         setError("Failed to get authentication token");
         return;
       }
-      // Fetch page details, analysis, saved content, and original meta description
-      const [pageDetails, analysisData, savedContent, originalContentResult] =
+      // Fetch page details, analysis, saved content, section ratings, and original meta description
+      const [pageDetails, analysisData, savedContent, sectionRatingsData, originalContentResult] =
         await Promise.allSettled([
           getPageDetails(token, pageId),
           getPageAnalysis(token, pageId),
           getPageContent(token, pageId),
+          getSectionRatings(token, pageId),
           getOriginalPageContent(token, pageId),
         ]);
       if (originalContentResult.status === "fulfilled") {
@@ -208,15 +229,25 @@ export default function PageAnalysisPage() {
           paragraph: [],
           keywords: [],
         };
-        content.forEach((item: PageContentData) => {
-          if (grouped[item.contentType]) grouped[item.contentType].push(item);
-        });
+        // Safety check: ensure content is an array before calling forEach
+        if (Array.isArray(content)) {
+          content.forEach((item: PageContentData) => {
+            if (grouped[item.contentType]) grouped[item.contentType].push(item);
+          });
+        }
         setContentVersions(grouped);
       }
       if (analysisData.status === "fulfilled") {
         setAnalysis(analysisData.value);
       } else {
         setAnalysis(null);
+      }
+      if (sectionRatingsData.status === "fulfilled") {
+        console.log("Section ratings data:", sectionRatingsData.value);
+        setSectionRatings(sectionRatingsData.value);
+      } else {
+        console.log("Section ratings failed:", sectionRatingsData.reason);
+        setSectionRatings(null);
       }
       setLoading(false);
     } catch (err: unknown) {
@@ -407,33 +438,57 @@ export default function PageAnalysisPage() {
 
   if (!isLoaded || loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading page details...</p>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Loading page details...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </DashboardLayout>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
   console.log({ pageData, analysis });
   if (error || !pageData) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">{error || "Page not found"}</p>
-            <Link href={`/dashboard/${siteId}`}>
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Site
-              </Button>
-            </Link>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                      <p className="text-destructive mb-4">{error || "Page not found"}</p>
+                      <Link href={`/dashboard/${siteId}`}>
+                        <Button variant="outline">
+                          <ArrowLeft className="h-4 w-4 mr-2" />
+                          Back to Site
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </DashboardLayout>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
@@ -813,7 +868,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -913,7 +968,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -1009,7 +1064,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -1104,7 +1159,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -1350,7 +1405,7 @@ export default function PageAnalysisPage() {
                       {analysis ? (
                         <>
                           {/* Section Ratings */}
-                          {analysis.sectionRatings && (
+                          {sectionRatings && (
                             <Card>
                               <CardHeader>
                                 <CardTitle className="flex items-center space-x-2">
@@ -1365,10 +1420,9 @@ export default function PageAnalysisPage() {
                               <CardContent>
                                 <SectionRatingDisplay
                                   pageId={pageId}
-                                  sectionRatings={analysis.sectionRatings}
-                                  sectionRecommendations={
-                                    analysis.sectionRecommendations
-                                  }
+                                  sectionRatings={sectionRatings?.sectionRatings}
+                                  sectionRecommendations={sectionRatings?.sectionRecommendations}
+                                  overallScore={analysis?.score || 0}
                                   onImproveSection={(
                                     sectionType,
                                     recommendations
@@ -1377,10 +1431,9 @@ export default function PageAnalysisPage() {
                                       isOpen: true,
                                       sectionType,
                                       recommendations,
-                                      currentScore:
-                                        analysis.sectionRatings?.[
-                                          sectionType as keyof typeof analysis.sectionRatings
-                                        ] || 0,
+                                      currentScore: sectionRatings?.sectionRatings?.[
+                                        sectionType as keyof typeof sectionRatings.sectionRatings
+                                      ] || 0,
                                     });
                                   }}
                                 />
@@ -1411,31 +1464,29 @@ export default function PageAnalysisPage() {
                                     return;
                                   }
 
-                                  // Update section rating in backend
-                                  await updateSectionRating(
-                                    token,
-                                    pageId,
-                                    improvementModal.sectionType,
-                                    newScore,
-                                    content,
-                                    "gpt-4o-mini"
-                                  );
-
                                   setToast({
                                     message: `${improvementModal.sectionType} section improved from ${improvementModal.currentScore}/10 to ${newScore}/10!`,
                                     type: "success",
                                   });
 
-                                  // Update ratings locally instead of full page refresh
-                                  if (analysis && analysis.sectionRatings) {
-                                    const updatedAnalysis = {
-                                      ...analysis,
-                                      sectionRatings: {
-                                        ...analysis.sectionRatings,
-                                        [improvementModal.sectionType]: newScore
-                                      }
-                                    };
+                                  // Refresh section ratings data to get updated scores
+                                  try {
+                                    const updatedSectionRatings = await getSectionRatings(token, pageId);
+                                    setSectionRatings(updatedSectionRatings);
+                                  } catch (error) {
+                                    console.error('Failed to refresh section ratings:', error);
+                                    // Fallback: refresh all data
+                                    await fetchData();
+                                  }
+
+                                  // Also refresh analysis data to get updated overall score
+                                  try {
+                                    const updatedAnalysis = await getPageAnalysis(token, pageId);
                                     setAnalysis(updatedAnalysis);
+                                  } catch (error) {
+                                    console.error('Failed to refresh analysis:', error);
+                                    // Fallback: refresh all data
+                                    await fetchData();
                                   }
                                   
                                   setImprovementModal(null);

@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { GoogleTagManager, GoogleAnalytics  } from '@next/third-parties/google'
+import { ConditionalThemeProvider } from "@/components/conditional-theme-provider";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -35,7 +36,52 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="light dark" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var pathname = window.location.pathname;
+                  var isDashboard = pathname.includes('/dashboard');
+                  
+                  if (!isDashboard) {
+                    // Force light theme for non-dashboard pages
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.remove('dashboard-page');
+                    document.documentElement.style.colorScheme = 'light';
+                    document.documentElement.style.setProperty('--background', '0 0% 100%');
+                    document.documentElement.style.setProperty('--foreground', '222.2 84% 4.9%');
+                    document.documentElement.style.backgroundColor = 'white';
+                  } else {
+                    // Add dashboard class for CSS targeting
+                    document.documentElement.classList.add('dashboard-page');
+                    // For dashboard pages, use normal theme detection
+                    var theme = localStorage.getItem('theme');
+                    var isDark = theme === 'dark' || 
+                      (theme === null && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                    
+                    if (isDark) {
+                      document.documentElement.classList.add('dark');
+                      document.documentElement.style.colorScheme = 'dark';
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                      document.documentElement.style.colorScheme = 'light';
+                    }
+                  }
+                } catch (e) {
+                  // Fallback to light theme
+                  document.documentElement.classList.remove('dark');
+                  document.documentElement.style.colorScheme = 'light';
+                  document.documentElement.style.backgroundColor = 'white';
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${poppins.variable} ${inter.variable} antialiased`}
       >
@@ -44,6 +90,10 @@ export default function RootLayout({
             variables: {
               colorPrimary: "#2563eb",
             },
+            elements: {
+              rootBox: "dark:bg-gray-900",
+              card: "dark:bg-gray-800",
+            },
           }}
           signInUrl="/login"
           signUpUrl="/register"
@@ -51,8 +101,10 @@ export default function RootLayout({
           afterSignUpUrl="/dashboard"
           publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
         >
-          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTIC_MANAGER_ID as string} />
+          <ConditionalThemeProvider>
+            <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTIC_MANAGER_ID as string} />
             {children}
+          </ConditionalThemeProvider>
         </ClerkProvider>
       </body>
     </html>

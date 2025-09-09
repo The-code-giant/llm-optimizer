@@ -27,21 +27,30 @@ interface SectionRating {
   links: number;
 }
 
+interface Recommendation {
+  title: string;
+  priority: string;
+  description: string;
+  expectedImpact: number;
+  implementation: string;
+}
+
 interface SectionRecommendations {
-  title: string[];
-  description: string[];
-  headings: string[];
-  content: string[];
-  schema: string[];
-  images: string[];
-  links: string[];
+  title: Recommendation[];
+  description: Recommendation[];
+  headings: Recommendation[];
+  content: Recommendation[];
+  schema: Recommendation[];
+  images: Recommendation[];
+  links: Recommendation[];
 }
 
 interface SectionRatingDisplayProps {
   pageId: string;
   sectionRatings?: SectionRating;
   sectionRecommendations?: SectionRecommendations;
-  onImproveSection: (sectionType: string, recommendations: string[]) => void;
+  overallScore?: number; // Add overall score from API
+  onImproveSection: (sectionType: string, recommendations: Recommendation[]) => void;
 }
 
 const sectionConfig = {
@@ -97,13 +106,15 @@ const sectionConfig = {
 };
 
 export default function SectionRatingDisplay({
-  pageId,
   sectionRatings,
   sectionRecommendations,
+  overallScore,
   onImproveSection,
 }: SectionRatingDisplayProps) {
   const [currentRatings, setCurrentRatings] = useState<SectionRating | null>(null);
-
+  console.log("sectionRecommendations", {  sectionRatings,
+    sectionRecommendations,
+    overallScore,});
   useEffect(() => {
     if (sectionRatings) {
       setCurrentRatings(sectionRatings);
@@ -126,14 +137,14 @@ export default function SectionRatingDisplay({
     );
   }
 
-  const calculateTotalScore = () => {
+  // Use the overall score from API if available, otherwise calculate from section ratings
+  const totalScore = overallScore !== undefined ? overallScore : (() => {
+    if (!currentRatings) return 0;
     const scores = Object.values(currentRatings);
     const total = scores.reduce((sum, score) => sum + score, 0);
     const maxPossible = scores.length * 10; // 7 sections * 10 = 70
     return Math.round((total / maxPossible) * 100); // Convert to percentage
-  };
-
-  const totalScore = calculateTotalScore();
+  })();
 
   const getScoreBadge = (score: number) => {
     if (score >= 8) return <Badge className="bg-green-500">{score}/10</Badge>;
@@ -180,7 +191,7 @@ export default function SectionRatingDisplay({
           const score = currentRatings[sectionType as keyof SectionRating];
           const recommendations = sectionRecommendations?.[sectionType as keyof SectionRecommendations] || [];
           const hasRecommendations = recommendations.length > 0;
-
+          console.log({sectionType, config, recommendations, sectionRecommendations})
           return (
             <Card key={sectionType} id={`${sectionType}-section`} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
@@ -214,11 +225,23 @@ export default function SectionRatingDisplay({
                       <p className="text-sm font-medium text-muted-foreground">
                         AI Recommendations ({recommendations.length})
                       </p>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {recommendations.slice(0, 2).map((rec, index) => (
-                          <p key={index} className="text-xs text-muted-foreground line-clamp-2">
-                            • {rec}
-                          </p>
+                          <div key={index} className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium">{rec.title}</span>
+                              <Badge 
+                                variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'secondary' : 'outline'}
+                                className="text-xs"
+                              >
+                                {rec.priority}
+                              </Badge>
+                            </div>
+                            <p className="text-muted-foreground mb-1">{rec.description}</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">
+                              Impact: +{rec.expectedImpact} points
+                            </p>
+                          </div>
                         ))}
                         {recommendations.length > 2 && (
                           <p className="text-xs text-muted-foreground">

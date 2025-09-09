@@ -17,14 +17,21 @@ import {
 import { generateSectionContent, savePageContent, updateSectionRating } from "@/lib/api";
 
 
+interface Recommendation {
+  title: string;
+  priority: string;
+  description: string;
+  expectedImpact: number;
+  implementation: string;
+}
+
 interface SectionImprovementFormProps {
   pageId: string;
   sectionType: string;
-  recommendations: string[];
+  recommendations: Recommendation[];
   currentScore: number;
   onBack: () => void;
   onContentGenerated: (content: string, newScore: number) => void;
-
 }
 
 const sectionLabels = {

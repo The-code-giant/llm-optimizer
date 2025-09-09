@@ -188,26 +188,6 @@ export const trackerData = pgTable("tracker_data", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const pageContent = pgTable("page_content", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  pageId: uuid("page_id")
-    .notNull()
-    .references(() => pages.id),
-  contentType: varchar("content_type", { length: 64 }).notNull(), // 'title', 'description', 'faq', 'paragraph', 'keywords', 'schema'
-  originalContent: text("original_content"),
-  optimizedContent: text("optimized_content").notNull(),
-  aiModel: varchar("ai_model", { length: 128 }),
-  generationContext: text("generation_context"),
-  isActive: integer("is_active").default(0), // 0 = draft, 1 = deployed
-  version: integer("version").default(1),
-  metadata: jsonb("metadata").default({}), // Store additional data like keyword analysis, character counts, etc.
-  pageUrl: varchar("page_url", { length: 1024 }),
-  deployedAt: timestamp("deployed_at"), // When this content was deployed
-  deployedBy: varchar("deployed_by", { length: 255 }), // User ID who deployed it
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
 export const contentSuggestions = pgTable("content_suggestions", {
   id: uuid("id").primaryKey().defaultRandom(),
   pageId: uuid("page_id")

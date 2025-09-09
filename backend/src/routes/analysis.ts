@@ -1,23 +1,66 @@
-import { Router, Response, NextFunction } from 'express';
-import { db } from '../db/client';
-import { sites, pages } from '../db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { Router } from 'express';
 import { authenticateJWT } from '../middleware/auth';
-import { analysisQueue } from '../utils/queue';
-
-// Extend Express Request type to include user
-import type { Request } from 'express';
-interface AuthenticatedRequest extends Request {
-  user?: { userId: string; email: string };
-}
+import { AnalysisController } from '../controllers/AnalysisController';
 
 const router = Router();
-
-
+const analysisController = new AnalysisController();
 
 /**
  * @openapi
- * /api/v1/pages/{pageId}/analysis:
+ * /api/v1/analysis/pages/{pageId}:
+ *   get:
+ *     summary: Get analysis results for a specific page
+ *     tags: [Analysis]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Analysis results for the page
+ *       404:
+ *         description: Page not found or not authorized
+ */
+router.get('/pages/:pageId', authenticateJWT, analysisController.getPageAnalysis);
+
+/**
+ * @openapi
+ * /api/v1/analysis/pages/{pageId}/history:
+ *   get:
+ *     summary: Get analysis history for a page
+ *     tags: [Analysis]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 100
+ *           default: 20
+ *     responses:
+ *       200:
+ *         description: Analysis history for the page
+ *       404:
+ *         description: Page not found or not authorized
+ */
+router.get('/pages/:pageId/history', authenticateJWT, analysisController.getPageAnalysisHistory);
+
+/**
+ * @openapi
+ * /api/v1/analysis/pages/{pageId}/trigger:
  *   post:
  *     summary: Trigger analysis for a specific page
  *     tags: [Analysis]
@@ -27,46 +70,68 @@ const router = Router();
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               forceRefresh:
+ *                 type: boolean
+ *                 default: false
  *     responses:
- *       202:
- *         description: Analysis started for page
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 jobId:
- *                   type: string
+ *       200:
+ *         description: Analysis completed successfully
  *       404:
  *         description: Page not found or not authorized
  */
-// Trigger analysis for a specific page
-router.post('/pages/:pageId/analysis', authenticateJWT, async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const pageArr = await db.select().from(pages).where(eq(pages.id, req.params.pageId)).limit(1);
-    const page = pageArr[0];
-    if (!page) {
-      res.status(404).json({ message: 'Page not found' });
-      return;
-    }
-    // Check site ownership
-    const siteArr = await db.select().from(sites).where(eq(sites.id, page.siteId)).limit(1);
-    const site = siteArr[0];
-    if (!site || site.userId !== req.user!.userId) {
-      res.status(404).json({ message: 'Not authorized' });
-      return;
-    }
-    // Enqueue analysis job for this page
-    const job = await analysisQueue.add('page-analysis', {
-      pageId: req.params.pageId,
-      userId: req.user!.userId,
-    });
-    res.status(202).json({ message: 'Analysis started for page', jobId: job.id });
-  } catch (err) {
-    next(err);
-  }
-});
+router.post('/pages/:pageId/trigger', authenticateJWT, analysisController.triggerPageAnalysis);
+
+/**
+ * @openapi
+ * /api/v1/analysis/pages/{pageId}/recommendations/{sectionType}:
+ *   get:
+ *     summary: Get recommendations for a specific section
+ *     tags: [Analysis]
+ *     parameters:
+ *       - in: path
+ *         name: pageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: sectionType
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [title, description, headings, content, schema, images, links]
+ *     responses:
+ *       200:
+ *         description: Section recommendations
+ *       404:
+ *         description: Page not found or not authorized
+ */
+router.get('/pages/:pageId/recommendations/:sectionType', authenticateJWT, analysisController.getSectionRecommendations);
+
+/**
+ * @openapi
+ * /api/v1/analysis/sites/{siteId}/stats:
+ *   get:
+ *     summary: Get overall analysis statistics for a site
+ *     tags: [Analysis]
+ *     parameters:
+ *       - in: path
+ *         name: siteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Site analysis statistics
+ *       404:
+ *         description: Site not found or not authorized
+ */
+router.get('/sites/:siteId/stats', authenticateJWT, analysisController.getSiteAnalysisStats);
 
 export default router;

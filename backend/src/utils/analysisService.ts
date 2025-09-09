@@ -11,8 +11,8 @@ import { UnifiedContentService } from '../services/unifiedContentService';
 
 // Initialize Vercel AI SDK OpenAI provider
 const aiOpenAI = createOpenAI({ apiKey: process.env.OPENAI_API_KEY });
-// Centralize the model selection; default to GPT‑5 Mini as requested
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-nano';
+// Centralize the model selection; default to GPT-4o Mini
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 // Shared guardrails for all generations
 const SHARED_SYSTEM = `You are a senior GEO (Generative Engine Optimization) strategist and copywriter.
@@ -798,7 +798,7 @@ FOCUS ON:
             contentType: type,
             suggestions: data,
             requestContext: 'Auto-generated during analysis (batched GPT-5 Nano optimization)',
-            aiModel: process.env.OPENAI_MODEL || 'gpt-5-nano',
+            aiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
             generatedAt: new Date(),
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           });
@@ -1009,7 +1009,7 @@ Generate 3 FAQ pairs and 3 informative paragraphs following the JSON format abov
             contentType: type,
             suggestions,
             requestContext: 'Auto-generated during analysis (sequential fallback)',
-            aiModel: process.env.OPENAI_MODEL || 'gpt-5-nano',
+            aiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
             generatedAt: new Date(),
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           });
