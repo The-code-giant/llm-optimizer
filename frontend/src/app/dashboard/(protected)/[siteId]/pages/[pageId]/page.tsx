@@ -15,7 +15,9 @@ import {
   getOriginalPageContent,
   getSectionRatings,
 } from "@/lib/api";
-import { DashboardLayout } from "@/components/ui/dashboard-layout";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Card,
   CardContent,
@@ -74,9 +76,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function PageAnalysisPage() {
   const router = useRouter();
@@ -439,33 +438,57 @@ export default function PageAnalysisPage() {
 
   if (!isLoaded || loading) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading page details...</p>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Loading page details...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </DashboardLayout>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
   console.log({ pageData, analysis });
   if (error || !pageData) {
     return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">{error || "Page not found"}</p>
-            <Link href={`/dashboard/${siteId}`}>
-              <Button variant="outline">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Site
-              </Button>
-            </Link>
+      <SidebarProvider>
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <SiteHeader />
+          <div className="flex flex-1 flex-col">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+                <div className="px-4 lg:px-6">
+                  <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                      <p className="text-destructive mb-4">{error || "Page not found"}</p>
+                      <Link href={`/dashboard/${siteId}`}>
+                        <Button variant="outline">
+                          <ArrowLeft className="h-4 w-4 mr-2" />
+                          Back to Site
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </DashboardLayout>
+        </SidebarInset>
+      </SidebarProvider>
     );
   }
 
@@ -845,7 +868,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -945,7 +968,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -1041,7 +1064,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >
@@ -1136,7 +1159,7 @@ export default function PageAnalysisPage() {
                                     disabled={!analysis}
                                     className={
                                       !analysis
-                                        ? "bg-gray-200 text-gray-500 border-gray-200 cursor-not-allowed"
+                                        ? "bg-muted text-muted-foreground border-muted cursor-not-allowed"
                                         : ""
                                     }
                                   >

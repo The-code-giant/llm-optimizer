@@ -1,4 +1,3 @@
-import { ThemeProvider } from "@/components/ui/theme-provider";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { TourProvider, TourOverlay } from "@/components/tours";
@@ -54,16 +53,9 @@ export default async function DashboardLayout({
   }
 
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <TourProvider tours={[dashboardTour, siteDetailsTour, analyticsTour]}>
-        {children}
-        <TourOverlay />
-      </TourProvider>
-    </ThemeProvider>
+    <TourProvider tours={[dashboardTour, siteDetailsTour, analyticsTour]}>
+      {children}
+      <TourOverlay />
+    </TourProvider>
   );
 }
