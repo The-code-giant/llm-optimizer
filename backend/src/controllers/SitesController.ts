@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from '../db/client';
 import { sites, users, pages, pageAnalytics, trackerData, contentAnalysis, contentSuggestions } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { sitemapImportQueue } from '../utils/queue';
+import { sitemapImportQueue, analysisQueue } from '../utils/queue';
 import { randomUUID } from 'crypto';
 import cache from '../utils/cache';
 import { AnalysisService } from '../utils/analysisService';
@@ -35,11 +35,15 @@ export class SitesController extends BaseController {
 
     const { name, url } = bodyValidation.data!;
 
-    // Check if site with this URL already exists for the user
+    // Check if site with this URL already exists for the user (excluding soft-deleted sites)
     const existingSite = await db
       .select()
       .from(sites)
-      .where(and(eq(sites.userId, userId), eq(sites.url, url)))
+      .where(and(
+        eq(sites.userId, userId), 
+        eq(sites.url, url),
+        sql`${sites.deletedAt} IS NULL`
+      ))
       .limit(1);
 
     if (existingSite.length > 0) {
@@ -254,7 +258,11 @@ export class SitesController extends BaseController {
     const siteArr = await db
       .select()
       .from(sites)
-      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
+      .where(and(
+        eq(sites.id, siteId), 
+        eq(sites.userId, userId),
+        sql`${sites.deletedAt} IS NULL`
+      ))
       .limit(1);
 
     const site = siteArr[0];
@@ -262,6 +270,7 @@ export class SitesController extends BaseController {
       return this.sendError(res, 'Site not found', 404);
     }
 
+    console.log('Site data being returned:', site);
     this.sendSuccess(res, site);
   });
 
@@ -286,11 +295,15 @@ export class SitesController extends BaseController {
 
     const updateData = bodyValidation.data!;
 
-    // Check if site exists and belongs to user
+    // Check if site exists and belongs to user (excluding soft-deleted sites)
     const siteArr = await db
       .select()
       .from(sites)
-      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
+      .where(and(
+        eq(sites.id, siteId), 
+        eq(sites.userId, userId),
+        sql`${sites.deletedAt} IS NULL`
+      ))
       .limit(1);
 
     const site = siteArr[0];
@@ -298,12 +311,16 @@ export class SitesController extends BaseController {
       return this.sendError(res, 'Site not found', 404);
     }
 
-    // If URL is being updated, check for conflicts
+    // If URL is being updated, check for conflicts (excluding soft-deleted sites)
     if (updateData.url && updateData.url !== site.url) {
       const existingSite = await db
         .select()
         .from(sites)
-        .where(and(eq(sites.userId, userId), eq(sites.url, updateData.url)))
+        .where(and(
+          eq(sites.userId, userId), 
+          eq(sites.url, updateData.url),
+          sql`${sites.deletedAt} IS NULL`
+        ))
         .limit(1);
 
       if (existingSite.length > 0) {
@@ -337,11 +354,15 @@ export class SitesController extends BaseController {
       return this.sendError(res, 'Invalid site ID format', 400);
     }
 
-    // Check if site exists and belongs to user
+    // Check if site exists and belongs to user (excluding soft-deleted sites)
     const siteArr = await db
       .select()
       .from(sites)
-      .where(and(eq(sites.id, siteId), eq(sites.userId, userId)))
+      .where(and(
+        eq(sites.id, siteId), 
+        eq(sites.userId, userId),
+        sql`${sites.deletedAt} IS NULL`
+      ))
       .limit(1);
 
     const site = siteArr[0];
@@ -960,31 +981,29 @@ export class SitesController extends BaseController {
     const daysBack = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
     const startDate = new Date(now.getTime() - (daysBack * 24 * 60 * 60 * 1000));
 
-    // Get demographics data from pageAnalytics
-    const demographicsData = await db
+    // Get basic analytics data from pageAnalytics (demographics not available in current schema)
+    const analyticsData = await db
       .select({
-        device: pageAnalytics.device,
-        browser: pageAnalytics.browser,
-        country: pageAnalytics.country,
-        views: sql<number>`count(*)`
+        pageUrl: pageAnalytics.pageUrl,
+        pageViews: pageAnalytics.pageViews,
+        uniqueVisitors: pageAnalytics.uniqueVisitors,
+        bounceRate: pageAnalytics.bounceRate,
+        avgSessionDuration: pageAnalytics.avgSessionDuration,
+        loadTimeMs: pageAnalytics.loadTimeMs,
+        contentInjected: pageAnalytics.contentInjected,
+        contentTypesInjected: pageAnalytics.contentTypesInjected,
+        visitDate: pageAnalytics.visitDate
       })
       .from(pageAnalytics)
       .where(and(
         eq(pageAnalytics.siteId, siteId),
-        sql`${pageAnalytics.timestamp} >= ${startDate}`
-      ))
-      .groupBy(pageAnalytics.device, pageAnalytics.browser, pageAnalytics.country);
+        sql`${pageAnalytics.createdAt} >= ${startDate}`
+      ));
 
-    // Process data into the expected format
+    // Since demographics fields don't exist in current schema, return empty demographics
     const devices: Record<string, number> = {};
     const browsers: Record<string, number> = {};
     const countries: Record<string, number> = {};
-
-    demographicsData.forEach(row => {
-      if (row.device) devices[row.device] = (devices[row.device] || 0) + row.views;
-      if (row.browser) browsers[row.browser] = (browsers[row.browser] || 0) + row.views;
-      if (row.country) countries[row.country] = (countries[row.country] || 0) + row.views;
-    });
 
     this.sendSuccess(res, {
       devices,
@@ -1021,44 +1040,47 @@ export class SitesController extends BaseController {
     const daysBack = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90;
     const startDate = new Date(now.getTime() - (daysBack * 24 * 60 * 60 * 1000));
 
-    // Get top pages by views
+    // Get top pages by views (using available fields)
     const topPages = await db
       .select({
         pageUrl: pageAnalytics.pageUrl,
-        views: sql<number>`count(*)`,
-        avgTimeOnPage: sql<number>`avg(${pageAnalytics.timeOnPage})`,
-        bounceRate: sql<number>`avg(case when ${pageAnalytics.timeOnPage} < 30 then 1 else 0 end) * 100`
+        pageViews: pageAnalytics.pageViews,
+        uniqueVisitors: pageAnalytics.uniqueVisitors,
+        bounceRate: pageAnalytics.bounceRate,
+        avgSessionDuration: pageAnalytics.avgSessionDuration,
+        loadTimeMs: pageAnalytics.loadTimeMs
       })
       .from(pageAnalytics)
       .where(and(
         eq(pageAnalytics.siteId, siteId),
-        sql`${pageAnalytics.timestamp} >= ${startDate}`
+        sql`${pageAnalytics.createdAt} >= ${startDate}`
       ))
-      .groupBy(pageAnalytics.pageUrl)
-      .orderBy(sql`count(*) desc`)
+      .orderBy(desc(pageAnalytics.pageViews))
       .limit(10);
 
-    // Get overall performance metrics
+    // Get overall performance metrics (using available fields)
     const performanceMetrics = await db
       .select({
-        totalViews: sql<number>`count(*)`,
-        avgTimeOnPage: sql<number>`avg(${pageAnalytics.timeOnPage})`,
-        bounceRate: sql<number>`avg(case when ${pageAnalytics.timeOnPage} < 30 then 1 else 0 end) * 100`,
-        uniqueVisitors: sql<number>`count(distinct ${pageAnalytics.anonymousUserId})`
+        totalViews: sql<number>`sum(${pageAnalytics.pageViews})`,
+        totalUniqueVisitors: sql<number>`sum(${pageAnalytics.uniqueVisitors})`,
+        avgBounceRate: sql<number>`avg(${pageAnalytics.bounceRate})`,
+        avgSessionDuration: sql<number>`avg(${pageAnalytics.avgSessionDuration})`,
+        avgLoadTime: sql<number>`avg(${pageAnalytics.loadTimeMs})`
       })
       .from(pageAnalytics)
       .where(and(
         eq(pageAnalytics.siteId, siteId),
-        sql`${pageAnalytics.timestamp} >= ${startDate}`
+        sql`${pageAnalytics.createdAt} >= ${startDate}`
       ));
 
     this.sendSuccess(res, {
       topPages,
       performanceMetrics: performanceMetrics[0] || {
         totalViews: 0,
-        avgTimeOnPage: 0,
-        bounceRate: 0,
-        uniqueVisitors: 0
+        totalUniqueVisitors: 0,
+        avgBounceRate: 0,
+        avgSessionDuration: 0,
+        avgLoadTime: 0
       },
       timeRange
     });

@@ -125,6 +125,7 @@ export default function SiteDetailsPage() {
           getSiteDetails(token, siteId),
           getPages(token, siteId),
         ]);
+        console.log('Site data received:', siteData);
         setSite(siteData);
         setPages(pagesData);
       } catch (err: unknown) {
