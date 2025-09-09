@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { 
@@ -19,11 +20,19 @@ import { generateSectionContent, savePageContent, updateSectionRating } from "@/
 import { cn } from "@/lib/utils";
 
 // Types
+interface Recommendation {
+  title: string;
+  priority: string;
+  description: string;
+  expectedImpact: number;
+  implementation: string;
+}
+
 interface SectionImprovementModalProps {
   isOpen: boolean;
   pageId: string;
   sectionType: string;
-  recommendations: string[];
+  recommendations: Recommendation[];
   currentScore: number;
   onClose: () => void;
   onContentGenerated: (content: string, newScore: number) => void;
@@ -31,20 +40,11 @@ interface SectionImprovementModalProps {
 
 // Component for modal improvements - validation removed per user request
 
-const calculateScoreImprovement = (recommendations: string[], currentScore: number): number => {
+const calculateScoreImprovement = (recommendations: Recommendation[], currentScore: number): number => {
   let improvement = 0;
   
   for (const rec of recommendations) {
-    const lowerRec = rec.toLowerCase();
-    if (lowerRec.includes('primary keywords') || lowerRec.includes('compelling') || lowerRec.includes('action-oriented')) {
-      improvement += 2.5;
-    } else if (lowerRec.includes('length') || lowerRec.includes('emotional') || lowerRec.includes('power words') || lowerRec.includes('click-worthy')) {
-      improvement += 2.0;
-    } else if (lowerRec.includes('brand name') || lowerRec.includes('serp display') || lowerRec.includes('benefit-focused')) {
-      improvement += 1.5;
-    } else {
-      improvement += 1.0;
-    }
+    improvement += rec.expectedImpact;
   }
   
   // Simple improvement calculation - ensure minimum improvement and cap at 10
@@ -71,7 +71,7 @@ export default function SectionImprovementModal({
   const [currentStep, setCurrentStep] = useState(1);
   const [generating, setGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string>("");
-  const [selectedRecommendations, setSelectedRecommendations] = useState<string[]>([]);
+  const [selectedRecommendations, setSelectedRecommendations] = useState<Recommendation[]>([]);
   const [estimatedNewScore, setEstimatedNewScore] = useState<number>(currentScore);
   
   // Additional AI generation details
@@ -171,7 +171,9 @@ export default function SectionImprovementModal({
         token,
         pageId,
         sectionType,
-        selectedRecommendations
+        selectedRecommendations.map(rec => rec.title),
+        undefined, // currentContent
+        undefined  // additionalContext
       );
 
       // Handle the actual API response structure
@@ -283,14 +285,14 @@ export default function SectionImprovementModal({
                     key={index}
                     className={cn(
                       "p-4 border rounded-lg cursor-pointer transition-all",
-                      selectedRecommendations.includes(rec)
+                      selectedRecommendations.some(r => r.title === rec.title)
                         ? "border-blue-500 bg-blue-50"
                         : "border-gray-200 hover:border-gray-300"
                     )}
                     onClick={() => {
                       setSelectedRecommendations(prev =>
-                        prev.includes(rec)
-                          ? prev.filter(r => r !== rec)
+                        prev.some(r => r.title === rec.title)
+                          ? prev.filter(r => r.title !== rec.title)
                           : [...prev, rec]
                       );
                     }}
@@ -298,15 +300,29 @@ export default function SectionImprovementModal({
                     <div className="flex items-start space-x-3">
                       <div className={cn(
                         "w-4 h-4 border-2 rounded mt-0.5",
-                        selectedRecommendations.includes(rec)
+                        selectedRecommendations.some(r => r.title === rec.title)
                           ? "bg-blue-500 border-blue-500"
                           : "border-gray-300"
                       )}>
-                        {selectedRecommendations.includes(rec) && (
+                        {selectedRecommendations.some(r => r.title === rec.title) && (
                           <CheckCircle className="h-3 w-3 text-white" />
                         )}
                       </div>
-                      <p className="text-sm">{rec}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-medium text-sm">{rec.title}</h4>
+                          <Badge 
+                            variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'secondary' : 'outline'}
+                            className="text-xs"
+                          >
+                            {rec.priority}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">{rec.description}</p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          Expected Impact: +{rec.expectedImpact} points
+                        </p>
+                      </div>
                     </div>
                   </div>
                 ))}

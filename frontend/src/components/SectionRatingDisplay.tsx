@@ -27,14 +27,22 @@ interface SectionRating {
   links: number;
 }
 
+interface Recommendation {
+  title: string;
+  priority: string;
+  description: string;
+  expectedImpact: number;
+  implementation: string;
+}
+
 interface SectionRecommendations {
-  title: string[];
-  description: string[];
-  headings: string[];
-  content: string[];
-  schema: string[];
-  images: string[];
-  links: string[];
+  title: Recommendation[];
+  description: Recommendation[];
+  headings: Recommendation[];
+  content: Recommendation[];
+  schema: Recommendation[];
+  images: Recommendation[];
+  links: Recommendation[];
 }
 
 interface SectionRatingDisplayProps {
@@ -42,7 +50,7 @@ interface SectionRatingDisplayProps {
   sectionRatings?: SectionRating;
   sectionRecommendations?: SectionRecommendations;
   overallScore?: number; // Add overall score from API
-  onImproveSection: (sectionType: string, recommendations: string[]) => void;
+  onImproveSection: (sectionType: string, recommendations: Recommendation[]) => void;
 }
 
 const sectionConfig = {
@@ -183,7 +191,7 @@ export default function SectionRatingDisplay({
           const score = currentRatings[sectionType as keyof SectionRating];
           const recommendations = sectionRecommendations?.[sectionType as keyof SectionRecommendations] || [];
           const hasRecommendations = recommendations.length > 0;
-
+          console.log({sectionType, config, recommendations, sectionRecommendations})
           return (
             <Card key={sectionType} id={`${sectionType}-section`} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
@@ -217,11 +225,23 @@ export default function SectionRatingDisplay({
                       <p className="text-sm font-medium text-muted-foreground">
                         AI Recommendations ({recommendations.length})
                       </p>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {recommendations.slice(0, 2).map((rec, index) => (
-                          <p key={index} className="text-xs text-muted-foreground line-clamp-2">
-                            • {rec}
-                          </p>
+                          <div key={index} className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-medium">{rec.title}</span>
+                              <Badge 
+                                variant={rec.priority === 'high' ? 'destructive' : rec.priority === 'medium' ? 'secondary' : 'outline'}
+                                className="text-xs"
+                              >
+                                {rec.priority}
+                              </Badge>
+                            </div>
+                            <p className="text-muted-foreground mb-1">{rec.description}</p>
+                            <p className="text-xs text-blue-600 dark:text-blue-400">
+                              Impact: +{rec.expectedImpact} points
+                            </p>
+                          </div>
                         ))}
                         {recommendations.length > 2 && (
                           <p className="text-xs text-muted-foreground">

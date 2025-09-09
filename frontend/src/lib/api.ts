@@ -58,6 +58,14 @@ export function calculateOverallScore(page: Page): number {
   return page.llmReadinessScore || 0;
 }
 
+export interface Recommendation {
+  title: string;
+  priority: string;
+  description: string;
+  expectedImpact: number;
+  implementation: string;
+}
+
 export interface AnalysisResult {
   id: string;
   pageId: string;
@@ -78,13 +86,13 @@ export interface AnalysisResult {
   };
   // New section-specific recommendations
   sectionRecommendations?: {
-    title: string[];
-    description: string[];
-    headings: string[];
-    content: string[];
-    schema: string[];
-    images: string[];
-    links: string[];
+    title: Recommendation[];
+    description: Recommendation[];
+    headings: Recommendation[];
+    content: Recommendation[];
+    schema: Recommendation[];
+    images: Recommendation[];
+    links: Recommendation[];
   };
 }
 
@@ -1046,13 +1054,13 @@ export async function getSectionRatings(token: string, pageId: string): Promise<
     links: number;
   };
   sectionRecommendations: {
-    title: string[];
-    description: string[];
-    headings: string[];
-    content: string[];
-    schema: string[];
-    images: string[];
-    links: string[];
+    title: Recommendation[];
+    description: Recommendation[];
+    headings: Recommendation[];
+    content: Recommendation[];
+    schema: Recommendation[];
+    images: Recommendation[];
+    links: Recommendation[];
   };
 }> {
   const response = await fetch(`${API_BASE}/pages/${pageId}/section-ratings`, {
