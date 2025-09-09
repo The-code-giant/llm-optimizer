@@ -59,7 +59,7 @@ export default function GettingStartedChecklist({
             {/* Install tracker script */}
             <div 
               className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
-              onClick={!site?.trackerId ? onShowTrackerScript : undefined}
+              onClick={onShowTrackerScript}
             >
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded bg-blue-500 flex items-center justify-center">

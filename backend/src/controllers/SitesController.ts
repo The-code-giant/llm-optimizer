@@ -59,6 +59,147 @@ export class SitesController extends BaseController {
       settings: {}
     }).returning();
 
+    // Automatically create a page for the main URL and run analysis
+    try {
+      console.log(`🔍 Creating initial page for site: ${newSite.id} - URL: ${url}`);
+      
+      // Create new page for the main URL
+      const [newPage] = await db
+        .insert(pages)
+        .values({
+          siteId: newSite.id,
+          url: url,
+          title: name, // Use site name as initial title
+          pageScore: 0, // Initial score
+          llmReadinessScore: 0, // Initial score
+        })
+        .returning();
+
+      console.log(`📄 Created page ${newPage.id} for site ${newSite.id}`);
+
+      // Perform synchronous analysis for the main page
+      try {
+        console.log(`🔍 Starting synchronous analysis for main page: ${newPage.id}`);
+        
+        // Import AnalysisService dynamically to avoid circular dependencies
+        const { AnalysisService } = await import('../utils/analysisService');
+        
+        // Import additional services for comprehensive analysis
+        const { EnhancedRatingService } = await import('../utils/enhancedRatingService');
+        const { ScoreUpdateService } = await import('../services/scoreUpdateService');
+        
+        // Perform the actual analysis
+        const analysisResult = await AnalysisService.analyzePage({
+          url: url
+        }) as any;
+
+        // Calculate section-based score if section ratings are available
+        let finalScore = analysisResult.score;
+        if (analysisResult.sectionRatings) {
+          const sectionBasedScore = EnhancedRatingService.calculateTotalScore(analysisResult.sectionRatings);
+          console.log(`📊 Section-based score: ${sectionBasedScore}% (from 7 sections), AI analysis score: ${analysisResult.score}%`);
+          finalScore = sectionBasedScore;
+        }
+
+        // Update the page with analysis results
+        await db.update(pages)
+          .set({ 
+            contentSnapshot: JSON.stringify(analysisResult.content),
+            title: analysisResult.content.title || newPage.title,
+            llmReadinessScore: finalScore,
+            pageScore: finalScore,
+            lastScoreUpdate: new Date(),
+            lastAnalysisAt: new Date(),
+            lastScannedAt: new Date()
+          })
+          .where(eq(pages.id, newPage.id));
+
+        // Update site metrics
+        console.log(`🔄 Updating site metrics after page analysis...`);
+        await ScoreUpdateService.updateSiteMetrics(newSite.id);
+
+        // Store analysis results in database
+        let analysisResultId: string;
+        try {
+          const [analysisRecord] = await db.insert(contentAnalysis).values({
+            pageId: newPage.id,
+            overallScore: finalScore,
+            llmModelUsed: 'gpt-4',
+            pageSummary: analysisResult.pageSummary || '',
+            analysisSummary: analysisResult.summary || '',
+            contentClarity: analysisResult.contentQuality?.clarity || 0,
+            contentStructure: analysisResult.contentQuality?.structure || 0,
+            contentCompleteness: analysisResult.contentQuality?.completeness || 0,
+            titleOptimization: analysisResult.technicalSEO?.titleOptimization || 0,
+            metaDescription: analysisResult.technicalSEO?.metaDescription || 0,
+            headingStructure: analysisResult.technicalSEO?.headingStructure || 0,
+            schemaMarkup: analysisResult.technicalSEO?.schemaMarkup || 0,
+            primaryKeywords: analysisResult.keywordAnalysis?.primaryKeywords || [],
+            longTailKeywords: analysisResult.keywordAnalysis?.longTailKeywords || [],
+            keywordDensity: analysisResult.keywordAnalysis?.keywordDensity || 0,
+            semanticKeywords: analysisResult.keywordAnalysis?.semanticKeywords || [],
+            definitionsPresent: analysisResult.llmOptimization?.definitionsPresent ? 1 : 0,
+            faqsPresent: analysisResult.llmOptimization?.faqsPresent ? 1 : 0,
+            structuredData: analysisResult.llmOptimization?.structuredData ? 1 : 0,
+            citationFriendly: analysisResult.llmOptimization?.citationFriendly ? 1 : 0,
+            topicCoverage: analysisResult.llmOptimization?.topicCoverage || 0,
+            answerableQuestions: analysisResult.llmOptimization?.answerableQuestions || 0
+          }).returning();
+          
+          analysisResultId = analysisRecord.id;
+          console.log(`💾 Analysis results saved with ID: ${analysisResultId}`);
+        } catch (dbError) {
+          console.error('❌ Failed to save analysis results:', dbError);
+          throw dbError;
+        }
+
+        // Generate AI recommendations
+        console.log('🚀 Starting AI recommendation generation...');
+        try {
+          console.log('🤖 Starting AI recommendation generation...');
+          console.log('📄 Page content for AI analysis:', {
+            url: analysisResult.content.url,
+            title: analysisResult.content.title,
+            titleLength: analysisResult.content.title?.length || 0,
+            metaDescription: analysisResult.content.metaDescription?.substring(0, 100) + '...',
+            metaLength: analysisResult.content.metaDescription?.length || 0,
+            contentLength: analysisResult.content.bodyText?.length || 0,
+            headings: analysisResult.content.headings?.length || 0,
+            keywords: analysisResult.keywordAnalysis?.primaryKeywords || []
+          });
+          
+          console.log('🔧 Calling AnalysisService.generateAIRecommendations...');
+          const aiRecommendations = await AnalysisService.generateAIRecommendations(
+            analysisResult.content,
+            analysisResult,
+            analysisResult.pageSummary || ''
+          );
+
+          console.log('💾 Saving AI recommendations to database...');
+          // Save AI recommendations to database
+          await AnalysisService.saveAIRecommendations(newPage.id, analysisResultId, aiRecommendations);
+          console.log(`🤖 Generated and saved AI recommendations for page ${newPage.id}`);
+          console.log('✅ AI recommendations saved successfully');
+        } catch (aiError) {
+          console.error('❌ AI recommendation generation failed:', aiError);
+          console.error('❌ Error stack:', aiError instanceof Error ? aiError.stack : 'No stack trace');
+          // Don't fail the analysis if AI recommendations fail
+        }
+
+        console.log(`✅ Comprehensive analysis completed for main page ${newPage.id} - Score: ${finalScore}/100`);
+        
+      } catch (error) {
+        console.error('Failed to analyze main page synchronously:', error);
+        // Don't fail the site creation if analysis fails
+        console.log(`⚠️ Site ${newSite.id} created and page ${newPage.id} created but analysis failed - user can retry later`);
+      }
+
+    } catch (error) {
+      console.error('Failed to create initial page for site:', error);
+      // Don't fail the site creation if page creation fails
+      console.log(`⚠️ Site ${newSite.id} created but initial page creation failed - user can add pages manually`);
+    }
+
     this.sendSuccess(res, newSite, 'Site created successfully', 201);
   });
 
