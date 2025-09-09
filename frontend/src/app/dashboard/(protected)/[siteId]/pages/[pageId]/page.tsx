@@ -1455,6 +1455,16 @@ export default function PageAnalysisPage() {
                                     // Fallback: refresh all data
                                     await fetchData();
                                   }
+
+                                  // Also refresh analysis data to get updated overall score
+                                  try {
+                                    const updatedAnalysis = await getPageAnalysis(token, pageId);
+                                    setAnalysis(updatedAnalysis);
+                                  } catch (error) {
+                                    console.error('Failed to refresh analysis:', error);
+                                    // Fallback: refresh all data
+                                    await fetchData();
+                                  }
                                   
                                   setImprovementModal(null);
                                 } catch (error) {

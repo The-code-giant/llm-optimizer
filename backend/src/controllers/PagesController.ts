@@ -684,6 +684,11 @@ export class PagesController extends BaseController {
       // Note: Deployment record is already created by savePageContent endpoint
       // This endpoint only handles rating updates
 
+      // Update page and site scores based on new section ratings
+      const { ScoreUpdateService } = await import('../services/scoreUpdateService');
+      await ScoreUpdateService.updatePageScore(pageId);
+      console.log(`🔄 Updated page and site scores after ${sectionType} improvement`);
+
       this.sendSuccess(res, {
         message: 'Section rating updated successfully',
         sectionType,
