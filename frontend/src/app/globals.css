@@ -119,11 +119,14 @@
     @apply border-border outline-ring/50;
   }
   
+<<<<<<< HEAD
   /* Ensure modal backgrounds work properly */
   .bg-background {
     background-color: var(--background) !important;
   }
   
+=======
+>>>>>>> 5b9d2a0fc794f3939b69a445c61b6cf70b248eb2
   /* Prevent flash of white content */
   html {
     background-color: white !important;
