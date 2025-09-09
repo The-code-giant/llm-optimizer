@@ -294,7 +294,15 @@ export async function addSite(
     },
     body: JSON.stringify({ name, url }),
   });
-  return handleResponse(res);
+  const response = await handleResponse(res);
+  
+  // Handle new structured response format
+  if (response.success && response.data) {
+    return response.data;
+  }
+  
+  // Fallback for direct response format (if any legacy endpoints still exist)
+  return response;
 }
 
 export async function getSiteDetails(

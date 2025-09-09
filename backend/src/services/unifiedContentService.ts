@@ -309,39 +309,36 @@ export class UnifiedContentService {
    * Get site content statistics
    */
   static async getSiteContentStats(siteId: string) {
-    // Get total content count
-    const totalContentResult = await db.select({ count: db.$count(pageContent.id) })
-      .from(pageContent)
-      .leftJoin(pages, eq(pageContent.pageId, pages.id))
-      .where(eq(pages.siteId, siteId));
-    
-    // Get total deployments count
+    // Get total deployments count (pageContent table no longer exists)
     const totalDeploymentsResult = await db.select({ count: db.$count(contentDeployments.id) })
       .from(contentDeployments)
       .leftJoin(pages, eq(contentDeployments.pageId, pages.id))
       .where(eq(pages.siteId, siteId));
     
-    // Get average score improvement (simplified for now)
+    // Get total suggestions count
+    const totalSuggestionsResult = await db.select({ count: db.$count(contentSuggestions.id) })
+      .from(contentSuggestions)
+      .leftJoin(pages, eq(contentSuggestions.pageId, pages.id))
+      .where(eq(pages.siteId, siteId));
     
     const stats = {
-      totalContent: totalContentResult[0]?.count || 0,
-      activeContent: totalContentResult[0]?.count || 0, // Same as total for now
+      totalContent: 0, // pageContent table no longer exists
+      activeContent: 0, // pageContent table no longer exists
       totalDeployments: totalDeploymentsResult[0]?.count || 0,
-      avgScoreImprovement: 0 // Simplified for now
+      totalSuggestions: totalSuggestionsResult[0]?.count || 0,
+      averageScoreImprovement: 0 // Would need to calculate from contentDeployments
     };
 
     return stats;
   }
 
   /**
-   * Archive content (set as inactive)
+   * Archive content (set as inactive) - pageContent table no longer exists
+   * This method is deprecated and should not be used
    */
   static async archiveContent(contentId: string): Promise<void> {
-    await db.update(pageContent)
-      .set({
-        isActive: 0,
-        updatedAt: new Date()
-      })
-      .where(eq(pageContent.id, contentId));
+    // pageContent table no longer exists - this method is deprecated
+    console.warn('archiveContent method called but pageContent table no longer exists');
+    return Promise.resolve();
   }
 }

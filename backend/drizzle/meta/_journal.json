@@ -141,6 +141,13 @@
       "when": 1757053466276,
       "tag": "0019_powerful_tempest",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1757440589781,
+      "tag": "0020_far_gateway",
+      "breakpoints": true
     }
   ]
 }
