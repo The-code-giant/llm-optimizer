@@ -147,6 +147,19 @@ if (sentryInitialized) {
 // Prometheus metrics middleware
 app.use(metricsMiddleware);
 
+// DNS scanning detection middleware
+app.use((req, res, next) => {
+  const hasDnsParams = req.query.dns || req.query.name || req.query.type;
+  const isDnsScanning = req.path.includes('resolve') || req.path.includes('dns-query') || req.path.includes('query');
+  
+  if (hasDnsParams || isDnsScanning) {
+    console.log(`🚨 DNS scanning attempt detected: ${req.method} ${req.originalUrl} from ${req.ip}`);
+    // You could add IP blocking logic here if needed
+  }
+  
+  next();
+});
+
 // General rate limiting for all requests
 app.use(generalRateLimit);
 
@@ -203,6 +216,13 @@ app.use(express.urlencoded({ extended: false, limit: "200kb" }));
 
 // Minimal root endpoint to reduce noisy 404 scans
 app.get("/", (_req, res) => {
+  // Check if this looks like a DNS query attempt
+  const hasDnsParams = _req.query.dns || _req.query.name || _req.query.type;
+  if (hasDnsParams) {
+    // Return 404 for DNS query attempts to discourage scanning
+    res.status(404).json({ message: "Not Found" });
+    return;
+  }
   res.status(200).send("Cleversearch backend is running");
 });
 
