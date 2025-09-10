@@ -101,12 +101,15 @@ export class TrackerController extends BaseController {
     const { pageUrl } = queryValidation.data!;
 
     try {
-      // Try Redis cache first for performance
-      const cachedContent = await cache.getTrackerContent(trackerId, pageUrl);
-      if (cachedContent) {
-        res.status(200).json(cachedContent);
-        return;
-      }
+      console.log(`🔍 Tracker content request: trackerId=${trackerId}, pageUrl=${pageUrl}`);
+      
+      // Skip cache for debugging
+      // const cachedContent = await cache.getTrackerContent(trackerId, pageUrl);
+      // if (cachedContent) {
+      //   console.log(`📦 Returning cached content: ${cachedContent.length} items`);
+      //   res.status(200).json(cachedContent);
+      //   return;
+      // }
 
       // Find site by trackerId
       const siteArr = await db
@@ -117,27 +120,62 @@ export class TrackerController extends BaseController {
 
       const site = siteArr[0];
       if (!site) {
+        console.log(`❌ Site not found for trackerId: ${trackerId}`);
         const emptyResponse: any[] = [];
         await cache.setTrackerContent(trackerId, pageUrl, emptyResponse);
         res.status(200).json(emptyResponse);
         return;
       }
 
-      // Find the page for this site and URL
-      const pageArr = await db
+      console.log(`✅ Found site: ${site.name} (${site.id})`);
+
+      // Find the page for this site and URL (handle trailing slash variations)
+      let pageArr = await db
         .select()
         .from(pages)
         .where(and(eq(pages.siteId, site.id), eq(pages.url, pageUrl)))
         .limit(1);
 
-      const page = pageArr[0];
+      let page = pageArr[0];
+      
+      // If not found, try without trailing slash
+      if (!page && pageUrl.endsWith('/')) {
+        const urlWithoutSlash = pageUrl.slice(0, -1);
+        pageArr = await db
+          .select()
+          .from(pages)
+          .where(and(eq(pages.siteId, site.id), eq(pages.url, urlWithoutSlash)))
+          .limit(1);
+        page = pageArr[0];
+        console.log(`🔄 Trying without trailing slash: ${urlWithoutSlash}`);
+      }
+      
+      // If still not found, try with trailing slash
+      if (!page && !pageUrl.endsWith('/')) {
+        const urlWithSlash = pageUrl + '/';
+        pageArr = await db
+          .select()
+          .from(pages)
+          .where(and(eq(pages.siteId, site.id), eq(pages.url, urlWithSlash)))
+          .limit(1);
+        page = pageArr[0];
+        console.log(`🔄 Trying with trailing slash: ${urlWithSlash}`);
+      }
+
       if (!page) {
+        console.log(`❌ Page not found for URL: ${pageUrl} in site: ${site.id}`);
+        // Let's also check all pages for this site to see what URLs exist
+        const allPages = await db.select().from(pages).where(eq(pages.siteId, site.id));
+        console.log(`📄 Available pages for this site:`, allPages.map(p => p.url));
+        
         const emptyResponse: any[] = [];
         // Cache empty response for 1 minute to reduce DB load
         await cache.setTrackerContent(trackerId, pageUrl, emptyResponse);
         res.status(200).json(emptyResponse);
         return;
       }
+
+      console.log(`✅ Found page: ${page.url} (${page.id})`);
 
       // Find active deployed content for this page
       const content = await db
@@ -149,9 +187,15 @@ export class TrackerController extends BaseController {
         .from(contentDeployments)
         .where(eq(contentDeployments.pageId, page.id));
 
+      console.log(`📝 Found ${content.length} content deployments for page ${page.id}`);
+      content.forEach((item, index) => {
+        console.log(`  ${index + 1}. ${item.type}: ${item.content.substring(0, 50)}...`);
+      });
+
       // Cache the response for 5 minutes
       await cache.setTrackerContent(trackerId, pageUrl, content);
       
+      console.log(`✅ Returning ${content.length} content items`);
       res.status(200).json(content);
     } catch (error) {
       console.error('Error retrieving tracker content:', error);

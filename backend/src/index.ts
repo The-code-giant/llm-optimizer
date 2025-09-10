@@ -289,7 +289,7 @@ app.use("/api/v1/users", dashboardRateLimit, usersRouter);
 app.use("/api/v1/billing", dashboardRateLimit, billingRouter);
 app.use("/api/v1/tools", generalRateLimit, toolsRouter);
 app.use("/api/v1/leads", generalRateLimit, leadsRouter);
-app.use("/api/v1", trackerRouter);
+app.use("/api/v1/tracker", trackerRouter);
 app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
 
 // Use refactored error handling middleware

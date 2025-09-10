@@ -1,6 +1,12 @@
 (function() {
   'use strict';
   
+  // Prevent multiple script executions
+  if (window.cleversearchTrackerLoaded) {
+    return;
+  }
+  window.cleversearchTrackerLoaded = true;
+  
   // Get configuration from the script tag's data-config attribute
   let configData = {};
   try {
@@ -40,10 +46,7 @@
     SITE_ID: configData.SITE_ID || '{{SITE_ID}}',
     VERSION: configData.VERSION || '1.0.0',
     RETRY_ATTEMPTS: configData.RETRY_ATTEMPTS || 3,
-    TIMEOUT: configData.TIMEOUT || 2000, // Reduced from 5000ms to 2000ms
-    UPDATE_INTERVAL: configData.UPDATE_INTERVAL || 500, // Reduced from 3000ms to 500ms
-    MAX_INTERVAL_DURATION: configData.MAX_INTERVAL_DURATION || 60000, // Increased to 60 seconds
-    FAST_MODE: configData.FAST_MODE !== false, // Enable fast mode by default
+    TIMEOUT: configData.TIMEOUT || 2000,
     DEBUG_MODE: configData.DEBUG_MODE || urlParams.has('clever-search-debug'),
     OVERRIDE_URL: configData.OVERRIDE_URL || window.LLM_OVERRIDE_URL || null, // URL override for testing
     API_ENDPOINTS: {
@@ -63,10 +66,7 @@
     }
   };
 
-  // Fast mode optimizations
-  if (CONFIG.FAST_MODE) {
-    consolePrint('🚀 Fast mode enabled - optimized for development', true);
-  }
+  // Simplified tracker - no intervals or fast mode
 
   // Counters for diagnostics
   let injectionCounts = {
@@ -77,8 +77,7 @@
     keywords: 0
   };
 
-  // Interval ID for cleanup
-  let updateIntervalId = null;
+  // Removed interval tracking - no longer needed
 
   // Main tracker class
   class LLMOptimizerTracker {
@@ -90,7 +89,12 @@
       this.isNextJS = isNextJS();
       this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
       this.cachedContent = null; // Cache content to avoid duplicate API calls
-      
+      this.isLoadingContent = false; // Prevent concurrent content loading
+      this.lastContentLoadTime = 0; // Track last content load to prevent rapid successive calls
+      this.eventsSent = new Set(); // Track sent events to prevent duplicates
+      this.lastEventTime = 0; // Track last event time for rate limiting
+      this.pageViewTracked = false; // Track if page view has been sent
+       
       if (CONFIG.OVERRIDE_URL) {
         consolePrint(`🔄 URL Override: Using ${CONFIG.OVERRIDE_URL} instead of ${window.location.href}`, true);
       }
@@ -154,12 +158,6 @@
       try {
         // Clean up previous content
         this.removePreviousContent();
-        
-        // Clear existing interval
-        if (updateIntervalId) {
-          clearInterval(updateIntervalId);
-          updateIntervalId = null;
-        }
 
         // Update current URL (respect override if set)
         this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
@@ -214,29 +212,35 @@
         return;
       }
 
+      // Prevent concurrent loading and rate limit calls
+      if (this.isLoadingContent) {
+        consolePrint('Content loading already in progress, skipping...');
+        return;
+      }
+
+      const now = Date.now();
+      if (now - this.lastContentLoadTime < 2000) { // Minimum 2 seconds between calls
+        consolePrint('Rate limiting: Too soon since last content load, skipping...');
+        return;
+      }
+
       const url = this.currentUrl;
       
       try {
+        this.isLoadingContent = true;
+        this.lastContentLoadTime = now;
         consolePrint('Early content loading for SEO...');
+        consolePrint(`Making API call to: /api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, true);
         
         // Make API call and cache the result
-        const response = await this.apiCall(CONFIG.API_ENDPOINTS.CONTENT, {
-          url: url,
-          siteId: CONFIG.SITE_ID,
-          userAgent: navigator.userAgent,
-          referrer: document.referrer,
-          sessionId: this.sessionId,
-          timestamp: new Date().toISOString(),
-          isNextJS: this.isNextJS,
-          priority: 'seo_critical' // Flag for server to prioritize title/meta
-        });
+        const response = await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, null, 'GET');
 
-        if (response.success && response.content && response.content.length > 0) {
+        if (response && Array.isArray(response) && response.length > 0) {
           // Cache the content for later use
-          this.cachedContent = response.content;
+          this.cachedContent = response;
           
           // Inject only SEO-critical content immediately
-          await this.injectSEOCriticalContent(response.content);
+          await this.injectSEOCriticalContent(response);
         }
       } catch (error) {
         if (error.message.includes('HTTP 404')) {
@@ -244,6 +248,8 @@
         } else {
           console.warn('Cleversearch: Failed to load early content:', error.message);
         }
+      } finally {
+        this.isLoadingContent = false;
       }
     }
 
@@ -255,15 +261,15 @@
           // Only inject title, description, and keywords early
           switch (item.type) {
             case 'title':
-              this.injectTitle(item.data);
+              this.injectTitle({ optimized: item.content });
               consolePrint('Early title injection completed');
               break;
             case 'description':
-              this.injectMetaDescription(item.data);
+              this.injectMetaDescription({ optimized: item.content });
               consolePrint('Early meta description injection completed');
               break;
             case 'keywords':
-              this.injectKeywords(item.data);
+              this.injectKeywords({ keywords: item.content });
               consolePrint('Early keywords injection completed');
               break;
             // Skip FAQ and paragraph content for early injection
@@ -285,21 +291,22 @@
         
         // If no cached content, fetch it (fallback case)
         if (!contentItems) {
+          // Check rate limiting
+          const now = Date.now();
+          if (now - this.lastContentLoadTime < 2000) {
+            consolePrint('Rate limiting: Too soon since last content load, using cached content');
+            return;
+          }
+
           consolePrint('No cached content - fetching from server');
           const url = this.currentUrl;
+          consolePrint(`Making API call to: /api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, true);
           
-          const response = await this.apiCall(CONFIG.API_ENDPOINTS.CONTENT, {
-            url: url,
-            siteId: CONFIG.SITE_ID,
-            userAgent: navigator.userAgent,
-            referrer: document.referrer,
-            sessionId: this.sessionId,
-            timestamp: new Date().toISOString(),
-            isNextJS: this.isNextJS
-          });
+          this.lastContentLoadTime = now;
+          const response = await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, null, 'GET');
 
-          if (response.success && response.content && response.content.length > 0) {
-            contentItems = response.content;
+          if (response && Array.isArray(response) && response.length > 0) {
+            contentItems = response;
             this.cachedContent = contentItems; // Cache for future use
           }
         } else {
@@ -308,12 +315,9 @@
 
         if (contentItems && contentItems.length > 0) {
           // Skip SEO-critical content as it was already injected early
-          await this.injectContent(contentItems, false, true);
+          await this.injectContent(contentItems, true);
           
-          // Set up interval updates for Next.js to handle React re-renders
-          if (this.isNextJS) {
-            this.setupIntervalUpdates(contentItems);
-          }
+          // No interval updates needed - content is injected once
         }
       } catch (error) {
         if (error.message.includes('HTTP 404')) {
@@ -324,33 +328,9 @@
       }
     }
 
-    setupIntervalUpdates(contentItems) {
-      if (updateIntervalId) {
-        clearInterval(updateIntervalId);
-      }
+    // Removed setupIntervalUpdates - no longer needed
 
-      const intervalTime = CONFIG.FAST_MODE ? CONFIG.UPDATE_INTERVAL : CONFIG.UPDATE_INTERVAL * 2;
-      consolePrint(`Setting up interval updates every ${intervalTime}ms`);
-
-      updateIntervalId = setInterval(async () => {
-        consolePrint('Interval update - re-applying existing content');
-        
-        // Always just reapply existing content - no server polling
-        // The interval is only for DOM updates, not fetching new content
-        this.injectContent(contentItems, true);
-      }, intervalTime);
-
-      // Clear interval after max duration
-      setTimeout(() => {
-        if (updateIntervalId) {
-          clearInterval(updateIntervalId);
-          updateIntervalId = null;
-          consolePrint('Interval updates stopped');
-        }
-      }, CONFIG.MAX_INTERVAL_DURATION);
-    }
-
-    async injectContent(contentItems, isIntervalUpdate = false, skipSEOCritical = false) {
+    async injectContent(contentItems, skipSEOCritical = false) {
       const injectedTypes = [];
       
       for (const item of contentItems) {
@@ -365,19 +345,19 @@
           
           switch (item.type) {
             case 'title':
-              injected = this.injectTitle(item.data);
+              injected = this.injectTitle({ optimized: item.content });
               break;
             case 'description':
-              injected = this.injectMetaDescription(item.data);
+              injected = this.injectMetaDescription({ optimized: item.content });
               break;
             case 'keywords':
-              injected = this.injectKeywords(item.data);
+              injected = this.injectKeywords({ keywords: item.content });
               break;
             case 'faq':
-              injected = this.injectFAQ(item.data);
+              injected = this.injectFAQ(JSON.parse(item.content));
               break;
             case 'paragraph':
-              injected = this.injectParagraph(item.data);
+              injected = this.injectParagraph({ content: item.content });
               break;
             default:
               console.warn('Cleversearch: Unknown content type:', item.type);
@@ -391,7 +371,7 @@
         }
       }
 
-      if (injectedTypes.length > 0 && !isIntervalUpdate) {
+      if (injectedTypes.length > 0) {
         this.contentInjected = true;
         this.contentTypes = [...(this.contentTypes || []), ...injectedTypes];
         this.trackEvent('content_injected', { 
@@ -678,6 +658,13 @@
     }
 
     trackPageView() {
+      // Only track page view once per page load
+      if (this.pageViewTracked) {
+        consolePrint('Page view already tracked, skipping...');
+        return;
+      }
+      
+      this.pageViewTracked = true;
       const loadTime = Date.now() - this.pageLoadTime;
       
       this.trackEvent('page_view', {
@@ -705,14 +692,14 @@
         });
       });
 
-      // Track Core Web Vitals if available
-      if (typeof PerformanceObserver !== 'undefined') {
-        try {
-          this.trackWebVitals();
-        } catch (error) {
-          // Silently fail for web vitals
-        }
-      }
+      // Disable Web Vitals tracking to reduce event noise
+      // if (typeof PerformanceObserver !== 'undefined') {
+      //   try {
+      //     this.trackWebVitals();
+      //   } catch (error) {
+      //     // Silently fail for web vitals
+      //   }
+      // }
     }
 
     trackWebVitals() {
@@ -775,13 +762,34 @@
 
     async trackEvent(eventType, data = {}) {
       try {
-        await this.apiCall(CONFIG.API_ENDPOINTS.EVENT, {
-          siteId: CONFIG.SITE_ID,
+        // Rate limiting: minimum 1 second between any events
+        const now = Date.now();
+        if (now - this.lastEventTime < 1000) {
+          consolePrint(`⏱️  Rate limiting: Skipping ${eventType} event (too soon since last event)`);
+          return;
+        }
+
+        // Create unique event key to prevent duplicates
+        const eventKey = `${eventType}_${this.currentUrl}_${JSON.stringify(data)}`;
+        if (this.eventsSent.has(eventKey)) {
+          consolePrint(`🔄 Duplicate event prevented: ${eventType}`);
+          return;
+        }
+
+        // Mark this event as sent
+        this.eventsSent.add(eventKey);
+        this.lastEventTime = now;
+
+        consolePrint(`📊 Sending event: ${eventType}`);
+        
+        await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/data`, {
+          pageUrl: this.currentUrl,
           eventType,
           eventData: data,
           sessionId: this.sessionId,
-          url: this.currentUrl,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          userAgent: navigator.userAgent,
+          referrer: document.referrer
         });
       } catch (error) {
         // Silently fail for tracking to not affect user experience
@@ -802,15 +810,21 @@
       });
     }
 
-    async apiCall(endpoint, data, retries = 0) {
+    async apiCall(endpoint, data, method = 'POST', retries = 0) {
       try {
-        const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, {
-          method: 'POST',
+        const requestOptions = {
+          method: method,
           headers: {
             'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        });
+          }
+        };
+
+        // Only add body for POST requests
+        if (method === 'POST' && data) {
+          requestOptions.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, requestOptions);
 
         if (!response.ok) {
           // Don't retry on client errors (4xx) - they indicate invalid requests or missing resources
@@ -884,6 +898,12 @@
   // Initialize tracker when script loads
   // Only initialize if we're not in an iframe and we have a valid site ID
   if (window === window.top && CONFIG.SITE_ID !== '{{SITE_ID}}') {
+    // Prevent multiple tracker instances
+    if (window.llmOptimizerTracker) {
+      consolePrint('Cleversearch tracker already initialized, skipping...', true);
+      return;
+    }
+    
     try {
       window.llmOptimizerTracker = new LLMOptimizerTracker();
       
@@ -919,8 +939,6 @@
             console.log('Injection Counts:', injectionCounts);
             console.log('Site ID:', CONFIG.SITE_ID);
             console.log('Current URL:', window.location.href);
-            console.log('Fast Mode:', CONFIG.FAST_MODE);
-            console.log('Update Interval:', CONFIG.UPDATE_INTERVAL + 'ms');
             console.log('Available Commands: LLMOptimizer.refresh(), LLMOptimizer.getStats()');
             console.log('================================');
           }, 2000);
@@ -929,9 +947,6 @@
       
       // Show load message
       consolePrint('Cleversearch Tracker v' + CONFIG.VERSION + ' loaded', true);
-      if (CONFIG.FAST_MODE) {
-        consolePrint('⚡ Fast mode active - updates every ' + CONFIG.UPDATE_INTERVAL + 'ms', true);
-      }
     } catch (error) {
       if (console && console.error) {
         console.error('Cleversearch initialization failed:', error);
