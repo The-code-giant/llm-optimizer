@@ -21,7 +21,6 @@ import swaggerJSDoc from "swagger-jsdoc";
 import winston from "winston";
 import expressWinston from "express-winston";
 import * as Sentry from "@sentry/node";
-import client from "prom-client";
 import helmet from "helmet";
 import {
   metricsMiddleware,
