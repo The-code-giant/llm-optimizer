@@ -230,7 +230,7 @@ export default function TrackerAnalytics({
     );
   }
 
-  if (!analytics) {
+  if (!analytics || !analytics.overview) {
     return (
       <div className={`text-center py-8 ${className}`}>
         <p className="text-muted-foreground">No analytics data available</p>
@@ -288,41 +288,41 @@ export default function TrackerAnalytics({
             <StatCard
               icon={Eye}
               title="Total Views"
-              value={formatNumber(analytics.overview.totalViews)}
-              badge={analytics.overview.trendsPercentage.views > 0 ? `+${analytics.overview.trendsPercentage.views.toFixed(1)}%` : `${analytics.overview.trendsPercentage.views.toFixed(1)}%`}
-              trend={analytics.overview.trendsPercentage.views > 0 ? 'Trending up' : analytics.overview.trendsPercentage.views < 0 ? 'Trending down' : 'No change'}
-              trendIcon={analytics.overview.trendsPercentage.views > 0 ? TrendingUp : analytics.overview.trendsPercentage.views < 0 ? TrendingDown : undefined}
-              trendColor={analytics.overview.trendsPercentage.views > 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.views < 0 ? 'text-destructive' : 'text-muted-foreground'}
+              value={formatNumber(analytics.overview.totalViews || 0)}
+              badge={analytics.overview.trendsPercentage?.views ? (analytics.overview.trendsPercentage.views > 0 ? `+${analytics.overview.trendsPercentage.views.toFixed(1)}%` : `${analytics.overview.trendsPercentage.views.toFixed(1)}%`) : '0%'}
+              trend={analytics.overview.trendsPercentage?.views ? (analytics.overview.trendsPercentage.views > 0 ? 'Trending up' : analytics.overview.trendsPercentage.views < 0 ? 'Trending down' : 'No change') : 'No change'}
+              trendIcon={analytics.overview.trendsPercentage?.views ? (analytics.overview.trendsPercentage.views > 0 ? TrendingUp : analytics.overview.trendsPercentage.views < 0 ? TrendingDown : undefined) : undefined}
+              trendColor={analytics.overview.trendsPercentage?.views ? (analytics.overview.trendsPercentage.views > 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.views < 0 ? 'text-destructive' : 'text-muted-foreground') : 'text-muted-foreground'}
               description="Total page views for the selected period"
             />
             <StatCard
               icon={Users}
               title="Unique Visitors"
-              value={formatNumber(analytics.overview.uniqueVisitors)}
-              badge={analytics.overview.trendsPercentage.visitors > 0 ? `+${analytics.overview.trendsPercentage.visitors.toFixed(1)}%` : `${analytics.overview.trendsPercentage.visitors.toFixed(1)}%`}
-              trend={analytics.overview.trendsPercentage.visitors > 0 ? 'Trending up' : analytics.overview.trendsPercentage.visitors < 0 ? 'Trending down' : 'No change'}
-              trendIcon={analytics.overview.trendsPercentage.visitors > 0 ? TrendingUp : analytics.overview.trendsPercentage.visitors < 0 ? TrendingDown : undefined}
-              trendColor={analytics.overview.trendsPercentage.visitors > 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.visitors < 0 ? 'text-destructive' : 'text-muted-foreground'}
+              value={formatNumber(analytics.overview.uniqueVisitors || 0)}
+              badge={analytics.overview.trendsPercentage?.visitors ? (analytics.overview.trendsPercentage.visitors > 0 ? `+${analytics.overview.trendsPercentage.visitors.toFixed(1)}%` : `${analytics.overview.trendsPercentage.visitors.toFixed(1)}%`) : '0%'}
+              trend={analytics.overview.trendsPercentage?.visitors ? (analytics.overview.trendsPercentage.visitors > 0 ? 'Trending up' : analytics.overview.trendsPercentage.visitors < 0 ? 'Trending down' : 'No change') : 'No change'}
+              trendIcon={analytics.overview.trendsPercentage?.visitors ? (analytics.overview.trendsPercentage.visitors > 0 ? TrendingUp : analytics.overview.trendsPercentage.visitors < 0 ? TrendingDown : undefined) : undefined}
+              trendColor={analytics.overview.trendsPercentage?.visitors ? (analytics.overview.trendsPercentage.visitors > 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.visitors < 0 ? 'text-destructive' : 'text-muted-foreground') : 'text-muted-foreground'}
               description="Unique visitors for the selected period"
             />
             <StatCard
               icon={Clock}
               title="Avg Load Time"
-              value={`${analytics.overview.avgLoadTime}ms`}
-              badge={analytics.overview.trendsPercentage.loadTime < 0 ? `${analytics.overview.trendsPercentage.loadTime.toFixed(1)}% faster` : `${analytics.overview.trendsPercentage.loadTime.toFixed(1)}% slower`}
-              trend={analytics.overview.trendsPercentage.loadTime < 0 ? 'Improved' : analytics.overview.trendsPercentage.loadTime > 0 ? 'Slower' : 'No change'}
-              trendIcon={analytics.overview.trendsPercentage.loadTime < 0 ? TrendingUp : analytics.overview.trendsPercentage.loadTime > 0 ? TrendingDown : undefined}
-              trendColor={analytics.overview.trendsPercentage.loadTime < 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.loadTime > 0 ? 'text-destructive' : 'text-muted-foreground'}
+              value={`${analytics.overview.avgLoadTime || 0}ms`}
+              badge={analytics.overview.trendsPercentage?.loadTime ? (analytics.overview.trendsPercentage.loadTime < 0 ? `${analytics.overview.trendsPercentage.loadTime.toFixed(1)}% faster` : `${analytics.overview.trendsPercentage.loadTime.toFixed(1)}% slower`) : '0%'}
+              trend={analytics.overview.trendsPercentage?.loadTime ? (analytics.overview.trendsPercentage.loadTime < 0 ? 'Improved' : analytics.overview.trendsPercentage.loadTime > 0 ? 'Slower' : 'No change') : 'No change'}
+              trendIcon={analytics.overview.trendsPercentage?.loadTime ? (analytics.overview.trendsPercentage.loadTime < 0 ? TrendingUp : analytics.overview.trendsPercentage.loadTime > 0 ? TrendingDown : undefined) : undefined}
+              trendColor={analytics.overview.trendsPercentage?.loadTime ? (analytics.overview.trendsPercentage.loadTime < 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.loadTime > 0 ? 'text-destructive' : 'text-muted-foreground') : 'text-muted-foreground'}
               description="Average page load time (lower is better)"
             />
             <StatCard
               icon={Target}
               title="Deployments"
-              value={analytics.overview.contentDeployments}
-              badge={analytics.overview.trendsPercentage.deployments > 0 ? `+${analytics.overview.trendsPercentage.deployments.toFixed(1)}%` : `${analytics.overview.trendsPercentage.deployments.toFixed(1)}%`}
-              trend={analytics.overview.trendsPercentage.deployments > 0 ? 'More deployments' : analytics.overview.trendsPercentage.deployments < 0 ? 'Fewer deployments' : 'No change'}
-              trendIcon={analytics.overview.trendsPercentage.deployments > 0 ? TrendingUp : analytics.overview.trendsPercentage.deployments < 0 ? TrendingDown : undefined}
-              trendColor={analytics.overview.trendsPercentage.deployments > 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.deployments < 0 ? 'text-destructive' : 'text-muted-foreground'}
+              value={analytics.overview.contentDeployments || 0}
+              badge={analytics.overview.trendsPercentage?.deployments ? (analytics.overview.trendsPercentage.deployments > 0 ? `+${analytics.overview.trendsPercentage.deployments.toFixed(1)}%` : `${analytics.overview.trendsPercentage.deployments.toFixed(1)}%`) : '0%'}
+              trend={analytics.overview.trendsPercentage?.deployments ? (analytics.overview.trendsPercentage.deployments > 0 ? 'More deployments' : analytics.overview.trendsPercentage.deployments < 0 ? 'Fewer deployments' : 'No change') : 'No change'}
+              trendIcon={analytics.overview.trendsPercentage?.deployments ? (analytics.overview.trendsPercentage.deployments > 0 ? TrendingUp : analytics.overview.trendsPercentage.deployments < 0 ? TrendingDown : undefined) : undefined}
+              trendColor={analytics.overview.trendsPercentage?.deployments ? (analytics.overview.trendsPercentage.deployments > 0 ? 'text-green-600 dark:text-green-400' : analytics.overview.trendsPercentage.deployments < 0 ? 'text-destructive' : 'text-muted-foreground') : 'text-muted-foreground'}
               description="Content deployments for the selected period"
             />
           </div>

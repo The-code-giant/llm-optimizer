@@ -63,12 +63,12 @@ export const NAV_DATA = {
   ],
   documents: [
     {
-      name: "documentation",
+      name: "Documentation",
       url: "/docs",
       icon: IconDatabase,
     },
     {
-      name: "blogs",
+      name: "Blogs",
       url: "blog",
       icon: IconReport,
     },
