@@ -815,7 +815,9 @@
         const requestOptions = {
           method: method,
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Accept-Encoding': 'gzip, deflate, br'
           }
         };
 
@@ -824,7 +826,14 @@
           requestOptions.body = JSON.stringify(data);
         }
 
+        // Add performance timing
+        const startTime = performance.now();
         const response = await fetch(`${CONFIG.API_BASE}${endpoint}`, requestOptions);
+        const endTime = performance.now();
+        
+        if (CONFIG.DEBUG_MODE) {
+          consolePrint(`API call took ${Math.round(endTime - startTime)}ms`);
+        }
 
         if (!response.ok) {
           // Don't retry on client errors (4xx) - they indicate invalid requests or missing resources

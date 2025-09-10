@@ -11,6 +11,7 @@ import {
   integer,
   pgEnum,
   uniqueIndex,
+  index,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -48,6 +49,10 @@ export const sites = pgTable("sites", {
 }, (table) => ({
   // Partial unique index that only applies to non-deleted sites
   urlUnique: uniqueIndex("sites_url_unique").on(table.url).where(sql`${table.deletedAt} IS NULL`),
+  // Performance indexes for frequent queries
+  userIdIdx: index("sites_user_id_idx").on(table.userId),
+  userIdCreatedAtIdx: index("sites_user_created_idx").on(table.userId, table.createdAt),
+  trackerIdIdx: index("sites_tracker_id_idx").on(table.trackerId),
 }));
 
 export const pages = pgTable("pages", {
@@ -65,7 +70,13 @@ export const pages = pgTable("pages", {
   lastScoreUpdate: timestamp("last_score_update"), // When score was last calculated
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  siteIdIdx: index("pages_site_id_idx").on(table.siteId),
+  siteIdUrlIdx: index("pages_site_url_idx").on(table.siteId, table.url),
+  siteIdAnalysisIdx: index("pages_site_analysis_idx").on(table.siteId, table.lastAnalysisAt),
+  urlIdx: index("pages_url_idx").on(table.url),
+}));
 
 export const contentAnalysis = pgTable("content_analysis", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -114,7 +125,11 @@ export const contentAnalysis = pgTable("content_analysis", {
   // Timestamps
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  pageIdIdx: index("content_analysis_page_id_idx").on(table.pageId),
+  pageIdCreatedAtIdx: index("content_analysis_page_created_idx").on(table.pageId, table.createdAt),
+}));
 
 // New table for content-based ratings
 export const contentRatings = pgTable("content_ratings", {
@@ -133,7 +148,12 @@ export const contentRatings = pgTable("content_ratings", {
   lastImprovedAt: timestamp("last_improved_at"), // When this section was last improved
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  pageIdIdx: index("content_ratings_page_id_idx").on(table.pageId),
+  analysisResultIdIdx: index("content_ratings_analysis_id_idx").on(table.analysisResultId),
+  pageIdCreatedAtIdx: index("content_ratings_page_created_idx").on(table.pageId, table.createdAt),
+}));
 
 // New table for content-specific recommendations
 export const contentRecommendations = pgTable("content_recommendations", {
@@ -149,7 +169,12 @@ export const contentRecommendations = pgTable("content_recommendations", {
   priority: varchar("priority", { length: 32 }).default('medium'), // 'low', 'medium', 'high', 'critical'
   estimatedImpact: doublePrecision("estimated_impact").default(0), // Estimated score improvement (0-10)
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  pageIdIdx: index("content_recommendations_page_id_idx").on(table.pageId),
+  analysisResultIdIdx: index("content_recommendations_analysis_id_idx").on(table.analysisResultId),
+  analysisResultIdCreatedAtIdx: index("content_recommendations_analysis_created_idx").on(table.analysisResultId, table.createdAt),
+}));
 
 // New table for tracking content deployments and score improvements
 export const contentDeployments = pgTable("content_deployments", {
@@ -166,7 +191,11 @@ export const contentDeployments = pgTable("content_deployments", {
   deployedBy: varchar("deployed_by", { length: 255 }), // User ID who deployed it
   deployedAt: timestamp("deployed_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Indexes for performance
+  pageIdIdx: index("content_deployments_page_id_idx").on(table.pageId),
+  pageIdDeployedAtIdx: index("content_deployments_page_deployed_idx").on(table.pageId, table.deployedAt),
+}));
 
 
 
@@ -186,7 +215,12 @@ export const trackerData = pgTable("tracker_data", {
   ipAddress: varchar("ip_address", { length: 45 }), // IPv6 max length
   referrer: varchar("referrer", { length: 1024 }),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  siteIdIdx: index("tracker_data_site_id_idx").on(table.siteId),
+  siteIdTimestampIdx: index("tracker_data_site_timestamp_idx").on(table.siteId, table.timestamp),
+  timestampIdx: index("tracker_data_timestamp_idx").on(table.timestamp),
+}));
 
 export const contentSuggestions = pgTable("content_suggestions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -199,7 +233,11 @@ export const contentSuggestions = pgTable("content_suggestions", {
   aiModel: varchar("ai_model", { length: 128 }),
   generatedAt: timestamp("generated_at").defaultNow(),
   expiresAt: timestamp("expires_at"), // Optional expiration for suggestion caching
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  pageIdIdx: index("content_suggestions_page_id_idx").on(table.pageId),
+  pageIdGeneratedAtIdx: index("content_suggestions_page_generated_idx").on(table.pageId, table.generatedAt),
+}));
 
 export const pageAnalytics = pgTable("page_analytics", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -217,7 +255,12 @@ export const pageAnalytics = pgTable("page_analytics", {
   contentTypesInjected: jsonb("content_types_injected").default([]), // Array of content types
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  siteIdIdx: index("page_analytics_site_id_idx").on(table.siteId),
+  siteIdPageViewsIdx: index("page_analytics_site_views_idx").on(table.siteId, table.pageViews),
+  pageUrlIdx: index("page_analytics_page_url_idx").on(table.pageUrl),
+}));
 
 export const subscriptionTypeEnum = pgEnum("subscription_type", [
   "free",
@@ -236,7 +279,11 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   isActive: integer("is_active").default(1),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  // Performance indexes for frequent queries
+  userIdIdx: index("user_subscriptions_user_id_idx").on(table.userId),
+  userIdCreatedAtIdx: index("user_subscriptions_user_created_idx").on(table.userId, table.createdAt),
+}));
 
 // Leads captured from public tools/forms
 export const leads = pgTable("leads", {

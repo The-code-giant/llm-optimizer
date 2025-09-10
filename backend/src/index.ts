@@ -4,6 +4,7 @@ dotenv.config();
 import express from "express";
 import path from "path";
 import cors from "cors";
+import compression from "compression";
 import authRouter from "./routes/auth";
 import sitesRouter from "./routes/sites";
 import pagesRouter from "./routes/pages";
@@ -74,6 +75,20 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
+
+// Enable gzip compression for all responses
+app.use(compression({
+  level: 6, // Good balance between compression and speed
+  threshold: 1024, // Only compress responses larger than 1KB
+  filter: (req, res) => {
+    // Don't compress if the request includes a no-transform directive
+    if (req.headers['cache-control'] && req.headers['cache-control'].includes('no-transform')) {
+      return false;
+    }
+    // Compress everything else
+    return compression.filter(req, res);
+  }
+}));
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, "../public")));

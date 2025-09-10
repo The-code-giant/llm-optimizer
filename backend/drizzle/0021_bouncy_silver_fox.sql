@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS "content_deployments_page_id_idx" ON "content_deployments" USING btree ("page_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_deployments_page_deployed_idx" ON "content_deployments" USING btree ("page_id","deployed_at");

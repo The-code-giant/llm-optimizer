@@ -101,15 +101,23 @@ export class TrackerController extends BaseController {
     const { pageUrl } = queryValidation.data!;
 
     try {
-      console.log(`🔍 Tracker content request: trackerId=${trackerId}, pageUrl=${pageUrl}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`🔍 Tracker content request: trackerId=${trackerId}, pageUrl=${pageUrl}`);
+      }
       
-      // Skip cache for debugging
-      // const cachedContent = await cache.getTrackerContent(trackerId, pageUrl);
-      // if (cachedContent) {
-      //   console.log(`📦 Returning cached content: ${cachedContent.length} items`);
-      //   res.status(200).json(cachedContent);
-      //   return;
-      // }
+      // Try Redis cache first for performance
+      const cachedContent = await cache.getTrackerContent(trackerId, pageUrl);
+      if (cachedContent) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`📦 Returning cached content: ${cachedContent.length} items`);
+        }
+        res.set({
+          'Cache-Control': 'public, max-age=300',
+          'ETag': `"cached-${trackerId}"`
+        });
+        res.status(200).json(cachedContent);
+        return;
+      }
 
       // Find site by trackerId
       const siteArr = await db
@@ -120,14 +128,18 @@ export class TrackerController extends BaseController {
 
       const site = siteArr[0];
       if (!site) {
-        console.log(`❌ Site not found for trackerId: ${trackerId}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`❌ Site not found for trackerId: ${trackerId}`);
+        }
         const emptyResponse: any[] = [];
         await cache.setTrackerContent(trackerId, pageUrl, emptyResponse);
         res.status(200).json(emptyResponse);
         return;
       }
 
-      console.log(`✅ Found site: ${site.name} (${site.id})`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`✅ Found site: ${site.name} (${site.id})`);
+      }
 
       // Find the page for this site and URL (handle trailing slash variations)
       let pageArr = await db
@@ -147,7 +159,9 @@ export class TrackerController extends BaseController {
           .where(and(eq(pages.siteId, site.id), eq(pages.url, urlWithoutSlash)))
           .limit(1);
         page = pageArr[0];
-        console.log(`🔄 Trying without trailing slash: ${urlWithoutSlash}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`🔄 Trying without trailing slash: ${urlWithoutSlash}`);
+        }
       }
       
       // If still not found, try with trailing slash
@@ -159,14 +173,18 @@ export class TrackerController extends BaseController {
           .where(and(eq(pages.siteId, site.id), eq(pages.url, urlWithSlash)))
           .limit(1);
         page = pageArr[0];
-        console.log(`🔄 Trying with trailing slash: ${urlWithSlash}`);
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`🔄 Trying with trailing slash: ${urlWithSlash}`);
+        }
       }
 
       if (!page) {
-        console.log(`❌ Page not found for URL: ${pageUrl} in site: ${site.id}`);
-        // Let's also check all pages for this site to see what URLs exist
-        const allPages = await db.select().from(pages).where(eq(pages.siteId, site.id));
-        console.log(`📄 Available pages for this site:`, allPages.map(p => p.url));
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(`❌ Page not found for URL: ${pageUrl} in site: ${site.id}`);
+          // Let's also check all pages for this site to see what URLs exist
+          const allPages = await db.select().from(pages).where(eq(pages.siteId, site.id));
+          console.log(`📄 Available pages for this site:`, allPages.map(p => p.url));
+        }
         
         const emptyResponse: any[] = [];
         // Cache empty response for 1 minute to reduce DB load
@@ -175,9 +193,11 @@ export class TrackerController extends BaseController {
         return;
       }
 
-      console.log(`✅ Found page: ${page.url} (${page.id})`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`✅ Found page: ${page.url} (${page.id})`);
+      }
 
-      // Find active deployed content for this page
+      // Find active deployed content for this page with optimized query
       const content = await db
         .select({ 
           id: contentDeployments.id, 
@@ -185,18 +205,34 @@ export class TrackerController extends BaseController {
           content: contentDeployments.deployedContent 
         })
         .from(contentDeployments)
-        .where(eq(contentDeployments.pageId, page.id));
+        .where(eq(contentDeployments.pageId, page.id))
+        .orderBy(contentDeployments.deployedAt); // Add ordering for consistency
 
-      console.log(`📝 Found ${content.length} content deployments for page ${page.id}`);
-      content.forEach((item, index) => {
-        console.log(`  ${index + 1}. ${item.type}: ${item.content.substring(0, 50)}...`);
-      });
-
-      // Cache the response for 5 minutes
-      await cache.setTrackerContent(trackerId, pageUrl, content);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`📝 Found ${content.length} content deployments for page ${page.id}`);
+      }
       
-      console.log(`✅ Returning ${content.length} content items`);
-      res.status(200).json(content);
+      // Optimize content for faster transmission
+      const optimizedContent = content.map(item => ({
+        id: item.id,
+        type: item.type,
+        content: item.content
+      }));
+
+      // Cache the response for 10 minutes (longer cache for better performance)
+      await cache.setTrackerContent(trackerId, pageUrl, optimizedContent);
+      
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`✅ Returning ${optimizedContent.length} content items`);
+      }
+      
+      // Set cache headers for browser caching
+      res.set({
+        'Cache-Control': 'public, max-age=300', // 5 minutes browser cache
+        'ETag': `"${trackerId}-${page.id}-${content.length}"`
+      });
+      
+      res.status(200).json(optimizedContent);
     } catch (error) {
       console.error('Error retrieving tracker content:', error);
       // Return empty array to avoid breaking the tracker
