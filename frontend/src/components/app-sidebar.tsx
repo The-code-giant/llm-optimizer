@@ -7,7 +7,6 @@ import {
   IconDashboard,
   IconDatabase,
   IconRobot,
-  IconGlobe,
   IconReport,
   IconSettings,
   IconCreditCard,
