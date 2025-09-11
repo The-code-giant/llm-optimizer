@@ -128,9 +128,6 @@ app.use("/tracker", (req, res, next) => {
   next();
 });
 
-// Serve static files for tracker script (MUST be after CORS middleware)
-app.use("/tracker", express.static("public/tracker"));
-
 // Tracker API CORS: reflect any Origin just for /api/v1/tracker
 const trackerCors = cors({
   origin: true, // reflect request Origin header
@@ -306,7 +303,9 @@ app.use("/api/v1/tools", generalRateLimit, toolsRouter);
 app.use("/api/v1/leads", generalRateLimit, leadsRouter);
 app.use("/api/v1/analytics", dashboardRateLimit, analyticsRouter);
 app.use("/api/v1/tracker", trackerRouter);
-app.use("/tracker", trackerRouter); // Direct tracker routes for JavaScript
+
+// Serve static files for tracker script (MUST be after API routes)
+app.use("/tracker", express.static("public/tracker"));
 
 // Use refactored error handling middleware
 app.use(notFoundHandler);

@@ -78,9 +78,9 @@ export const UpdateContentSchema = z.object({
 
 // Tracker DTOs
 export const TrackerDataSchema = z.object({
-  pageUrl: URLSchema,
+  pageUrl: z.string().min(1), // More lenient URL validation for tracker data
   eventType: z.string(),
-  timestamp: z.string().datetime().optional(),
+  timestamp: z.string().optional(), // More lenient timestamp validation
   sessionId: z.string().optional(),
   anonymousUserId: z.string().optional(),
   eventData: z.record(z.any()).optional(),

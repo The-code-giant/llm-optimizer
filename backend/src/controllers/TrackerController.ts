@@ -4,7 +4,10 @@ import { sites, pages, contentDeployments, trackerData } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import cache from '../utils/cache';
 import { BaseController } from './BaseController';
-import eventProcessor from '../utils/eventProcessor';
+
+// In-memory cache for recent requests to prevent duplicates (last 60 seconds)
+const recentRequests = new Map<string, number>();
+const DUPLICATE_WINDOW = 60000; // 60 seconds
 import { 
   TrackerDataSchema, 
   TrackerContentQuerySchema,
@@ -17,6 +20,7 @@ export class TrackerController extends BaseController {
    */
   public collectData = this.asyncHandler(async (req: Request, res: Response): Promise<void> => {
     const trackerId = req.params.trackerId;
+    
 
     // Validate trackerId
     const trackerIdValidation = UUIDSchema.safeParse(trackerId);
@@ -48,6 +52,33 @@ export class TrackerController extends BaseController {
     }
 
     try {
+      // Create a unique key for this request to detect duplicates
+      const requestKey = `${trackingData.eventType}_${trackingData.pageUrl}_${trackingData.sessionId}_${JSON.stringify(trackingData.eventData || {})}`;
+      const now = Date.now();
+      
+      // Check if we've seen this exact request recently
+      if (recentRequests.has(requestKey)) {
+        const lastSeen = recentRequests.get(requestKey)!;
+        if (now - lastSeen < DUPLICATE_WINDOW) {
+          res.status(200).json({ success: true, message: 'Duplicate request ignored' });
+          return;
+        }
+      }
+      
+      // Record this request
+      recentRequests.set(requestKey, now);
+      
+      // Clean up old entries periodically
+      if (recentRequests.size > 1000) {
+        const cutoff = now - DUPLICATE_WINDOW;
+        for (const [key, timestamp] of recentRequests.entries()) {
+          if (timestamp < cutoff) {
+            recentRequests.delete(key);
+          }
+        }
+      }
+
+
       // Extract additional metadata from request
       const ipAddress = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || 
                        req.socket.remoteAddress || '';
@@ -68,15 +99,19 @@ export class TrackerController extends BaseController {
         referrer: referrer.substring(0, 1024) // Truncate to fit column length
       });
 
-      // Process event for analytics (this will update pageAnalytics table)
-      await eventProcessor.processBatch(site.id, [{
+      // Buffer event for analytics processing
+      await cache.bufferTrackerEvent(site.id, {
         pageUrl: trackingData.pageUrl,
         eventType: trackingData.eventType,
         timestamp: trackingData.timestamp ? new Date(trackingData.timestamp) : new Date(),
         sessionId: trackingData.sessionId,
         anonymousUserId: trackingData.anonymousUserId,
-        eventData: trackingData.eventData || {}
-      }]);
+        eventData: trackingData.eventData || {},
+        userAgent,
+        ipAddress: ipAddress.substring(0, 45),
+        referrer: referrer.substring(0, 1024)
+      });
+
 
       // Return success response
       res.status(200).json({ success: true, message: 'Data received' });

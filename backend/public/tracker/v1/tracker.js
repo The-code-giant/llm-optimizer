@@ -2,8 +2,13 @@
   'use strict';
   
   // Prevent multiple script executions
-  if (window.cleversearchTrackerLoaded) {
+  if (window.cleversearchTrackerLoaded || window.llmOptimizerTracker) {
     return;
+  }
+  
+  // Check if we're in a hot reload scenario (Next.js development)
+  if (typeof window !== 'undefined' && window.location && window.location.href.includes('localhost')) {
+    // Development environment detected
   }
   window.cleversearchTrackerLoaded = true;
   
@@ -20,7 +25,7 @@
       configData = JSON.parse(currentScript.getAttribute('data-config'));
     }
   } catch (error) {
-    console.warn('Cleversearch: Failed to parse configuration, using defaults');
+    // Failed to parse configuration, using defaults
   }
 
   // Initialize URL params early - needed for CONFIG object
@@ -55,16 +60,34 @@
     }
   };
 
-  // Detect Next.js environment
-  const isNextJS = () => window?.next || window?.__NEXT_DATA__ || document.querySelector('[data-nextjs-scroll-focus-boundary]');
-
-  // Diagnostics helper
-  const diagnosticsEnabled = urlParams.has('clever-search-debug') || urlParams.has('diagnostics') || CONFIG.DEBUG_MODE;
-  const consolePrint = (message, force = false) => {
-    if (diagnosticsEnabled || force) {
-      console.log(`[Cleversearch] ${message}`);
+  // Detect SPA environment (any framework)
+  const isSPA = () => {
+    // Next.js detection
+    if (window?.next || window?.__NEXT_DATA__ || document.querySelector('[data-nextjs-scroll-focus-boundary]')) {
+      return 'nextjs';
     }
+    // React detection (Create React App, Vite, etc.)
+    if (window.React || document.querySelector('#root') || document.querySelector('[data-reactroot]')) {
+      return 'react';
+    }
+    // Vue.js detection
+    if (window.Vue || document.querySelector('[data-v-]') || document.querySelector('#app[data-v-app]')) {
+      return 'vue';
+    }
+    // Angular detection
+    if (window.ng || document.querySelector('[ng-version]') || document.querySelector('app-root')) {
+      return 'angular';
+    }
+    // Generic SPA detection (history API usage)
+    if (window.history && window.history.pushState && 
+        (document.querySelector('[data-spa]') || 
+         document.querySelector('[data-router]') ||
+         window.location.hash.includes('#/'))) {
+      return 'generic';
+    }
+    return false;
   };
+
 
   // Simplified tracker - no intervals or fast mode
 
@@ -82,11 +105,12 @@
   // Main tracker class
   class LLMOptimizerTracker {
     constructor() {
+      this.instanceId = Math.random().toString(36).substr(2, 9); // Unique instance ID
       this.sessionId = this.generateSessionId();
       this.pageLoadTime = Date.now();
       this.contentInjected = false;
       this.contentTypes = [];
-      this.isNextJS = isNextJS();
+      this.spaFramework = isSPA();
       this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
       this.cachedContent = null; // Cache content to avoid duplicate API calls
       this.isLoadingContent = false; // Prevent concurrent content loading
@@ -94,9 +118,13 @@
       this.eventsSent = new Set(); // Track sent events to prevent duplicates
       this.lastEventTime = 0; // Track last event time for rate limiting
       this.pageViewTracked = false; // Track if page view has been sent
+      this.pendingEvents = new Set(); // Track events currently being sent
+      this.performanceTrackingSetup = false; // Track if performance tracking is already set up
+      this.webVitalsSetup = false; // Track if web vitals observers are already set up
+      this.webVitalsSent = false; // Track if web vitals have been sent
        
       if (CONFIG.OVERRIDE_URL) {
-        consolePrint(`🔄 URL Override: Using ${CONFIG.OVERRIDE_URL} instead of ${window.location.href}`, true);
+        // URL Override active
       }
       
       this.init();
@@ -104,14 +132,11 @@
 
     async init() {
       try {
-        consolePrint('Initializing Cleversearch Tracker');
-        consolePrint(`Environment: ${this.isNextJS ? 'Next.js' : 'Standard HTML'}`);
-        
         // IMMEDIATE: Load SEO-critical content as early as possible
         await this.loadContentEarly();
         
-        // Set up SPA navigation handling for Next.js
-        if (this.isNextJS) {
+        // Set up SPA navigation handling for all SPA frameworks
+        if (this.spaFramework) {
           this.setupSPANavigation();
         }
 
@@ -135,6 +160,13 @@
           window.dispatchEvent(new Event('locationchange'));
         };
 
+        // Hook into history.replaceState for route replacements
+        const originalReplaceState = history.replaceState;
+        history.replaceState = function() {
+          originalReplaceState.apply(history, arguments);
+          window.dispatchEvent(new Event('locationchange'));
+        };
+
         // Hook into popstate for back/forward navigation
         const originalPopState = window.onpopstate;
         window.onpopstate = function(event) {
@@ -144,33 +176,137 @@
 
         // Listen for location changes
         window.addEventListener('locationchange', () => {
-          consolePrint('Location changed - reloading content');
           this.onLocationChange();
         });
 
-        consolePrint('SPA navigation handling set up');
+        // Framework-specific navigation detection
+        this.setupFrameworkSpecificDetection();
+
       } catch (error) {
-        consolePrint('SPA navigation setup failed: ' + error.message);
       }
+    }
+
+    setupFrameworkSpecificDetection() {
+      try {
+        switch (this.spaFramework) {
+          case 'nextjs':
+            this.setupNextJSDetection();
+            break;
+          case 'react':
+            this.setupReactDetection();
+            break;
+          case 'vue':
+            this.setupVueDetection();
+            break;
+          case 'angular':
+            this.setupAngularDetection();
+            break;
+          case 'generic':
+            this.setupGenericSPADetection();
+            break;
+        }
+      } catch (error) {
+      }
+    }
+
+    setupNextJSDetection() {
+      // Watch for Next.js router events if available
+      if (window.next?.router) {
+        window.next.router.events.on('routeChangeComplete', () => {
+          window.dispatchEvent(new Event('locationchange'));
+        });
+      }
+
+      // Watch for __NEXT_DATA__ changes (indicates route change)
+      if (window.__NEXT_DATA__) {
+        let lastNextData = JSON.stringify(window.__NEXT_DATA__);
+        const checkNextDataChange = () => {
+          const currentNextData = JSON.stringify(window.__NEXT_DATA__);
+          if (currentNextData !== lastNextData) {
+            lastNextData = currentNextData;
+            window.dispatchEvent(new Event('locationchange'));
+          }
+        };
+        setInterval(checkNextDataChange, 1000);
+      }
+    }
+
+    setupReactDetection() {
+      // React Router detection
+      if (window.history && window.location) {
+        // Additional React-specific detection could be added here
+      }
+    }
+
+    setupVueDetection() {
+      // Vue Router detection
+      if (window.Vue || window.__VUE__) {
+        // Watch for Vue router changes if available
+        if (window.$router) {
+          window.$router.afterEach(() => {
+            window.dispatchEvent(new Event('locationchange'));
+          });
+        }
+      }
+    }
+
+    setupAngularDetection() {
+      // Angular Router detection
+      if (window.ng) {
+        // Listen for Angular navigation events
+        document.addEventListener('angular-route-change', () => {
+          window.dispatchEvent(new Event('locationchange'));
+        });
+      }
+    }
+
+    setupGenericSPADetection() {
+      // Generic SPA fallback - monitor URL changes more frequently
+      let lastUrl = window.location.href;
+      const checkUrlChange = () => {
+        const currentUrl = window.location.href;
+        if (currentUrl !== lastUrl) {
+          lastUrl = currentUrl;
+          window.dispatchEvent(new Event('locationchange'));
+        }
+      };
+      setInterval(checkUrlChange, 500); // More frequent checking for generic SPAs
     }
 
     async onLocationChange() {
       try {
+        const previousUrl = this.currentUrl;
+        const newUrl = CONFIG.OVERRIDE_URL || window.location.href;
+        
+        // Only proceed if URL actually changed
+        if (previousUrl === newUrl) {
+          return;
+        }
+
+
         // Clean up previous content
         this.removePreviousContent();
 
-        // Update current URL (respect override if set)
-        this.currentUrl = CONFIG.OVERRIDE_URL || window.location.href;
+        // Update current URL
+        this.currentUrl = newUrl;
         
         // Clear cached content for new page
         this.cachedContent = null;
+        this.isLoadingContent = false;
+        
+        // Reset content injection status for new page
+        this.contentInjected = false;
+        this.contentTypes = [];
         
         // IMMEDIATE: Load SEO-critical content first for new page
         await this.loadContentEarly();
         
         // Then load remaining content (will use cached content)
         await this.loadContent();
+        
+        // Track page view for new route
         this.trackPageView();
+        
       } catch (error) {
         this.trackError('location_change_failed', error);
       }
@@ -188,15 +324,12 @@
           }
         });
         
-        consolePrint(`Removed ${elementsToRemove.length} previously injected elements`);
       } catch (error) {
-        consolePrint('Error removing previous content: ' + error.message);
       }
     }
 
     async onDOMReady() {
       try {
-        consolePrint('DOM ready - loading remaining content');
         await this.loadContent(); // Will use cached content, no duplicate API call
         this.trackPageView();
         this.setupPerformanceTracking();
@@ -208,19 +341,16 @@
     // Early execution for SEO-critical elements
     async loadContentEarly() {
       if (CONFIG.SITE_ID === '{{SITE_ID}}') {
-        console.warn('Cleversearch: Invalid site ID. Please ensure script is properly configured.');
         return;
       }
 
       // Prevent concurrent loading and rate limit calls
       if (this.isLoadingContent) {
-        consolePrint('Content loading already in progress, skipping...');
         return;
       }
 
       const now = Date.now();
       if (now - this.lastContentLoadTime < 2000) { // Minimum 2 seconds between calls
-        consolePrint('Rate limiting: Too soon since last content load, skipping...');
         return;
       }
 
@@ -229,8 +359,6 @@
       try {
         this.isLoadingContent = true;
         this.lastContentLoadTime = now;
-        consolePrint('Early content loading for SEO...');
-        consolePrint(`Making API call to: /api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, true);
         
         // Make API call and cache the result
         const response = await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, null, 'GET');
@@ -244,9 +372,7 @@
         }
       } catch (error) {
         if (error.message.includes('HTTP 404')) {
-          consolePrint(`Page not found (404) for URL: ${url} - skipping content injection`);
         } else {
-          console.warn('Cleversearch: Failed to load early content:', error.message);
         }
       } finally {
         this.isLoadingContent = false;
@@ -254,7 +380,6 @@
     }
 
     async injectSEOCriticalContent(contentItems) {
-      consolePrint('Injecting SEO-critical content immediately...');
       
       for (const item of contentItems) {
         try {
@@ -262,15 +387,12 @@
           switch (item.type) {
             case 'title':
               this.injectTitle({ optimized: item.content });
-              consolePrint('Early title injection completed');
               break;
             case 'description':
               this.injectMetaDescription({ optimized: item.content });
-              consolePrint('Early meta description injection completed');
               break;
             case 'keywords':
               this.injectKeywords({ keywords: item.content });
-              consolePrint('Early keywords injection completed');
               break;
             // Skip FAQ and paragraph content for early injection
           }
@@ -282,7 +404,6 @@
 
     async loadContent() {
       if (CONFIG.SITE_ID === '{{SITE_ID}}') {
-        console.warn('Cleversearch: Invalid site ID. Please ensure script is properly configured.');
         return;
       }
 
@@ -294,13 +415,10 @@
           // Check rate limiting
           const now = Date.now();
           if (now - this.lastContentLoadTime < 2000) {
-            consolePrint('Rate limiting: Too soon since last content load, using cached content');
             return;
           }
 
-          consolePrint('No cached content - fetching from server');
           const url = this.currentUrl;
-          consolePrint(`Making API call to: /api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, true);
           
           this.lastContentLoadTime = now;
           const response = await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/content?pageUrl=${encodeURIComponent(url)}`, null, 'GET');
@@ -310,7 +428,6 @@
             this.cachedContent = contentItems; // Cache for future use
           }
         } else {
-          consolePrint('Using cached content - no API call needed');
         }
 
         if (contentItems && contentItems.length > 0) {
@@ -321,9 +438,7 @@
         }
       } catch (error) {
         if (error.message.includes('HTTP 404')) {
-          consolePrint(`Page not found (404) for URL: ${this.currentUrl} - skipping content injection`);
         } else {
-          console.warn('Cleversearch: Failed to load content:', error.message);
         }
       }
     }
@@ -339,7 +454,6 @@
           
           // Skip SEO-critical content if it was already injected early
           if (skipSEOCritical && ['title', 'description', 'keywords'].includes(item.type)) {
-            consolePrint(`Skipping ${item.type} - already injected early for SEO`);
             continue;
           }
           
@@ -360,7 +474,6 @@
               injected = this.injectParagraph({ content: item.content });
               break;
             default:
-              console.warn('Cleversearch: Unknown content type:', item.type);
           }
           
           if (injected && !injectedTypes.includes(item.type)) {
@@ -377,7 +490,7 @@
         this.trackEvent('content_injected', { 
           contentTypes: injectedTypes,
           itemCount: contentItems.length,
-          isNextJS: this.isNextJS
+          spaFramework: this.spaFramework
         });
       }
     }
@@ -393,7 +506,7 @@
         const existingTitles = document.querySelectorAll('title');
         if (existingTitles?.length) {
           existingTitles?.forEach(item => {
-            if (!this.isNextJS) {
+            if (this.spaFramework !== 'nextjs') {
               item?.remove();
             }
           });
@@ -404,15 +517,13 @@
         
         if (titleElementExists) {
           // Update existing title element using innerHTML
-          consolePrint(`Replacing existing title content - ${newTitle}`);
           titleElementExists.innerHTML = newTitle;
           injectionCounts.title++;
         } else {
           // Create new title element
-          consolePrint(`Header Title Not Found - creating new title`);
           injectionCounts.title++;
           
-          if (this.isNextJS) {
+          if (this.spaFramework === 'nextjs') {
             // For Next.js, find title element and update innerHTML
             const titleElement = document.querySelector('title');
             if (titleElement) {
@@ -421,7 +532,6 @@
           } else {
             // For regular HTML, insert new title tag
             const titleTag = `<title>${newTitle}</title>`;
-            consolePrint(`Inserting Title tag element: ${titleTag}`);
             document.head.insertAdjacentHTML('afterbegin', titleTag);
           }
         }
@@ -434,10 +544,8 @@
         //   }
         // }
         
-        consolePrint(`Title updated: ${newTitle}`);
         return true;
       } catch (error) {
-                  console.warn('Cleversearch: Title injection failed:', error);
       }
       return false;
     }
@@ -456,12 +564,10 @@
         
         if (metaDesc.getAttribute('content') !== data.optimized) {
           metaDesc.setAttribute('content', data.optimized);
-          consolePrint(`Meta description updated: ${data.optimized}`);
           injectionCounts.meta++;
           return true;
         }
       } catch (error) {
-                  console.warn('Cleversearch: Meta description injection failed:', error);
       }
       return false;
     }
@@ -484,7 +590,6 @@
           
           if (metaKeywords.getAttribute('content') !== data.keywords) {
             metaKeywords.setAttribute('content', data.keywords);
-            consolePrint(`Meta keywords updated: ${data.keywords}`);
             injectionCounts.keywords++;
             injected = true;
           }
@@ -510,12 +615,10 @@
             }
             
             target.appendChild(keywordContent);
-            consolePrint('Keyword content injected');
             injected = true;
           }
         }
       } catch (error) {
-                  console.warn('Cleversearch: Keywords injection failed:', error);
       }
       
       return injected;
@@ -547,7 +650,6 @@
         // Only update if content is different
         if (target.innerHTML !== faqHTML) {
           target.innerHTML = faqHTML;
-          consolePrint(`FAQ injected with ${data.questions.length} questions`);
           injectionCounts.faq++;
 
           // Add schema markup if requested
@@ -558,7 +660,6 @@
           return true;
         }
       } catch (error) {
-                  console.warn('Cleversearch: FAQ injection failed:', error);
       }
       return false;
     }
@@ -598,11 +699,9 @@
         }
         
         target.appendChild(paragraph);
-        consolePrint('Paragraph content injected');
         injectionCounts.paragraph++;
         return true;
       } catch (error) {
-                  console.warn('Cleversearch: Paragraph injection failed:', error);
       }
       return false;
     }
@@ -651,16 +750,13 @@
         script.textContent = JSON.stringify(schema);
         script.setAttribute('data-clever-search', 'injected');
         document.head.appendChild(script);
-        consolePrint('FAQ schema added');
       } catch (error) {
-                  console.warn('Cleversearch: FAQ schema injection failed:', error);
       }
     }
 
     trackPageView() {
       // Only track page view once per page load
       if (this.pageViewTracked) {
-        consolePrint('Page view already tracked, skipping...');
         return;
       }
       
@@ -673,129 +769,238 @@
         loadTime: loadTime,
         contentInjected: this.contentInjected,
         contentTypes: this.contentTypes,
-        isNextJS: this.isNextJS,
+        spaFramework: this.spaFramework,
         viewport: {
           width: window.innerWidth,
           height: window.innerHeight
-        }
+        },
+        // Additional analytics data
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        connection: navigator.connection ? {
+          effectiveType: navigator.connection.effectiveType,
+          downlink: navigator.connection.downlink,
+          rtt: navigator.connection.rtt
+        } : null,
+        // Performance timing data
+        performanceTiming: performance.timing ? {
+          navigationStart: performance.timing.navigationStart,
+          loadEventEnd: performance.timing.loadEventEnd,
+          domContentLoadedEventEnd: performance.timing.domContentLoadedEventEnd
+        } : null
       });
     }
 
     setupPerformanceTracking() {
+      // Prevent multiple setups
+      if (this.performanceTrackingSetup) {
+        return;
+      }
+      this.performanceTrackingSetup = true;
+
       // Track page unload
       window.addEventListener('beforeunload', () => {
         const timeOnPage = Date.now() - this.pageLoadTime;
         this.trackEvent('page_unload', {
           timeOnPage: timeOnPage,
           contentInjected: this.contentInjected,
-          isNextJS: this.isNextJS
+          spaFramework: this.spaFramework
         });
       });
 
-      // Disable Web Vitals tracking to reduce event noise
-      // if (typeof PerformanceObserver !== 'undefined') {
-      //   try {
-      //     this.trackWebVitals();
-      //   } catch (error) {
-      //     // Silently fail for web vitals
-      //   }
-      // }
+      // Enable Web Vitals tracking for analytics
+      if (typeof PerformanceObserver !== 'undefined') {
+        try {
+          this.trackWebVitals();
+        } catch (error) {
+          // Silently fail for web vitals
+        }
+      }
     }
 
     trackWebVitals() {
-      // Track Largest Contentful Paint (LCP)
+      // Prevent multiple web vitals observers
+      if (this.webVitalsSetup) {
+        return;
+      }
+      this.webVitalsSetup = true;
+
+      // Initialize web vitals data object
+      this.webVitalsData = {
+        lcp: null,
+        fid: null,
+        cls: 0,
+        contentInjected: this.contentInjected,
+        spaFramework: this.spaFramework
+      };
+
+      // Track Largest Contentful Paint (LCP) - modern approach
       try {
-        new PerformanceObserver((entryList) => {
-          const entries = entryList.getEntries();
-          const lastEntry = entries[entries.length - 1];
-          this.trackEvent('web_vital', {
-            metric: 'LCP',
-            value: lastEntry.startTime,
-            contentInjected: this.contentInjected,
-            isNextJS: this.isNextJS
-          });
-        }).observe({ entryTypes: ['largest-contentful-paint'] });
+        // Method 1: Set up observer for LCP measurements
+        if (typeof PerformanceObserver !== 'undefined') {
+          new PerformanceObserver((entryList) => {
+            const entries = entryList.getEntries();
+            const lastEntry = entries[entries.length - 1];
+            this.webVitalsData.lcp = lastEntry.startTime;
+            this.checkAndSendWebVitals();
+          }).observe({ entryTypes: ['largest-contentful-paint'] });
+        }
+        
+        // Method 2: Fallback using navigation timing after 3 seconds
+        setTimeout(() => {
+          if (this.webVitalsData.lcp === null && performance.timing) {
+            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+            if (loadTime > 0) {
+              this.webVitalsData.lcp = loadTime;
+              this.checkAndSendWebVitals();
+            }
+          }
+        }, 3000);
+        
       } catch (error) {
-        // Ignore LCP tracking errors
+        // Fallback: use navigation timing
+        setTimeout(() => {
+          if (this.webVitalsData.lcp === null && performance.timing) {
+            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+            if (loadTime > 0) {
+              this.webVitalsData.lcp = loadTime;
+              this.checkAndSendWebVitals();
+            }
+          }
+        }, 3000);
       }
 
-      // Track First Input Delay (FID)
+      // Track First Input Delay (FID) - only once per session
       try {
         new PerformanceObserver((entryList) => {
           const entries = entryList.getEntries();
-          entries.forEach(entry => {
-            this.trackEvent('web_vital', {
-              metric: 'FID',
-              value: entry.processingStart - entry.startTime,
-              contentInjected: this.contentInjected,
-              isNextJS: this.isNextJS
-            });
-          });
+          const firstEntry = entries[0]; // Only track the first input
+          this.webVitalsData.fid = firstEntry.processingStart - firstEntry.startTime;
+          this.checkAndSendWebVitals();
         }).observe({ entryTypes: ['first-input'] });
       } catch (error) {
         // Ignore FID tracking errors
       }
 
-      // Track Cumulative Layout Shift (CLS)
+      // Track Cumulative Layout Shift (CLS) - accumulate all shifts
       try {
         new PerformanceObserver((entryList) => {
-          let cls = 0;
           const entries = entryList.getEntries();
           entries.forEach(entry => {
             if (!entry.hadRecentInput) {
-              cls += entry.value;
+              this.webVitalsData.cls += entry.value;
             }
           });
-          if (cls > 0) {
-            this.trackEvent('web_vital', {
-              metric: 'CLS',
-              value: cls,
-              contentInjected: this.contentInjected,
-              isNextJS: this.isNextJS
-            });
-          }
+          this.checkAndSendWebVitals();
         }).observe({ entryTypes: ['layout-shift'] });
+        
+        // Also send final web vitals when page is about to unload
+        window.addEventListener('beforeunload', () => {
+          this.sendWebVitalsIfReady();
+        });
+        
+        // Fallback: Send web vitals after 10 seconds if not already sent
+        setTimeout(() => {
+          // If LCP is still null, try to calculate it from navigation timing
+          if (this.webVitalsData.lcp === null && performance.timing) {
+            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+            if (loadTime > 0) {
+              this.webVitalsData.lcp = loadTime;
+            }
+          }
+          this.sendWebVitalsIfReady();
+        }, 10000);
       } catch (error) {
         // Ignore CLS tracking errors
       }
     }
 
+    checkAndSendWebVitals() {
+      // Send web vitals as soon as we have LCP (which always happens)
+      if (this.webVitalsData.lcp !== null) {
+        this.sendWebVitalsIfReady();
+      }
+    }
+
+    sendWebVitalsIfReady() {
+      // Only send once per page load
+      if (this.webVitalsSent) {
+        return;
+      }
+      
+      this.webVitalsSent = true;
+      
+      // Prepare web vitals data - send even if LCP is null
+      const webVitalsData = {
+        lcp: this.webVitalsData.lcp,
+        fid: this.webVitalsData.fid,
+        cls: this.webVitalsData.cls,
+        contentInjected: this.webVitalsData.contentInjected,
+        spaFramework: this.webVitalsData.spaFramework,
+        timestamp: new Date().toISOString()
+      };
+
+      // Send combined web vitals event
+      this.trackEvent('web_vitals', webVitalsData);
+    }
+
     async trackEvent(eventType, data = {}) {
       try {
-        // Rate limiting: minimum 1 second between any events
+        // Rate limiting: minimum 1 second between events (except web vitals)
         const now = Date.now();
-        if (now - this.lastEventTime < 1000) {
-          consolePrint(`⏱️  Rate limiting: Skipping ${eventType} event (too soon since last event)`);
+        if (eventType !== 'web_vital' && eventType !== 'web_vitals' && now - this.lastEventTime < 1000) {
           return;
         }
 
         // Create unique event key to prevent duplicates
-        const eventKey = `${eventType}_${this.currentUrl}_${JSON.stringify(data)}`;
+        const eventKey = `${eventType}_${this.currentUrl}_${this.sessionId}_${JSON.stringify(data)}`;
+        
+        // Check if this exact event is already being sent
+        if (this.pendingEvents.has(eventKey)) {
+          return;
+        }
+        
+        // Check if this event was already sent
         if (this.eventsSent.has(eventKey)) {
-          consolePrint(`🔄 Duplicate event prevented: ${eventType}`);
           return;
         }
 
-        // Mark this event as sent
-        this.eventsSent.add(eventKey);
+        // Mark this event as pending
+        this.pendingEvents.add(eventKey);
         this.lastEventTime = now;
-
-        consolePrint(`📊 Sending event: ${eventType}`);
         
-        await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/data`, {
-          pageUrl: this.currentUrl,
-          eventType,
-          eventData: data,
-          sessionId: this.sessionId,
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent,
-          referrer: document.referrer
-        });
+        try {
+          const userAgent = navigator?.userAgent || 'unknown';
+          
+          await this.apiCall(`/api/v1/tracker/${CONFIG.SITE_ID}/data`, {
+            pageUrl: this.currentUrl,
+            eventType,
+            eventData: data,
+            sessionId: this.sessionId,
+            timestamp: new Date().toISOString(),
+            userAgent: userAgent,
+            referrer: document.referrer
+          });
+
+          // Mark this event as successfully sent
+          this.eventsSent.add(eventKey);
+          
+          // Clean up old event keys to prevent memory leaks
+          if (this.eventsSent.size > 100) {
+            const keysArray = Array.from(this.eventsSent);
+            this.eventsSent.clear();
+            keysArray.slice(-50).forEach(key => this.eventsSent.add(key));
+          }
+          
+        } catch (apiError) {
+          throw apiError;
+        } finally {
+          this.pendingEvents.delete(eventKey);
+        }
       } catch (error) {
         // Silently fail for tracking to not affect user experience
-        if (console && console.warn) {
-          console.warn('Cleversearch tracking failed:', error.message);
-        }
       }
     }
 
@@ -832,17 +1037,14 @@
         const endTime = performance.now();
         
         if (CONFIG.DEBUG_MODE) {
-          consolePrint(`API call took ${Math.round(endTime - startTime)}ms`);
         }
 
         if (!response.ok) {
           // Don't retry on client errors (4xx) - they indicate invalid requests or missing resources
           // if (response.status >= 400 && response.status < 500) {
-          //   consolePrint(`Client error ${response.status} for ${endpoint} - not retrying`);
           //   throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           // }
           // // Only retry on server errors (5xx) or network issues
-          // consolePrint(`Server error ${response.status} for ${endpoint} - will retry if attempts remain`);
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
@@ -882,8 +1084,6 @@
 
     // Manual refresh function for immediate content updates
     async refreshContent() {
-      consolePrint('🔄 Manual content refresh triggered', true);
-      
       try {
         // Remove previous content
         this.removePreviousContent();
@@ -895,10 +1095,8 @@
         await this.loadContentEarly();
         await this.loadContent();
         
-        consolePrint('✅ Manual refresh completed', true);
         return true;
       } catch (error) {
-        consolePrint('❌ Manual refresh failed: ' + error.message, true);
         return false;
       }
     }
@@ -909,7 +1107,6 @@
   if (window === window.top && CONFIG.SITE_ID !== '{{SITE_ID}}') {
     // Prevent multiple tracker instances
     if (window.llmOptimizerTracker) {
-      consolePrint('Cleversearch tracker already initialized, skipping...', true);
       return;
     }
     
@@ -926,16 +1123,14 @@
           currentUrl: window.llmOptimizerTracker?.currentUrl,
           contentInjected: window.llmOptimizerTracker?.contentInjected,
           contentTypes: window.llmOptimizerTracker?.contentTypes,
-          isNextJS: window.llmOptimizerTracker?.isNextJS
+          spaFramework: window.llmOptimizerTracker?.spaFramework
         }),
         enableDebug: () => {
           CONFIG.DEBUG_MODE = true;
-          consolePrint('🔧 Debug mode enabled', true);
         },
         enableFastMode: () => {
           CONFIG.FAST_MODE = true;
           CONFIG.UPDATE_INTERVAL = 250; // Super fast updates
-          consolePrint('⚡ Super fast mode enabled - 250ms updates', true);
         }
       };
       
@@ -943,23 +1138,12 @@
       if (diagnosticsEnabled) {
         window.addEventListener('load', () => {
           setTimeout(() => {
-            console.log('=== Cleversearch Diagnostics ===');
-            console.log('Environment:', isNextJS() ? 'Next.js' : 'Standard HTML');
-            console.log('Injection Counts:', injectionCounts);
-            console.log('Site ID:', CONFIG.SITE_ID);
-            console.log('Current URL:', window.location.href);
-            console.log('Available Commands: LLMOptimizer.refresh(), LLMOptimizer.getStats()');
-            console.log('================================');
+            // Diagnostics summary
           }, 2000);
         });
       }
-      
-      // Show load message
-      consolePrint('Cleversearch Tracker v' + CONFIG.VERSION + ' loaded', true);
     } catch (error) {
-      if (console && console.error) {
-        console.error('Cleversearch initialization failed:', error);
-      }
+      // Initialization failed
     }
   }
 })();
