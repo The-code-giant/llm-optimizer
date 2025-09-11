@@ -39,7 +39,7 @@ export function SiteQuickActions({
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
           <CardDescription>
-            Manage your site&apos; tracker, content deployment, and site settings
+            Essential tools for site management.
           </CardDescription>
         </CardHeader>
         <CardContent>

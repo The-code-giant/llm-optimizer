@@ -38,7 +38,7 @@ export function SiteDashboardOverview({
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       {/* Quick Actions */}
-      <Card>
+      <Card className="gap-1">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Zap className="h-4 w-4" />
@@ -48,7 +48,7 @@ export function SiteDashboardOverview({
         <CardContent className="pt-0">
           <div className="space-y-1 text-sm">
             <p className="text-muted-foreground text-xs">
-              Manage your site&apos;s tracker, content deployment, and site settings.
+            Essential tools for site management.
             </p>
             <div className="space-y-1">
               {/* Get Script */}
@@ -121,7 +121,7 @@ export function SiteDashboardOverview({
       />
 
       {/* Performance Overview */}
-      <Card>
+      <Card className="gap-1">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <BarChart3 className="h-4 w-4" />
