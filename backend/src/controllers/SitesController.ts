@@ -518,6 +518,8 @@ export class SitesController extends BaseController {
       orderBy = sortOrder === 'asc' ? pages.pageScore : desc(pages.pageScore);
     } else if (sortBy === 'lastAnalysis') {
       orderBy = sortOrder === 'asc' ? pages.lastAnalysisAt : desc(pages.lastAnalysisAt);
+    } else if (sortBy === 'createdAt') {
+      orderBy = sortOrder === 'asc' ? pages.createdAt : desc(pages.createdAt);
     } else {
       orderBy = desc(pages.createdAt);
     }

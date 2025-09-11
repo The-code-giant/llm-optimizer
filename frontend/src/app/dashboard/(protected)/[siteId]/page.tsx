@@ -62,9 +62,9 @@ export default function SiteDetailsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<
-    "title" | "url" | "score" | "lastScanned"
-  >("title");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    "title" | "url" | "score" | "lastScanned" | "createdAt"
+  >("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [scoreFilter, setScoreFilter] = useState<
     "all" | "high" | "medium" | "low"
   >("all");

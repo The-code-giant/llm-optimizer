@@ -355,7 +355,7 @@ export async function deleteSite(
 
 export interface GetPagesParams {
   search?: string;
-  sortBy?: "title" | "url" | "score" | "lastScanned";
+  sortBy?: "title" | "url" | "score" | "lastScanned" | "createdAt";
   sortOrder?: "asc" | "desc";
   scoreFilter?: "all" | "high" | "medium" | "low";
   page?: number;

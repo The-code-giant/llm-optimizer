@@ -243,7 +243,7 @@ router.post('/:siteId/sitemap/import', authenticateJWT, sitesController.importSi
  *         name: sortBy
  *         schema:
  *           type: string
- *           enum: [title, score, lastAnalysis]
+ *           enum: [title, score, lastAnalysis, createdAt]
  *       - in: query
  *         name: sortOrder
  *         schema:

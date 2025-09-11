@@ -18,8 +18,8 @@ interface SitePagesManagementProps {
   siteId: string;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  sortBy: "title" | "url" | "score" | "lastScanned";
-  setSortBy: (sort: "title" | "url" | "score" | "lastScanned") => void;
+  sortBy: "title" | "url" | "score" | "lastScanned" | "createdAt";
+  setSortBy: (sort: "title" | "url" | "score" | "lastScanned" | "createdAt") => void;
   sortOrder: "asc" | "desc";
   setSortOrder: (order: "asc" | "desc") => void;
   scoreFilter: "all" | "high" | "medium" | "low";
@@ -223,9 +223,10 @@ export function SitePagesManagement({
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as "title" | "url" | "score" | "lastScanned")}
+            onChange={(e) => setSortBy(e.target.value as "title" | "url" | "score" | "lastScanned" | "createdAt")}
             className="px-3 py-2 border border-input rounded-md text-sm bg-background w-full sm:w-auto"
           >
+            <option value="createdAt">Sort by Created Date</option>
             <option value="title">Sort by Title</option>
             <option value="url">Sort by URL</option>
             <option value="score">Sort by Score</option>
