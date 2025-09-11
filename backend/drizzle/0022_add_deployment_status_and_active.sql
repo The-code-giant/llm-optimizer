@@ -1,0 +1,25 @@
+CREATE INDEX IF NOT EXISTS "content_analysis_page_id_idx" ON "content_analysis" USING btree ("page_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_analysis_page_created_idx" ON "content_analysis" USING btree ("page_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_ratings_page_id_idx" ON "content_ratings" USING btree ("page_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_ratings_analysis_id_idx" ON "content_ratings" USING btree ("analysis_result_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_ratings_page_created_idx" ON "content_ratings" USING btree ("page_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_recommendations_page_id_idx" ON "content_recommendations" USING btree ("page_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_recommendations_analysis_id_idx" ON "content_recommendations" USING btree ("analysis_result_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_recommendations_analysis_created_idx" ON "content_recommendations" USING btree ("analysis_result_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_suggestions_page_id_idx" ON "content_suggestions" USING btree ("page_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "content_suggestions_page_generated_idx" ON "content_suggestions" USING btree ("page_id","generated_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "page_analytics_site_id_idx" ON "page_analytics" USING btree ("site_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "page_analytics_site_views_idx" ON "page_analytics" USING btree ("site_id","page_views");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "page_analytics_page_url_idx" ON "page_analytics" USING btree ("page_url");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pages_site_id_idx" ON "pages" USING btree ("site_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pages_site_url_idx" ON "pages" USING btree ("site_id","url");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pages_site_analysis_idx" ON "pages" USING btree ("site_id","last_analysis_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pages_url_idx" ON "pages" USING btree ("url");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sites_user_id_idx" ON "sites" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sites_user_created_idx" ON "sites" USING btree ("user_id","created_at");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "sites_tracker_id_idx" ON "sites" USING btree ("tracker_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tracker_data_site_id_idx" ON "tracker_data" USING btree ("site_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tracker_data_site_timestamp_idx" ON "tracker_data" USING btree ("site_id","timestamp");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "tracker_data_timestamp_idx" ON "tracker_data" USING btree ("timestamp");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_subscriptions_user_id_idx" ON "user_subscriptions" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "user_subscriptions_user_created_idx" ON "user_subscriptions" USING btree ("user_id","created_at");

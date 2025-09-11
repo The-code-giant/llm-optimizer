@@ -155,6 +155,20 @@
       "when": 1757545082423,
       "tag": "0021_bouncy_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1757552726146,
+      "tag": "0022_add_deployment_status_and_active",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1757552745581,
+      "tag": "0023_add_deployment_status_and_active",
+      "breakpoints": true
     }
   ]
 }

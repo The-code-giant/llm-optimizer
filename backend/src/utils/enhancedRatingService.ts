@@ -221,7 +221,16 @@ export class EnhancedRatingService {
   ): Promise<void> {
     const scoreImprovement = newScore - previousScore;
 
-    // Record the deployment
+    // First, deactivate all existing deployments for this page and section type
+    await db.update(contentDeployments)
+      .set({ isActive: 0 })
+      .where(and(
+        eq(contentDeployments.pageId, pageId),
+        eq(contentDeployments.sectionType, sectionType),
+        eq(contentDeployments.isActive, 1)
+      ));
+
+    // Record the new active deployment
     await db.insert(contentDeployments).values({
       pageId,
       sectionType,
@@ -231,6 +240,8 @@ export class EnhancedRatingService {
       deployedContent,
       aiModel,
       deployedBy,
+      status: 'deployed',
+      isActive: 1
     });
 
     // Update the content rating

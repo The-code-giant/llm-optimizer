@@ -151,7 +151,7 @@ class EventProcessor {
   /**
    * Process a batch of events and insert them into the database
    */
-  private async processBatch(siteId: string, events: any[]): Promise<number> {
+  public async processBatch(siteId: string, events: any[]): Promise<number> {
     if (events.length === 0) return 0;
 
     try {

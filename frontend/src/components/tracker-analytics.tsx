@@ -27,8 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { StatCard } from './ui/stat-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Progress } from "./ui/progress";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000/api/v1";
+import { analyticsAPI, AnalyticsOverview, DemographicsData, PagePerformanceData } from "../lib/analytics-api";
 
 interface TrackerAnalyticsProps {
   siteId: string;
@@ -128,7 +127,7 @@ export default function TrackerAnalytics({
   className = "" 
 }: TrackerAnalyticsProps) {
   const { getToken } = useAuth();
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
   const [demographics, setDemographics] = useState<DemographicsData | null>(null);
   const [pagePerformance, setPagePerformance] = useState<PagePerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,48 +145,24 @@ export default function TrackerAnalytics({
       const token = await getToken();
       if (!token) throw new Error('Not authenticated');
 
-      // Load all analytics data in parallel
-      const [analyticsRes, demographicsRes, performanceRes] = await Promise.all([
-        fetch(`${API_BASE}/sites/${siteId}/analytics?timeRange=${timeRange}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }),
-        fetch(`${API_BASE}/sites/${siteId}/analytics/demographics?timeRange=${timeRange}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }),
-        fetch(`${API_BASE}/sites/${siteId}/analytics/page-performance?timeRange=${timeRange}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        })
-      ]);
-
-      if (!analyticsRes.ok || !demographicsRes.ok || !performanceRes.ok) {
-        throw new Error('Failed to load analytics');
-      }
-
+      // Load all analytics data in parallel using the new API
       const [analyticsData, demographicsData, performanceData] = await Promise.all([
-        analyticsRes.json(),
-        demographicsRes.json(),
-        performanceRes.json()
+        analyticsAPI.getOverview(token, siteId, timeRange),
+        analyticsAPI.getDemographics(token, siteId, timeRange),
+        analyticsAPI.getPagePerformance(token, siteId, timeRange)
       ]);
 
-      // Extract data from the response structure { success: true, data: {...}, message: "..." }
-      setAnalytics(analyticsData?.success ? analyticsData.data : analyticsData);
-      setDemographics(demographicsData?.success ? demographicsData.data : demographicsData);
-      setPagePerformance(performanceData?.success ? performanceData.data : performanceData);
-      } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to load analytics';
-    setToast({ 
-      message: errorMessage, 
-      type: 'error' 
-    });
+      setAnalytics(analyticsData);
+      setDemographics(demographicsData);
+      setPagePerformance(performanceData);
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load analytics';
+      console.error('Analytics loading error:', error);
+      setToast({ 
+        message: errorMessage, 
+        type: 'error' 
+      });
     } finally {
       setLoading(false);
     }

@@ -189,12 +189,15 @@ export const contentDeployments = pgTable("content_deployments", {
   deployedContent: text("deployed_content").notNull(), // The actual content that was deployed
   aiModel: varchar("ai_model", { length: 128 }), // Which AI model generated the content
   deployedBy: varchar("deployed_by", { length: 255 }), // User ID who deployed it
+  status: varchar("status", { length: 32 }).default("deployed").notNull(), // 'deployed', 'draft', 'archived'
+  isActive: integer("is_active").default(1).notNull(), // 1 = active, 0 = inactive (replaced by newer deployment)
   deployedAt: timestamp("deployed_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
   // Indexes for performance
   pageIdIdx: index("content_deployments_page_id_idx").on(table.pageId),
   pageIdDeployedAtIdx: index("content_deployments_page_deployed_idx").on(table.pageId, table.deployedAt),
+  pageIdSectionActiveIdx: index("content_deployments_page_section_active_idx").on(table.pageId, table.sectionType, table.isActive),
 }));
 
 

@@ -76,6 +76,16 @@ export class UnifiedContentService {
 
     // If deploying immediately, create deployment record
     if (data.isActive) {
+      // First, deactivate all existing deployments for this page and section type
+      await db.update(contentDeployments)
+        .set({ isActive: 0 })
+        .where(and(
+          eq(contentDeployments.pageId, data.pageId),
+          eq(contentDeployments.sectionType, data.contentType),
+          eq(contentDeployments.isActive, 1)
+        ));
+
+      // Create new active deployment
       await db.insert(contentDeployments).values({
         pageId: data.pageId,
         sectionType: data.contentType,
@@ -84,7 +94,9 @@ export class UnifiedContentService {
         scoreImprovement: 5,
         deployedContent: data.optimizedContent,
         aiModel: data.aiModel || 'gpt-4o-mini',
-        deployedBy: data.deployedBy || ''
+        deployedBy: data.deployedBy || 'system',
+        status: 'deployed',
+        isActive: 1
       });
     }
     

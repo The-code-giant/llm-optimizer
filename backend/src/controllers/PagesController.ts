@@ -372,6 +372,15 @@ export class PagesController extends BaseController {
 
     // If deploying immediately, create a deployment record
     if (deployImmediately) {
+      // First, deactivate all existing deployments for this page and section type
+      await db.update(contentDeployments)
+        .set({ isActive: 0 })
+        .where(and(
+          eq(contentDeployments.pageId, pageId),
+          eq(contentDeployments.sectionType, contentType),
+          eq(contentDeployments.isActive, 1)
+        ));
+
       // Get current score for this section type
       const currentRating = await db.select()
         .from(contentRatings)
@@ -385,6 +394,7 @@ export class PagesController extends BaseController {
       const currentScore = currentRating[0]?.currentScore || 0;
       const estimatedNewScore = Math.min(10, currentScore + 2); // Estimate improvement
 
+      // Create new active deployment
       await db.insert(contentDeployments).values({
         pageId,
         sectionType: contentType,
@@ -393,7 +403,9 @@ export class PagesController extends BaseController {
         scoreImprovement: estimatedNewScore - currentScore,
         deployedContent: optimizedContent,
         aiModel: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        deployedBy: userId
+        deployedBy: userId || 'system',
+        status: 'deployed',
+        isActive: 1
       });
 
       // Note: Content ratings will be created during analysis process

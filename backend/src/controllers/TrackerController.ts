@@ -4,6 +4,7 @@ import { sites, pages, contentDeployments, trackerData } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import cache from '../utils/cache';
 import { BaseController } from './BaseController';
+import eventProcessor from '../utils/eventProcessor';
 import { 
   TrackerDataSchema, 
   TrackerContentQuerySchema,
@@ -53,7 +54,7 @@ export class TrackerController extends BaseController {
       const userAgent = req.headers['user-agent'] || '';
       const referrer = req.headers['referer'] || '';
 
-      // Store tracking data
+      // Store tracking data in database
       await db.insert(trackerData).values({
         siteId: site.id,
         pageUrl: trackingData.pageUrl,
@@ -66,6 +67,16 @@ export class TrackerController extends BaseController {
         ipAddress: ipAddress.substring(0, 45), // Truncate to fit column length
         referrer: referrer.substring(0, 1024) // Truncate to fit column length
       });
+
+      // Process event for analytics (this will update pageAnalytics table)
+      await eventProcessor.processBatch(site.id, [{
+        pageUrl: trackingData.pageUrl,
+        eventType: trackingData.eventType,
+        timestamp: trackingData.timestamp ? new Date(trackingData.timestamp) : new Date(),
+        sessionId: trackingData.sessionId,
+        anonymousUserId: trackingData.anonymousUserId,
+        eventData: trackingData.eventData || {}
+      }]);
 
       // Return success response
       res.status(200).json({ success: true, message: 'Data received' });
@@ -205,7 +216,11 @@ export class TrackerController extends BaseController {
           content: contentDeployments.deployedContent 
         })
         .from(contentDeployments)
-        .where(eq(contentDeployments.pageId, page.id))
+        .where(and(
+          eq(contentDeployments.pageId, page.id),
+          eq(contentDeployments.status, 'deployed'),
+          eq(contentDeployments.isActive, 1)
+        ))
         .orderBy(contentDeployments.deployedAt); // Add ordering for consistency
 
       if (process.env.NODE_ENV !== 'production') {
