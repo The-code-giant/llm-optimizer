@@ -353,18 +353,68 @@ export async function deleteSite(
   }
 }
 
-export async function getPages(token: string, siteId: string): Promise<Page[]> {
-  const res = await fetch(`${API_BASE}/sites/${siteId}/pages`, {
+export interface GetPagesParams {
+  search?: string;
+  sortBy?: "title" | "url" | "score" | "lastScanned";
+  sortOrder?: "asc" | "desc";
+  scoreFilter?: "all" | "high" | "medium" | "low";
+  page?: number;
+  limit?: number;
+}
+
+export interface GetPagesResponse {
+  pages: Page[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export async function getPages(
+  token: string, 
+  siteId: string, 
+  params?: GetPagesParams
+): Promise<GetPagesResponse> {
+  const searchParams = new URLSearchParams();
+  
+  if (params?.search) searchParams.append('search', params.search);
+  if (params?.sortBy) searchParams.append('sortBy', params.sortBy);
+  if (params?.sortOrder) searchParams.append('sortOrder', params.sortOrder);
+  if (params?.scoreFilter && params.scoreFilter !== 'all') {
+    searchParams.append('scoreFilter', params.scoreFilter);
+  }
+  if (params?.page) searchParams.append('page', params.page.toString());
+  if (params?.limit) searchParams.append('limit', params.limit.toString());
+
+  const url = `${API_BASE}/sites/${siteId}/pages${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+  
+  const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
+  
   const response = await handleResponse(res);
+  
   // Handle new paginated response format
-  if (response.success && response.data && response.data.pages) {
-    return response.data.pages;
+  if (response.success && response.data) {
+    return {
+      pages: response.data.pages || [],
+      total: response.data.pagination?.total || 0,
+      page: response.data.pagination?.page || 1,
+      limit: response.data.pagination?.limit || 10,
+      totalPages: response.data.pagination?.pages || 1,
+    };
   }
-  // Fallback for direct array format (if any legacy endpoints still exist)
-  return Array.isArray(response) ? response : [];
+  
+  // Fallback for legacy format
+  const pages = Array.isArray(response) ? response : [];
+  return {
+    pages,
+    total: pages.length,
+    page: 1,
+    limit: pages.length,
+    totalPages: 1,
+  };
 }
 
 export async function getPageDetails(

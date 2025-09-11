@@ -250,6 +250,12 @@ router.post('/:siteId/sitemap/import', authenticateJWT, sitesController.importSi
  *           type: string
  *           enum: [asc, desc]
  *           default: desc
+ *       - in: query
+ *         name: scoreFilter
+ *         schema:
+ *           type: string
+ *           enum: [all, high, medium, low]
+ *           default: all
  *     responses:
  *       200:
  *         description: List of pages for the site

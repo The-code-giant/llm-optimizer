@@ -248,11 +248,11 @@ export default function TrackerAnalytics({
       {/* Main Analytics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <TabsList className="!flex !w-max min-w-full">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Overview</TabsTrigger>
-            <TabsTrigger value="demographics" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Traffic Sources</TabsTrigger>
-            <TabsTrigger value="performance" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Page Performance</TabsTrigger>
-            <TabsTrigger value="activity" className="text-xs sm:text-sm flex-shrink-0 min-w-fit">Recent Activity</TabsTrigger>
+          <TabsList className="!flex !w-auto min-w-fit">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm flex-shrink-0 min-w-fit data-[state=active]:bg-black data-[state=active]:text-white">Overview</TabsTrigger>
+            <TabsTrigger value="demographics" className="text-xs sm:text-sm flex-shrink-0 min-w-fit data-[state=active]:bg-black data-[state=active]:text-white">Traffic Sources</TabsTrigger>
+            <TabsTrigger value="performance" className="text-xs sm:text-sm flex-shrink-0 min-w-fit data-[state=active]:bg-black data-[state=active]:text-white">Page Performance</TabsTrigger>
+            <TabsTrigger value="activity" className="text-xs sm:text-sm flex-shrink-0 min-w-fit data-[state=active]:bg-black data-[state=active]:text-white">Recent Activity</TabsTrigger>
           </TabsList>
         </div>
 

@@ -7,33 +7,19 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
-  BarChart3,
   Bell,
-  Calendar,
-  CheckSquare,
   ExternalLink,
-  FileText,
   Globe,
-  Plus,
   RefreshCw,
-  Search,
   Settings,
-  SortAsc,
-  SortDesc,
-  Square,
   Target,
   Trash2,
-  TrendingUp,
-  Upload,
 } from "lucide-react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import PageContentDeploymentModal from "@/components/content-deployment-modal";
 import Toast from "@/components/Toast";
-import TrackerAnalytics from "@/components/tracker-analytics";
 import TrackerScriptModal from "@/components/tracker-script-modal";
-import GettingStartedChecklist from "@/components/getting-started-checklist";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,17 +30,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { DashboardLayout } from "@/components/ui/dashboard-layout";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import ImportSitemapForm from "@/components/ImportSitemapForm";
-import AddSinglePageForm from "@/components/AddSinglePageForm";
 import {
   deletePage,
   deletePages,
@@ -64,8 +47,8 @@ import {
   Page,
   SiteDetails,
 } from "@/lib/api";
-import { StatCard } from '@/components/ui/stat-card'
 import { TourTrigger } from "@/components/tours";
+import { SiteDashboardOverview, SiteAnalyticsTab, SitePagesManagement } from "@/components/site-page";
 
 export default function SiteDetailsPage() {
   const router = useRouter();
@@ -93,7 +76,6 @@ export default function SiteDetailsPage() {
   // Tracker modals state
   const [showTrackerScript, setShowTrackerScript] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showPageManagement, setShowPageManagement] = useState(false);
   const [showAddPageModal, setShowAddPageModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [selectedPageForDeployment, setSelectedPageForDeployment] =
@@ -127,7 +109,7 @@ export default function SiteDetailsPage() {
         ]);
         console.log('Site data received:', siteData);
         setSite(siteData);
-        setPages(pagesData);
+        setPages(pagesData.pages);
       } catch (err: unknown) {
         setError(
           err instanceof Error ? err.message : "Failed to load site details"
@@ -153,28 +135,10 @@ export default function SiteDetailsPage() {
         getPages(token, siteId),
       ]);
       setSite(siteData);
-      setPages(pagesData);
+      setPages(pagesData.pages);
       setToast({ message: "Data refreshed successfully", type: "success" });
     } catch {
       setToast({ message: "Failed to refresh data", type: "error" });
-    }
-  };
-
-  const handleSelectPage = (pageId: string) => {
-    const newSelected = new Set(selectedPages);
-    if (newSelected.has(pageId)) {
-      newSelected.delete(pageId);
-    } else {
-      newSelected.add(pageId);
-    }
-    setSelectedPages(newSelected);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedPages.size === filteredAndSortedPages.length) {
-      setSelectedPages(new Set());
-    } else {
-      setSelectedPages(new Set(filteredAndSortedPages.map((page) => page.id)));
     }
   };
 
@@ -221,7 +185,7 @@ export default function SiteDetailsPage() {
 
       // Refresh the pages list
       const updatedPages = await getPages(token, siteId);
-      setPages(updatedPages);
+      setPages(updatedPages.pages);
 
       setToast({
         message: `Successfully deleted ${pageCount} page${
@@ -283,14 +247,13 @@ export default function SiteDetailsPage() {
   };
 
   // Calculate metrics using new scoring system
-  const totalPages = pages.length;
   const pagesWithScores = pages.filter(page => 
     (page.sectionRatings && Object.values(page.sectionRatings).some(score => score > 0)) || 
     (page.llmReadinessScore != null && page.llmReadinessScore > 0)
   );
   
   // Utility function to calculate overall score from section ratings
-  const calculateOverallScore = (page: any): number => {
+  const calculateOverallScore = (page: Page): number => {
     if (page.sectionRatings) {
       const scores = Object.values(page.sectionRatings) as number[];
       const total = scores.reduce((sum: number, score: number) => sum + score, 0);
@@ -308,67 +271,14 @@ export default function SiteDetailsPage() {
             pagesWithScores.length
         )
       : 0;
-  const pagesAbove80 = pages.filter(
-    (page) => calculateOverallScore(page) >= 80
+  const pagesAbove75 = pages.filter(
+    (page) => calculateOverallScore(page) >= 75
   ).length;
   const recentlyScanned = pages.filter((page) => {
     const lastScan = new Date(page.lastScannedAt);
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     return lastScan > weekAgo;
   }).length;
-
-  // Filter and sort pages
-  const filteredAndSortedPages = pages
-    .filter((page) => {
-      const matchesSearch =
-        page.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        page.url.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const pageScore = calculateOverallScore(page);
-      const matchesScore =
-        scoreFilter === "all" ||
-        (scoreFilter === "high" && pageScore >= 80) ||
-        (scoreFilter === "medium" &&
-          pageScore >= 60 &&
-          pageScore < 80) ||
-        (scoreFilter === "low" && pageScore < 60);
-
-      return matchesSearch && matchesScore;
-    })
-    .sort((a, b) => {
-      let aValue, bValue;
-
-      switch (sortBy) {
-        case "title":
-          aValue = a.title || a.url;
-          bValue = b.title || b.url;
-          break;
-        case "url":
-          aValue = a.url;
-          bValue = b.url;
-          break;
-        case "score":
-          aValue = calculateOverallScore(a);
-          bValue = calculateOverallScore(b);
-          break;
-        case "lastScanned":
-          aValue = new Date(a.lastScannedAt).getTime();
-          bValue = new Date(b.lastScannedAt).getTime();
-          break;
-        default:
-          return 0;
-      }
-
-      if (typeof aValue === "string" && typeof bValue === "string") {
-        return sortOrder === "asc"
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      } else {
-        return sortOrder === "asc"
-          ? (aValue as number) - (bValue as number)
-          : (bValue as number) - (aValue as number);
-      }
-    });
 
   if (!isLoaded) {
     return (
@@ -441,107 +351,30 @@ export default function SiteDetailsPage() {
                       </div>
                     </div>
                     
-                    {/* Tab Navigation - Mobile responsive */}
-                    <div className="flex items-center space-x-1 border rounded-lg p-1 w-full md:w-auto justify-center md:justify-start">
-                      <Button
-                        variant={
-                          activeTab === "overview" ? "default" : "ghost"
-                        }
-                        size="sm"
-                        onClick={() => setActiveTab("overview")}
-                        className="flex-1 md:flex-none"
-                      >
-                        Overview
-                      </Button>
-                      <Button
-                        variant={
-                          activeTab === "analytics" ? "default" : "ghost"
-                        }
-                        size="sm"
-                        onClick={() => setActiveTab("analytics")}
-                        className="flex-1 md:flex-none"
-                      >
-                        Analytics
-                      </Button>
-                    </div>
+                    {/* Tab Navigation */}
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "overview" | "analytics")} className="w-auto">
+                      <TabsList className="grid w-auto grid-cols-2">
+                        <TabsTrigger value="overview" className="data-[state=active]:bg-black data-[state=active]:text-white">Overview</TabsTrigger>
+                        <TabsTrigger value="analytics" className="data-[state=active]:bg-black data-[state=active]:text-white">Analytics</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
                   </div>
 
-                  {/* Top Action Buttons */}
+                  {/* Dashboard Overview */}
                   {site && activeTab === "overview" && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card data-tour="quick-actions">
-                      <CardHeader>
-                        <CardTitle>Quick Actions</CardTitle>
-                        <CardDescription>
-                          Manage your site&apos; tracker, content deployment, and site settings
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <Button
-                            onClick={() => setShowTrackerScript(true)}
-                            className="flex items-center"
-                          >
-                            <Settings className="h-4 w-4 mr-2" />
-                            Get Script
-                          </Button>
-                          <Dialog
-                            open={showPageManagement}
-                            onOpenChange={setShowPageManagement}
-                          >
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className="flex items-center"
-                                data-tour="add-pages"
-                              >
-                                <Upload className="h-4 w-4 mr-2" />
-                                Import Sitemap
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle className="flex items-center">
-                                  <Upload className="h-5 w-5 mr-2" />
-                                  Import Sitemap
-                                </DialogTitle>
-                                <DialogDescription>
-                                  Bulk import pages from your website&apos;s sitemap
-                                </DialogDescription>
-                              </DialogHeader>
-
-                              <div className="mt-6">
-                                <ImportSitemapForm
-                                  siteId={siteId}
-                                  onPagesUpdated={(pagesData) => setPages(pagesData)}
-                                  onToast={(t) => setToast(t)}
-                                />
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          
-                          {/* Settings and Refresh buttons moved here */}
-                          <Button variant="outline" onClick={refreshData}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Refresh
-                          </Button>
-                          <Button variant="outline" onClick={() => setShowSettings(true)}>
-                            <Settings className="h-4 w-4 mr-2" />
-                            Settings
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                                        <GettingStartedChecklist
+                    <SiteDashboardOverview
                       site={site}
                       pages={pages}
                       recentlyScanned={recentlyScanned}
+                      siteId={siteId}
+                      averageLLMScore={averageLLMScore}
+                      pagesAbove75={pagesAbove75}
                       onShowTrackerScript={() => setShowTrackerScript(true)}
-                      onShowPageManagement={() => setShowPageManagement(true)}
                       onSetActiveTab={setActiveTab}
+                      onPagesUpdated={setPages}
+                      onToast={setToast}
+                      onShowSettings={() => setShowSettings(true)}
                     />
-                    </div>
-
                   )}
 
                   {error && (
@@ -572,355 +405,73 @@ export default function SiteDetailsPage() {
                         {/* Tab Content */}
                         {activeTab === "overview" && (
                           <>
-                            {/* Metrics Cards */}
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4" data-tour="metrics-overview">
-                              <StatCard
-                                icon={FileText}
-                                title="Total Pages"
-                                value={totalPages}
-                                description="Pages tracked for optimization"
-                              />
-                              <StatCard
-                                icon={BarChart3}
-                                title="Avg LLM Score"
-                                value={`${averageLLMScore}%`}
-                                description="Average readiness score"
-                              />
-                              <StatCard
-                                icon={TrendingUp}
-                                title="High Quality"
-                                value={pagesAbove80}
-                                description="Pages with 80%+ score"
-                              />
-                              <StatCard
-                                icon={Calendar}
-                                title="Recent Scans"
-                                value={recentlyScanned}
-                                description="Scanned this week"
-                              />
-                            </div>
-
-
-
                             {/* Pages Management */}
-                            <Card data-tour="pages-management">
-                              <CardHeader>
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                  <div>
-                                    <CardTitle>
-                                      Pages ({filteredAndSortedPages.length})
-                                    </CardTitle>
-                                    <CardDescription>
-                                      Monitor and analyze your website pages
-                                    </CardDescription>
-                                  </div>
-
-                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                                    {/* Add New Page Button */}
-                                    <Dialog
-                                      open={showAddPageModal}
-                                      onOpenChange={setShowAddPageModal}
-                                    >
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          className="flex items-center w-full sm:w-auto"
-                                          data-tour="add-new-page"
-                                        >
-                                          <Plus className="h-4 w-4 mr-2" />
-                                          Add New Page
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                        <DialogHeader>
-                                          <DialogTitle>Add New Page</DialogTitle>
-                                          <DialogDescription>
-                                            Add a new page to your site for analysis and optimization
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        {site && (
-                                          <AddSinglePageForm
-                                            siteId={siteId}
-                                            siteUrl={site.url}
-                                            onCompleted={() => {
-                                              setShowAddPageModal(false);
-                                              refreshData();
-                                            }}
-                                          />
-                                        )}
-                                      </DialogContent>
-                                    </Dialog>
-
-                                    {/* Bulk Actions */}
-                                    {selectedPages.size > 0 && (
-                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
-                                        <span className="text-sm text-muted-foreground">
-                                          {selectedPages.size} selected
-                                        </span>
-                                        <div className="flex gap-2">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={handleBulkDelete}
-                                          >
-                                            <Trash2 className="h-4 w-4 mr-1" />
-                                            Delete
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Filters and Search */}
-                                <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4 pt-4" data-tour="search-filters">
-                                  <div className="relative w-full sm:w-auto">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                      placeholder="Search pages..."
-                                      value={searchTerm}
-                                      onChange={(e) =>
-                                        setSearchTerm(e.target.value)
-                                      }
-                                      className="pl-10 w-full sm:w-64"
-                                    />
-                                  </div>
-
-                                  <select
-                                    value={scoreFilter}
-                                    onChange={(e) =>
-                                      setScoreFilter(e.target.value as "all" | "high" | "medium" | "low")
+                            <SitePagesManagement
+                              site={site}
+                              siteId={siteId}
+                              searchTerm={searchTerm}
+                              setSearchTerm={setSearchTerm}
+                              sortBy={sortBy}
+                              setSortBy={setSortBy}
+                              sortOrder={sortOrder}
+                              setSortOrder={setSortOrder}
+                              scoreFilter={scoreFilter}
+                              setScoreFilter={setScoreFilter}
+                              selectedPages={selectedPages}
+                              setSelectedPages={setSelectedPages}
+                              showAddPageModal={showAddPageModal}
+                              setShowAddPageModal={setShowAddPageModal}
+                              onRefresh={refreshData}
+                              onDeletePage={async (pageId: string) => {
+                                const page = pages.find(p => p.id === pageId);
+                                const confirmMessage = `Delete "${
+                                  page?.title || page?.url
+                                }"?\n\nThis will permanently delete the page and all its related data (analysis results, content, suggestions, etc.).`;
+                                if (confirm(confirmMessage)) {
+                                  try {
+                                    setToast({
+                                      message: "Deleting page...",
+                                      type: "info",
+                                    });
+                                    const token = await getToken();
+                                    if (!token) {
+                                      setError("Failed to get authentication token");
+                                      return;
                                     }
-                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background w-full sm:w-auto"
-                                  >
-                                    <option value="all">All Scores</option>
-                                    <option value="high">High (80%+)</option>
-                                    <option value="medium">
-                                      Medium (60-79%)
-                                    </option>
-                                    <option value="low">Low (&lt;60%)</option>
-                                  </select>
+                                    await deletePage(token, pageId);
 
-                                  <select
-                                    value={sortBy}
-                                    onChange={(e) =>
-                                      setSortBy(e.target.value as "title" | "url" | "score" | "lastScanned")
-                                    }
-                                    className="px-3 py-2 border border-input rounded-md text-sm bg-background w-full sm:w-auto"
-                                  >
-                                    <option value="title">Sort by Title</option>
-                                    <option value="url">Sort by URL</option>
-                                    <option value="score">Sort by Score</option>
-                                    <option value="lastScanned">
-                                      Sort by Last Scan
-                                    </option>
-                                  </select>
+                                    // Refresh the pages list
+                                    const updatedPagesResponse = await getPages(token, siteId);
+                                    setPages(updatedPagesResponse.pages);
 
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                      setSortOrder(
-                                        sortOrder === "asc" ? "desc" : "asc"
-                                      )
-                                    }
-                                    className="w-full sm:w-auto"
-                                  >
-                                    {sortOrder === "asc" ? (
-                                      <SortAsc className="h-4 w-4" />
-                                    ) : (
-                                      <SortDesc className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </div>
-                              </CardHeader>
-
-                              <CardContent>
-                                {filteredAndSortedPages.length === 0 ? (
-                                  <div className="text-center py-8">
-                                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                    <p className="text-muted-foreground">
-                                      {searchTerm || scoreFilter !== "all"
-                                        ? "No pages match your filters."
-                                        : "No pages found. Import your sitemap to get started."}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="space-y-4">
-                                    {/* Select All */}
-                                    <div className="flex items-center space-x-2 pb-2 border-b border-border">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleSelectAll}
-                                        className="p-1"
-                                      >
-                                        {selectedPages.size ===
-                                        filteredAndSortedPages.length ? (
-                                          <CheckSquare className="h-4 w-4" />
-                                        ) : (
-                                          <Square className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                      <span className="text-sm text-muted-foreground">
-                                        Select All
-                                      </span>
-                                    </div>
-
-                                    {filteredAndSortedPages.map((page) => (
-                                      <div
-                                        key={page.id}
-                                        className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-colors"
-                                      >
-                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                                          <div className="flex items-start space-x-3 flex-1 min-w-0">
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              onClick={() =>
-                                                handleSelectPage(page.id)
-                                              }
-                                              className="p-1 mt-1 flex-shrink-0"
-                                            >
-                                              {selectedPages.has(page.id) ? (
-                                                <CheckSquare className="h-4 w-4" />
-                                              ) : (
-                                                <Square className="h-4 w-4" />
-                                              )}
-                                            </Button>
-
-                                            <div className="flex-1 min-w-0">
-                                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 gap-2 mb-2">
-                                                <h3 className="font-medium truncate">
-                                                  {page.title ||
-                                                    "Untitled Page"}
-                                                </h3>
-                                                {(() => {
-                                                  const pageScore = calculateOverallScore(page);
-                                                  return (
-                                                    <Badge
-                                                      variant={
-                                                        pageScore >= 80
-                                                          ? "default"
-                                                          : pageScore >= 60
-                                                          ? "secondary"
-                                                          : "destructive"
-                                                      }
-                                                      className="w-fit"
-                                                    >
-                                                      {pageScore}% LLM Ready
-                                                    </Badge>
-                                                  );
-                                                })()}
-                                              </div>
-                                              <p className="text-sm text-muted-foreground truncate mb-2">
-                                                {page.url}
-                                              </p>
-                                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-1 text-xs text-muted-foreground">
-                                                <span>
-                                                  Last scanned:{" "}
-                                                  {new Date(
-                                                    page.lastScannedAt
-                                                  ).toLocaleDateString()}
-                                                </span>
-                                                {page.lastAnalysisAt && (
-                                                  <span>
-                                                    Last analyzed:{" "}
-                                                    {new Date(
-                                                      page.lastAnalysisAt
-                                                    ).toLocaleDateString()}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2 sm:ml-4" data-tour="page-actions">
-                                            <Link
-                                              href={`/dashboard/${siteId}/pages/${page.id}`}
-                                              className="w-full sm:w-auto"
-                                            >
-                                              <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full sm:w-auto"
-                                              >
-                                                View Analysis
-                                              </Button>
-                                            </Link>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              onClick={async () => {
-                                                const confirmMessage = `Delete "${
-                                                  page.title || page.url
-                                                }"?\n\nThis will permanently delete the page and all its related data (analysis results, content, suggestions, etc.).`;
-                                                if (confirm(confirmMessage)) {
-                                                  try {
-                                                    setToast({
-                                                      message:
-                                                        "Deleting page...",
-                                                      type: "info",
-                                                    });
-                                                    const token =
-                                                      await getToken();
-                                                    if (!token) {
-                                                      setError(
-                                                        "Failed to get authentication token"
-                                                      );
-                                                      return;
-                                                    }
-                                                    await deletePage(
-                                                      token,
-                                                      page.id
-                                                    );
-
-                                                    // Refresh the pages list
-                                                    const updatedPages =
-                                                      await getPages(
-                                                        token,
-                                                        siteId
-                                                      );
-                                                    setPages(updatedPages);
-
-                                                    setToast({
-                                                      message:
-                                                        "Page deleted successfully",
-                                                      type: "success",
-                                                    });
-                                                  } catch (err: unknown) {
-                                                    const errorMessage =
-                                                      err instanceof Error
-                                                        ? err.message
-                                                        : "Failed to delete page";
-                                                    setToast({
-                                                      message: errorMessage,
-                                                      type: "error",
-                                                    });
-                                                  }
-                                                }
-                                              }}
-                                              className="text-red-600 hover:text-red-800 border-red-300 hover:border-red-400 w-full sm:w-auto"
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
+                                    setToast({
+                                      message: "Page deleted successfully",
+                                      type: "success",
+                                    });
+                                  } catch (err: unknown) {
+                                    const errorMessage =
+                                      err instanceof Error
+                                        ? err.message
+                                        : "Failed to delete page";
+                                    setToast({
+                                      message: errorMessage,
+                                      type: "error",
+                                    });
+                                  }
+                                }
+                              }}
+                              onBulkDelete={handleBulkDelete}
+                              calculateOverallScore={calculateOverallScore}
+                              getToken={getToken}
+                            />
                           </>
                         )}
 
                         {/* Analytics Tab Content */}
                         {activeTab === "analytics" && site && (
-                          <TrackerAnalytics
+                          <SiteAnalyticsTab
+                            site={site}
                             siteId={siteId}
-                            siteName={site.name}
                           />
                         )}
                       </>

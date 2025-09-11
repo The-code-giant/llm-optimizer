@@ -468,7 +468,7 @@ export class SitesController extends BaseController {
     }
 
     const queryData = queryValidation.data!;
-    const { search, sortBy, sortOrder } = queryData;
+    const { search, sortBy, sortOrder, scoreFilter } = queryData;
     const page = queryData.page!; // Safe because schema has default
     const limit = queryData.limit!; // Safe because schema has default
     const offset = (page - 1) * limit;
@@ -492,6 +492,22 @@ export class SitesController extends BaseController {
         whereConditions,
         sql`(${pages.title} ILIKE ${`%${search}%`} OR ${pages.url} ILIKE ${`%${search}%`})`
       )!;
+    }
+
+    // Add score filtering
+    if (scoreFilter && scoreFilter !== 'all') {
+      let scoreCondition;
+      if (scoreFilter === 'high') {
+        scoreCondition = sql`${pages.pageScore} >= 75`;
+      } else if (scoreFilter === 'medium') {
+        scoreCondition = sql`${pages.pageScore} >= 60 AND ${pages.pageScore} < 75`;
+      } else if (scoreFilter === 'low') {
+        scoreCondition = sql`${pages.pageScore} < 60`;
+      }
+      
+      if (scoreCondition) {
+        whereConditions = and(whereConditions, scoreCondition)!;
+      }
     }
 
     // Build order by clause

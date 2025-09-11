@@ -6,46 +6,28 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "./ui/card";
+} from "@/components/ui/card";
+import { SiteDetails, Page } from "@/lib/api";
 
-interface GettingStartedChecklistProps {
-  site: {
-    trackerId?: string;
-  } | null;
-  pages: Array<{ 
-    id: string; 
-    title?: string; 
-    url: string; 
-    llmReadinessScore?: number; 
-    lastScannedAt: string;
-    sectionRatings?: {
-      title: number;
-      description: number;
-      headings: number;
-      content: number;
-      schema: number;
-      images: number;
-      links: number;
-    };
-  }>;
+interface SiteGettingStartedChecklistProps {
+  site: SiteDetails | null;
+  pages: Page[];
   recentlyScanned: number;
   onShowTrackerScript: () => void;
-  onShowPageManagement: () => void;
   onSetActiveTab: (tab: "overview" | "analytics") => void;
 }
 
-export default function GettingStartedChecklist({
+export function SiteGettingStartedChecklist({
   site,
   pages,
   recentlyScanned,
   onShowTrackerScript,
-  onShowPageManagement,
   onSetActiveTab,
-}: GettingStartedChecklistProps) {
+}: SiteGettingStartedChecklistProps) {
   return (
-    <Card>
+    <Card className='gap-1'>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-base">
+        <CardTitle className="flex items-center gap-1 text-base">
           <Target className="h-4 w-4" />
           Getting Started
         </CardTitle>
@@ -77,7 +59,6 @@ export default function GettingStartedChecklist({
             {/* Import pages */}
             <div 
               className="flex items-center justify-between py-2 px-3 border rounded hover:bg-gray-50 cursor-pointer transition-colors"
-              onClick={pages.length === 0 ? onShowPageManagement : undefined}
             >
               <div className="flex items-center gap-2">
                 <div className="h-3 w-3 rounded bg-green-500 flex items-center justify-center">

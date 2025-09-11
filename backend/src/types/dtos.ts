@@ -11,7 +11,8 @@ export const PaginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   search: z.string().optional(),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('desc')
+  sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  scoreFilter: z.enum(['all', 'high', 'medium', 'low']).default('all')
 }).transform(data => ({
   ...data,
   page: data.page ?? 1,
