@@ -101,6 +101,12 @@ export default function SectionImprovementModal({
   const cleanSchemaContent = (content: string): string => {
     if (sectionType !== 'schema') return content;
     
+    // Ensure content is a string
+    if (typeof content !== 'string') {
+      console.warn('cleanSchemaContent received non-string content:', content);
+      return String(content || '');
+    }
+    
     // Backend should now generate clean JSON, but keep this as safety net
     try {
       // If it's already clean JSON, just format it

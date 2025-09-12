@@ -181,7 +181,11 @@ export default function PageAnalysisPage() {
 
   // Check if content is deployed for a section
   const isContentDeployed = (contentType: string) => {
-    return contentVersions[contentType]?.some(content => content.isActive === 1) || false;
+    const content = contentVersions[contentType];
+    console.log(`Checking deployment for ${contentType}:`, content);
+    const isDeployed = content?.some(item => item.isActive === 1) || false;
+    console.log(`Is ${contentType} deployed:`, isDeployed);
+    return isDeployed;
   };
 
   // Move fetchData to top-level scope so it can be called from handleUndeploy
@@ -1476,6 +1480,31 @@ export default function PageAnalysisPage() {
                                     setSectionRatings(updatedSectionRatings);
                                   } catch (error) {
                                     console.error('Failed to refresh section ratings:', error);
+                                    // Fallback: refresh all data
+                                    await fetchData();
+                                  }
+
+                                  // Refresh page content data to update task completion status
+                                  try {
+                                    const updatedContent = await getPageContent(token, pageId);
+                                    const content = updatedContent.content;
+                                    const grouped: { [type: string]: PageContentData[] } = {
+                                      title: [],
+                                      description: [],
+                                      faq: [],
+                                      paragraph: [],
+                                      keywords: [],
+                                      schema: [],
+                                    };
+                                    if (Array.isArray(content)) {
+                                      content.forEach((item: PageContentData) => {
+                                        if (grouped[item.contentType]) grouped[item.contentType].push(item);
+                                      });
+                                    }
+                                    setContentVersions(grouped);
+                                    console.log('Updated content versions:', grouped);
+                                  } catch (error) {
+                                    console.error('Failed to refresh page content:', error);
                                     // Fallback: refresh all data
                                     await fetchData();
                                   }

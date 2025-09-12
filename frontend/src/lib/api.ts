@@ -843,7 +843,7 @@ export async function getDeployedPageContent(
 export async function getPageContent(
   token: string,
   pageId: string,
-  contentType?: "title" | "description" | "faq" | "paragraph" | "keywords"
+  contentType?: "title" | "description" | "faq" | "paragraph" | "keywords" | "schema"
 ): Promise<{ pageId: string; content: PageContentData[] }> {
   const url = new URL(`${API_BASE}/pages/${pageId}/content`);
   if (contentType) {
