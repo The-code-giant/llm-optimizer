@@ -116,7 +116,6 @@ export default function TitleEditorModal({
       setDeploying(false);
     }
   };
-console.log({suggestions});
   return (
     <>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

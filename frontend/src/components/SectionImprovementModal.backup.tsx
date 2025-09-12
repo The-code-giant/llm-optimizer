@@ -70,7 +70,6 @@ const calculateScoreImprovement = (recommendations: string[], currentScore: numb
     return Math.max(0.1, 10 - currentScore);
   }
   
-  console.log(`🛡️ Anti-gaming: Current ${currentScore}/10, raw improvement ${improvement.toFixed(2)}, final ${finalImprovement.toFixed(2)}`);
   return finalImprovement;
 };
 

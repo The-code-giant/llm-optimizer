@@ -112,9 +112,6 @@ export default function SectionRatingDisplay({
   onImproveSection,
 }: SectionRatingDisplayProps) {
   const [currentRatings, setCurrentRatings] = useState<SectionRating | null>(null);
-  console.log("sectionRecommendations", {  sectionRatings,
-    sectionRecommendations,
-    overallScore,});
   useEffect(() => {
     if (sectionRatings) {
       setCurrentRatings(sectionRatings);
@@ -191,7 +188,6 @@ export default function SectionRatingDisplay({
           const score = currentRatings[sectionType as keyof SectionRating];
           const recommendations = sectionRecommendations?.[sectionType as keyof SectionRecommendations] || [];
           const hasRecommendations = recommendations.length > 0;
-          console.log({sectionType, config, recommendations, sectionRecommendations})
           return (
             <Card key={sectionType} id={`${sectionType}-section`} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">

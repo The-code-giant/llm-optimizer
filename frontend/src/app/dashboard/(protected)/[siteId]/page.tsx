@@ -91,7 +91,6 @@ export default function SiteDetailsPage() {
           getSiteDetails(token, siteId),
           getPages(token, siteId),
         ]);
-        console.log('Site data received:', siteData);
         setSite(siteData);
         setPages(pagesData.pages);
       } catch (err: unknown) {
@@ -203,9 +202,7 @@ export default function SiteDetailsPage() {
         return;
       }
       
-      console.log("Deleting site:", siteId);
       await deleteSite(token, siteId);
-      console.log("Site deleted successfully, navigating to dashboard");
       
       // Navigate to dashboard after successful deletion
       router.push("/dashboard");

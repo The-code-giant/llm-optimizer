@@ -18,7 +18,6 @@ export default function ScrollToFormButton({
     if (onClick) onClick(e);
     try {
       const target = document.getElementById(targetSelector);
-      console.log(target);
       if (target) {
         const top = target.getBoundingClientRect().top + window.scrollY - offset;
         window.scrollTo({ top, behavior: 'smooth' });
