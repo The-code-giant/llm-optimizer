@@ -357,17 +357,32 @@ export default function SectionImprovementModal({
               </div>
 
               <div className="space-y-6">
-                {/* Success Summary */}
-                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <h4 className="font-medium text-green-800">Content Generated Successfully!</h4>
+                {/* Generated Content - Moved to top */}
+                {generatedContent && (
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-800 mb-3">✨ Generated Content</h4>
+                    <div className="bg-white p-3 rounded border border-blue-100">
+                      <p className="text-sm whitespace-pre-wrap text-gray-900">{generatedContent}</p>
+                    </div>
+                    <p className="text-xs text-blue-700 mt-2">
+                      {getCharacterCount()} characters • Ready to Deploy
+                    </p>
                   </div>
-                  <p className="text-sm text-green-700">
-                    Estimated score improvement: {currentScore.toFixed(1)} → {estimatedNewScore.toFixed(1)} 
-                    (+{(estimatedNewScore - currentScore).toFixed(1)})
-                  </p>
-                </div>
+                )}
+
+                {/* Success Summary - Only show if content was actually generated */}
+                {generatedContent && (
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <h4 className="font-medium text-green-800">Content Generated Successfully!</h4>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      Estimated score improvement: {currentScore.toFixed(1)} → {estimatedNewScore.toFixed(1)} 
+                      (+{(estimatedNewScore - currentScore).toFixed(1)})
+                    </p>
+                  </div>
+                )}
 
                 {/* AI Improvements Made */}
                 {aiRecommendationsAddressed && aiRecommendationsAddressed.length > 0 && (
@@ -396,14 +411,6 @@ export default function SectionImprovementModal({
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* AI Generation Context */}
-                {aiGenerationContext && (
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">🧠 AI Analysis Context</h4>
-                    <p className="text-sm text-gray-700">{aiGenerationContext}</p>
                   </div>
                 )}
 
@@ -436,39 +443,6 @@ export default function SectionImprovementModal({
                     </p>
                   </div>
                 )}
-
-                {/* Generated Content */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    {sectionType === 'schema' ? 'Generated Schema JSON-LD:' : 'Generated Content:'}
-                  </label>
-                  <div className="bg-gray-50 p-4 rounded-lg border">
-                    {generatedContent ? (
-                      sectionType === 'schema' ? (
-                        <pre className="text-xs text-gray-800 overflow-x-auto">
-                          <code>{generatedContent}</code>
-                        </pre>
-                      ) : (
-                        <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
-                      )
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-gray-500 mb-2">No content generated yet</p>
-                        <p className="text-xs text-gray-400">Click "Generate Content" to create AI-optimized content</p>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <p className="text-xs text-muted-foreground">
-                      {getCharacterCount()} characters
-                    </p>
-                    {sectionType === 'schema' && generatedContent && (
-                      <p className="text-xs text-green-600">
-                        ✓ Clean JSON-LD (HTML removed)
-                      </p>
-                    )}
-                  </div>
-                </div>
 
                 <div className="flex items-center justify-between">
                   <Button variant="outline" onClick={() => setCurrentStep(1)}>

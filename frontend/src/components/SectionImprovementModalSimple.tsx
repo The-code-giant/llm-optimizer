@@ -274,26 +274,32 @@ export default function SectionImprovementModal({
               </div>
 
               <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <h4 className="font-medium text-green-800">Content Generated Successfully!</h4>
+                {/* Generated Content - Moved to top */}
+                {generatedContent && (
+                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-800 mb-3">✨ Generated Content</h4>
+                    <div className="bg-white p-3 rounded border border-blue-100">
+                      <p className="text-sm whitespace-pre-wrap text-gray-900">{generatedContent}</p>
+                    </div>
+                    <p className="text-xs text-blue-700 mt-2">
+                      {getCharacterCount()} characters • Ready to Deploy
+                    </p>
                   </div>
-                  <p className="text-sm text-green-700">
-                    Estimated score improvement: {currentScore.toFixed(1)} → {estimatedNewScore.toFixed(1)} 
-                    (+{(estimatedNewScore - currentScore).toFixed(1)})
-                  </p>
-                </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium mb-2">Generated Content:</label>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
+                {/* Success Summary - Only show if content was actually generated */}
+                {generatedContent && (
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <h4 className="font-medium text-green-800">Content Generated Successfully!</h4>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      Estimated score improvement: {currentScore.toFixed(1)} → {estimatedNewScore.toFixed(1)} 
+                      (+{(estimatedNewScore - currentScore).toFixed(1)})
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {getCharacterCount()} characters
-                  </p>
-                </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <Button variant="outline" onClick={() => setCurrentStep(1)}>
