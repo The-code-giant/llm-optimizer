@@ -357,7 +357,7 @@ export function SitePagesManagement({
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <Link href={`/dashboard/${siteId}/pages/${page.id}`}>
                         <Button variant="outline" size="sm" className="text-xs">
-                          View
+                          View Analysis
                         </Button>
                       </Link>
                       <Button
