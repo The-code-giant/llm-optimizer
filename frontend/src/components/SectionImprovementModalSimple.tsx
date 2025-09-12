@@ -289,13 +289,41 @@ export default function SectionImprovementModal({
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Generated Content:</label>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
+                  <label className="block text-lg font-semibold mb-3 text-gray-800">Generated Content:</label>
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border-2 border-blue-200 shadow-sm">
+                    {generatedContent ? (
+                      <div className="space-y-3">
+                        <div className="bg-white p-4 rounded-lg border border-blue-100 shadow-sm">
+                          <p className="text-lg font-medium text-gray-900 leading-relaxed whitespace-pre-wrap">{generatedContent}</p>
+                        </div>
+                        <div className="flex items-center justify-center">
+                          <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                            ✨ AI-Generated Content
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                          <Wand2 className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-600 mb-2 font-medium">No content generated yet</p>
+                        <p className="text-sm text-gray-500">Click "Generate Content" to create AI-optimized content</p>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {getCharacterCount()} characters
-                  </p>
+                  <div className="flex justify-between items-center mt-3">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm text-gray-600 font-medium">
+                        {getCharacterCount()} characters
+                      </p>
+                      {generatedContent && (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">
+                          Ready to Deploy
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">
