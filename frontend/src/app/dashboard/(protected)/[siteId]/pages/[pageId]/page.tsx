@@ -228,6 +228,7 @@ export default function PageAnalysisPage() {
           faq: [],
           paragraph: [],
           keywords: [],
+          schema: [],
         };
         // Safety check: ensure content is an array before calling forEach
         if (Array.isArray(content)) {
@@ -696,7 +697,7 @@ export default function PageAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">Optimize Page Title</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {analysis?.sectionRatings?.title || 0}/10
+                                  {sectionRatings?.sectionRatings?.title || 0}/10
                                 </span>
                               </div>
                             </div>
@@ -717,7 +718,7 @@ export default function PageAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">Improve Meta Description</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {analysis?.sectionRatings?.description || 0}/10
+                                  {sectionRatings?.sectionRatings?.description || 0}/10
                                 </span>
                               </div>
                             </div>
@@ -738,7 +739,7 @@ export default function PageAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">Add Schema Markup</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {analysis?.sectionRatings?.schema || 0}/10
+                                  {sectionRatings?.sectionRatings?.schema || 0}/10
                                 </span>
                               </div>
                             </div>
