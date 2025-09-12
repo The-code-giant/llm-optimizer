@@ -274,16 +274,19 @@ export default function SectionImprovementModal({
               </div>
 
               <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <CheckCircle className="h-5 w-5 text-green-600" />
-                    <h4 className="font-medium text-green-800">Content Generated Successfully!</h4>
+                {/* Success Summary - Only show if content was actually generated */}
+                {generatedContent && (
+                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                      <h4 className="font-medium text-green-800">Content Generated Successfully!</h4>
+                    </div>
+                    <p className="text-sm text-green-700">
+                      Estimated score improvement: {currentScore.toFixed(1)} → {estimatedNewScore.toFixed(1)} 
+                      (+{(estimatedNewScore - currentScore).toFixed(1)})
+                    </p>
                   </div>
-                  <p className="text-sm text-green-700">
-                    Estimated score improvement: {currentScore.toFixed(1)} → {estimatedNewScore.toFixed(1)} 
-                    (+{(estimatedNewScore - currentScore).toFixed(1)})
-                  </p>
-                </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Generated Content:</label>
