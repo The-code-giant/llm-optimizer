@@ -103,7 +103,6 @@ export class EnhancedRatingService {
     expectedImpact: number;
     implementation: string;
   }>> {
-    console.log(`🔍 Getting recommendations for ${sectionType} section on page ${pageId}`);
     
     const result = await db.select()
       .from(contentRecommendations)
@@ -113,7 +112,6 @@ export class EnhancedRatingService {
       ))
       .orderBy(desc(contentRecommendations.createdAt));
 
-    console.log(`📊 Found ${result.length} recommendation records for ${sectionType}`);
 
     if (result.length === 0) return [];
     
@@ -129,7 +127,6 @@ export class EnhancedRatingService {
     for (const record of result) {
       try {
         const recommendations = record.recommendations as any;
-        console.log(`📝 Processing record with recommendations:`, recommendations);
         
         if (Array.isArray(recommendations)) {
           for (const rec of recommendations) {
@@ -173,7 +170,6 @@ export class EnhancedRatingService {
       index === self.findIndex(r => r.title === rec.title)
     );
     
-    console.log(`✅ Returning ${uniqueRecommendations.length} unique recommendations for ${sectionType}:`, uniqueRecommendations);
     return uniqueRecommendations;
   }
 

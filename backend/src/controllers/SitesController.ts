@@ -1154,4 +1154,183 @@ export class SitesController extends BaseController {
     }
   });
 
+  /**
+   * Check if tracker script is installed on a site
+   */
+  public checkTrackerInstallation = this.asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { userId } = this.getAuthenticatedUser(req);
+    const siteId = req.params.siteId;
+
+    console.log(`🚀 Starting tracker installation check for site: ${siteId}`);
+    console.log(`👤 User ID: ${userId}`);
+
+    // Validate siteId
+    const siteIdValidation = UUIDSchema.safeParse(siteId);
+    if (!siteIdValidation.success) {
+      console.log(`❌ Invalid site ID format: ${siteId}`);
+      return this.sendError(res, 'Invalid site ID format', 400);
+    }
+
+    // Check site ownership
+    const siteArr = await db.select().from(sites).where(eq(sites.id, siteId)).limit(1);
+    const site = siteArr[0];
+    
+    if (!site || site.userId !== userId) {
+      console.log(`❌ Site not found or access denied for site: ${siteId}`);
+      return this.sendError(res, 'Site not found', 404);
+    }
+
+    console.log(`✅ Site found: ${site.name} (${site.url})`);
+    console.log(`🆔 Tracker ID: ${site.trackerId}`);
+
+    try {
+      // Check if tracker script is installed by making a request to the site
+      console.log(`🔍 Initiating tracker script check...`);
+      const isInstalled = await this.checkTrackerScriptInstalled(site.url, site.trackerId);
+      
+      console.log(`📋 Check result: ${isInstalled ? 'INSTALLED' : 'NOT INSTALLED'}`);
+      
+      // Update site status based on installation result
+      if (isInstalled) {
+        console.log(`🔄 Updating site status to 'active'...`);
+        await db.update(sites)
+          .set({ 
+            status: 'active',
+            updatedAt: new Date()
+          })
+          .where(eq(sites.id, siteId));
+        console.log(`✅ Site status updated to 'active'`);
+      } else {
+        console.log(`🔄 Updating site status to 'created' (tracker not installed)...`);
+        await db.update(sites)
+          .set({ 
+            status: 'created',
+            updatedAt: new Date()
+          })
+          .where(eq(sites.id, siteId));
+        console.log(`✅ Site status updated to 'created'`);
+      }
+
+      const responseData = {
+        siteId: site.id,
+        url: site.url,
+        trackerId: site.trackerId,
+        isInstalled,
+        checkedAt: new Date().toISOString()
+      };
+
+      console.log(`📤 Sending response:`, responseData);
+      this.sendSuccess(res, responseData, 'Tracker installation check completed');
+    } catch (error) {
+      console.error('❌ Error checking tracker installation:', error);
+      
+      // Update site status to 'created' on error
+      console.log(`🔄 Updating site status to 'created' due to error...`);
+      try {
+        await db.update(sites)
+          .set({ 
+            status: 'created',
+            updatedAt: new Date()
+          })
+          .where(eq(sites.id, siteId));
+        console.log(`✅ Site status updated to 'created' due to error`);
+      } catch (updateError) {
+        console.error('❌ Failed to update site status after error:', updateError);
+      }
+      
+      this.sendError(res, 'Failed to check tracker installation', 500);
+    }
+  });
+
+  /**
+   * Helper method to check if tracker script is installed on a website
+   */
+  private async checkTrackerScriptInstalled(siteUrl: string, trackerId: string): Promise<boolean> {
+    try {
+      // Ensure URL has protocol
+      const url = siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`;
+      
+      console.log(`🔍 Starting tracker check for site: ${url}`);
+      console.log(`📋 Looking for tracker ID: ${trackerId}`);
+      
+      // Make request to the website
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      console.log(`🌐 Making HTTP request to: ${url}`);
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'CleverSearch-Tracker-Checker/1.0',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        console.log(`❌ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+        return false;
+      }
+
+      const html = await response.text();
+      console.log(`📄 HTML content length: ${html.length} characters`);
+      
+      // Check for multiple indicators that the tracker script is installed
+      const indicators = [
+        // Check for the tracker script tag
+        { name: 'tracker-script-path', found: html.includes('/tracker/v1/tracker.js') },
+        { name: 'tracker-script-id', found: html.includes('clever-search-tracker') },
+        { name: 'data-config-attr', found: html.includes('data-config') },
+        
+        // Check for tracker-specific attributes
+        { name: 'data-clever-search', found: html.includes('data-clever-search') },
+        { name: 'clever-search-faq', found: html.includes('clever-search-faq') },
+        { name: 'clever-search-content', found: html.includes('clever-search-content') },
+        
+        // Check for tracker configuration
+        { name: 'tracker-id-match', found: html.includes(trackerId) },
+        { name: 'site-id-ref', found: html.includes('SITE_ID') },
+        
+        // Check for global tracker objects (these would be in JavaScript)
+        { name: 'window-tracker', found: html.includes('window.llmOptimizerTracker') },
+        { name: 'window-optimizer', found: html.includes('window.LLMOptimizer') },
+        { name: 'tracker-loaded', found: html.includes('cleversearchTrackerLoaded') },
+      ];
+
+      // Log each indicator result
+      console.log(`🔎 Tracker detection results:`);
+      indicators.forEach(indicator => {
+        console.log(`   ${indicator.found ? '✅' : '❌'} ${indicator.name}: ${indicator.found}`);
+      });
+
+      // Count how many indicators are present
+      const indicatorCount = indicators.filter(ind => ind.found).length;
+      
+      // Consider it installed if at least 2 indicators are present
+      const isInstalled = indicatorCount >= 2;
+      
+      console.log(`📊 Summary: ${indicatorCount}/12 indicators found`);
+      console.log(`🎯 Tracker installed: ${isInstalled ? 'YES' : 'NO'}`);
+      
+      // Log some sample HTML content for debugging
+      if (html.length > 0) {
+        console.log(`📝 Sample HTML (first 500 chars):`);
+        console.log(html.substring(0, 500));
+      }
+      
+      return isInstalled;
+    } catch (error) {
+      console.error(`❌ Error checking tracker installation for ${siteUrl}:`, error);
+      console.error(`   Error type: ${(error as Error).constructor.name}`);
+      console.error(`   Error message: ${(error as Error).message}`);
+      if ((error as Error).stack) {
+        console.error(`   Stack trace: ${(error as Error).stack}`);
+      }
+      return false;
+    }
+  }
+
 }

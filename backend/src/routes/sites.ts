@@ -406,7 +406,52 @@ router.get('/:siteId/tracker-script', authenticateJWT, sitesController.getTracke
 
 /**
  * @openapi
- * /api/v1/sites/{siteId}/analytics/demographics:
+ * /api/v1/sites/{siteId}/check-tracker:
+ *   post:
+ *     summary: Check if tracker script is installed on a site
+ *     tags: [Sites]
+ *     parameters:
+ *       - in: path
+ *         name: siteId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Tracker installation check completed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     siteId:
+ *                       type: string
+ *                     url:
+ *                       type: string
+ *                     trackerId:
+ *                       type: string
+ *                     isInstalled:
+ *                       type: boolean
+ *                     checkedAt:
+ *                       type: string
+ *                       format: date-time
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Invalid site ID format
+ *       404:
+ *         description: Site not found
+ *       500:
+ *         description: Failed to check tracker installation
+ */
+router.post('/:siteId/check-tracker', authenticateJWT, sitesController.checkTrackerInstallation);
+
+/**
  *   get:
  *     summary: Get demographics analytics for a site
  *     tags: [Analytics]
