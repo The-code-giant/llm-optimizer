@@ -181,7 +181,11 @@ export default function PageAnalysisPage() {
 
   // Check if content is deployed for a section
   const isContentDeployed = (contentType: string) => {
-    return contentVersions[contentType]?.some(content => content.isActive === 1) || false;
+    const content = contentVersions[contentType];
+    console.log(`Checking deployment for ${contentType}:`, content);
+    const isDeployed = content?.some(item => item.isActive === 1) || false;
+    console.log(`Is ${contentType} deployed:`, isDeployed);
+    return isDeployed;
   };
 
   // Move fetchData to top-level scope so it can be called from handleUndeploy
@@ -228,6 +232,7 @@ export default function PageAnalysisPage() {
           faq: [],
           paragraph: [],
           keywords: [],
+          schema: [],
         };
         // Safety check: ensure content is an array before calling forEach
         if (Array.isArray(content)) {
@@ -696,7 +701,7 @@ export default function PageAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">Optimize Page Title</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {analysis?.sectionRatings?.title || 0}/10
+                                  {sectionRatings?.sectionRatings?.title || 0}/10
                                 </span>
                               </div>
                             </div>
@@ -717,7 +722,7 @@ export default function PageAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">Improve Meta Description</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {analysis?.sectionRatings?.description || 0}/10
+                                  {sectionRatings?.sectionRatings?.description || 0}/10
                                 </span>
                               </div>
                             </div>
@@ -738,7 +743,7 @@ export default function PageAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium text-sm">Add Schema Markup</span>
                                 <span className="text-xs text-muted-foreground">
-                                  {analysis?.sectionRatings?.schema || 0}/10
+                                  {sectionRatings?.sectionRatings?.schema || 0}/10
                                 </span>
                               </div>
                             </div>
@@ -1475,6 +1480,31 @@ export default function PageAnalysisPage() {
                                     setSectionRatings(updatedSectionRatings);
                                   } catch (error) {
                                     console.error('Failed to refresh section ratings:', error);
+                                    // Fallback: refresh all data
+                                    await fetchData();
+                                  }
+
+                                  // Refresh page content data to update task completion status
+                                  try {
+                                    const updatedContent = await getPageContent(token, pageId);
+                                    const content = updatedContent.content;
+                                    const grouped: { [type: string]: PageContentData[] } = {
+                                      title: [],
+                                      description: [],
+                                      faq: [],
+                                      paragraph: [],
+                                      keywords: [],
+                                      schema: [],
+                                    };
+                                    if (Array.isArray(content)) {
+                                      content.forEach((item: PageContentData) => {
+                                        if (grouped[item.contentType]) grouped[item.contentType].push(item);
+                                      });
+                                    }
+                                    setContentVersions(grouped);
+                                    console.log('Updated content versions:', grouped);
+                                  } catch (error) {
+                                    console.error('Failed to refresh page content:', error);
                                     // Fallback: refresh all data
                                     await fetchData();
                                   }
