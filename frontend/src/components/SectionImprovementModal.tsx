@@ -414,14 +414,6 @@ export default function SectionImprovementModal({
                   </div>
                 )}
 
-                {/* AI Generation Context */}
-                {aiGenerationContext && (
-                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">🧠 AI Analysis Context</h4>
-                    <p className="text-sm text-gray-700">{aiGenerationContext}</p>
-                  </div>
-                )}
-
                 {/* Schema Content Notice */}
                 {sectionType === 'schema' && originalRawContent !== generatedContent && (
                   <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
