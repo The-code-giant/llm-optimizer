@@ -1283,9 +1283,34 @@ export async function getDashboardMetrics(token: string): Promise<DashboardMetri
     },
   });
 
+  return response.json();
+}
+
+/**
+ * Check if tracker script is installed on a site
+ */
+export async function checkTrackerInstallation(
+  token: string,
+  siteId: string
+): Promise<{
+  siteId: string;
+  url: string;
+  trackerId: string;
+  isInstalled: boolean;
+  checkedAt: string;
+}> {
+  const response = await fetch(`${API_BASE}/sites/${siteId}/check-tracker`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
   if (!response.ok) {
-    throw new Error('Failed to fetch dashboard metrics');
+    throw new Error('Failed to check tracker installation');
   }
 
-  return response.json();
+  const result = await response.json();
+  return result.data;
 }

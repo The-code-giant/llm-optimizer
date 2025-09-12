@@ -1,13 +1,15 @@
 "use client";
 
-import { CheckCircle, Target } from "lucide-react";
+import { CheckCircle, Target, Loader2, RefreshCw } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SiteDetails, Page } from "@/lib/api";
+import { SiteDetails, Page, checkTrackerInstallation } from "@/lib/api";
+import { useAuth } from "@clerk/nextjs";
 
 interface SiteGettingStartedChecklistProps {
   site: SiteDetails | null;
@@ -24,6 +26,51 @@ export function SiteGettingStartedChecklist({
   onShowTrackerScript,
   onSetActiveTab,
 }: SiteGettingStartedChecklistProps) {
+  const { getToken } = useAuth();
+  const [isCheckingTracker, setIsCheckingTracker] = useState(false);
+  const [trackerInstalled, setTrackerInstalled] = useState<boolean | null>(null);
+
+  const checkTrackerStatus = useCallback(async () => {
+    if (!site?.id || !getToken) return;
+    
+    console.log(`🔄 Frontend: Starting tracker check for site: ${site.id}`);
+    setIsCheckingTracker(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.log(`❌ Frontend: No auth token available`);
+        return;
+      }
+      
+      console.log(`🌐 Frontend: Calling checkTrackerInstallation API...`);
+      const result = await checkTrackerInstallation(token, site.id);
+      console.log(`📋 Frontend: API response:`, result);
+      
+      setTrackerInstalled(result.isInstalled);
+      console.log(`✅ Frontend: Tracker installed status set to: ${result.isInstalled}`);
+    } catch (error) {
+      console.error('❌ Frontend: Failed to check tracker installation:', error);
+      setTrackerInstalled(false);
+    } finally {
+      setIsCheckingTracker(false);
+      console.log(`🏁 Frontend: Tracker check completed`);
+    }
+  }, [site?.id, getToken]);
+
+  // Check tracker installation when component mounts or site changes
+  useEffect(() => {
+    console.log(`🎯 Frontend: useEffect triggered - site?.id: ${site?.id}, site?.trackerId: ${site?.trackerId}`);
+    if (site?.id && site?.trackerId) {
+      console.log(`🚀 Frontend: Auto-checking tracker status...`);
+      checkTrackerStatus();
+    } else {
+      console.log(`⏸️ Frontend: Skipping auto-check - missing site ID or tracker ID`);
+    }
+  }, [site?.id, site?.trackerId, checkTrackerStatus]);
+
+  // Determine if tracker is installed
+  const isTrackerInstalled = trackerInstalled !== null ? trackerInstalled : !!site?.trackerId;
+
   return (
     <Card className='gap-1'>
       <CardHeader className="pb-3">
@@ -49,11 +96,28 @@ export function SiteGettingStartedChecklist({
                 </div>
                 <span className="font-medium text-sm">Install tracker script</span>
               </div>
-              {site?.trackerId ? (
-                <CheckCircle className="h-4 w-4 text-green-500" />
-              ) : (
-                <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
-              )}
+              <div className="flex items-center gap-2">
+                {site?.trackerId && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      checkTrackerStatus();
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                    disabled={isCheckingTracker}
+                    title="Check if tracker is installed"
+                  >
+                    <RefreshCw className={`h-3 w-3 text-gray-500 ${isCheckingTracker ? 'animate-spin' : ''}`} />
+                  </button>
+                )}
+                {isCheckingTracker ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                ) : isTrackerInstalled ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <div className="h-4 w-4 border-2 border-gray-300 rounded-full" />
+                )}
+              </div>
             </div>
 
             {/* Import pages */}
