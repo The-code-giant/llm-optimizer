@@ -189,15 +189,9 @@ export default function SectionImprovementModal({
       const actualKeyPoints = responseData.generatedContent?.keyPoints || responseData.keyPoints || [];
       const actualRecommendations = responseData.recommendations || responseData.recommendationsAddressed || [];
       
-      console.log('🔍 Debug - Full API Response:', result);
-      console.log('🔍 Debug - Response Data:', responseData);
-      console.log('🔍 Debug - Extracted Content:', actualContent);
-      console.log('🔍 Debug - Extracted Key Points:', actualKeyPoints);
-      console.log('🔍 Debug - Extracted Recommendations:', actualRecommendations);
       
       setOriginalRawContent(actualContent); // Store original for comparison
       const cleanedContent = cleanSchemaContent(actualContent);
-      console.log('🔍 Debug - Cleaned Content:', cleanedContent);
       setGeneratedContent(cleanedContent);
       setAiKeyPoints(actualKeyPoints);
       setAiRecommendationsAddressed(actualRecommendations);

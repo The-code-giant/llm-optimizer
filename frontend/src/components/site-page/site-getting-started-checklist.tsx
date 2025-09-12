@@ -33,38 +33,25 @@ export function SiteGettingStartedChecklist({
   const checkTrackerStatus = useCallback(async () => {
     if (!site?.id || !getToken) return;
     
-    console.log(`🔄 Frontend: Starting tracker check for site: ${site.id}`);
     setIsCheckingTracker(true);
     try {
       const token = await getToken();
-      if (!token) {
-        console.log(`❌ Frontend: No auth token available`);
-        return;
-      }
+      if (!token) return;
       
-      console.log(`🌐 Frontend: Calling checkTrackerInstallation API...`);
       const result = await checkTrackerInstallation(token, site.id);
-      console.log(`📋 Frontend: API response:`, result);
-      
       setTrackerInstalled(result.isInstalled);
-      console.log(`✅ Frontend: Tracker installed status set to: ${result.isInstalled}`);
     } catch (error) {
-      console.error('❌ Frontend: Failed to check tracker installation:', error);
+      console.error('Failed to check tracker installation:', error);
       setTrackerInstalled(false);
     } finally {
       setIsCheckingTracker(false);
-      console.log(`🏁 Frontend: Tracker check completed`);
     }
   }, [site?.id, getToken]);
 
   // Check tracker installation when component mounts or site changes
   useEffect(() => {
-    console.log(`🎯 Frontend: useEffect triggered - site?.id: ${site?.id}, site?.trackerId: ${site?.trackerId}`);
     if (site?.id && site?.trackerId) {
-      console.log(`🚀 Frontend: Auto-checking tracker status...`);
       checkTrackerStatus();
-    } else {
-      console.log(`⏸️ Frontend: Skipping auto-check - missing site ID or tracker ID`);
     }
   }, [site?.id, site?.trackerId, checkTrackerStatus]);
 

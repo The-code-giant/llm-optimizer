@@ -154,7 +154,6 @@ export default function Webinars() {
 
   const handleRegistration = (webinarId: number) => {
     // Handle webinar registration
-    console.log('Registering for webinar:', webinarId, registrationData);
   };
 
   return (

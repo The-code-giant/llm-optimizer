@@ -80,7 +80,6 @@ export default function Demo() {
   // const handleSubmit = (e: React.FormEvent) => {
   //   e.preventDefault();
   //   // Handle form submission
-  //   console.log('Demo booking:', { ...formData, selectedTime });
   // };
 
 

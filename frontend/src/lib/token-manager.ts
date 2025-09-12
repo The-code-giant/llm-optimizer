@@ -82,7 +82,6 @@ export class TokenManager {
     getTokenFn: (options?: GetTokenOptions) => Promise<string | null>,
     options?: GetTokenOptions
   ): Promise<string> {
-    console.log('🔄 Refreshing JWT token...');
     
     const token = await getTokenFn(options);
     if (!token) {
@@ -94,7 +93,6 @@ export class TokenManager {
     this.tokenCache = token;
     this.tokenExpiry = payload?.exp || null;
 
-    console.log('✅ JWT token refreshed successfully');
     return token;
   }
 
@@ -118,20 +116,14 @@ export class TokenManager {
     }
 
     const now = Math.floor(Date.now() / 1000);
-    const expiryDate = new Date(payload.exp * 1000);
-    const currentDate = new Date();
     const secondsUntilExpiry = payload.exp - now;
 
-    console.log(`🕐 Token expires: ${expiryDate.toISOString()}`);
-    console.log(`🕐 Current time: ${currentDate.toISOString()}`);
-    console.log(`⏱️ Seconds until expiry: ${secondsUntilExpiry}`);
     
     if (secondsUntilExpiry <= 0) {
       console.warn('❌ Token is expired!');
     } else if (secondsUntilExpiry <= 60) {
       console.warn(`⚠️ Token expires soon: ${secondsUntilExpiry} seconds`);
     } else {
-      console.log('✅ Token is valid');
     }
   }
 }
@@ -173,7 +165,6 @@ export async function fetchWithTokenRefresh(
         wwwAuth?.includes('JWT is expired');
 
       if (isTokenExpired) {
-        console.log('🔄 Token expired, refreshing and retrying request...');
         
         // Clear cache and get a fresh token
         TokenManager.clearCache();
@@ -191,7 +182,6 @@ export async function fetchWithTokenRefresh(
         if (response.status === 401) {
           console.error('❌ Still getting 401 after token refresh - may need to re-authenticate');
         } else {
-          console.log('✅ Request succeeded after token refresh');
         }
       }
     } catch (parseError) {

@@ -29,16 +29,6 @@ export async function POST(request: NextRequest) {
 
     // Check if SendGrid is configured
     if (!process.env.SENDGRID_API_KEY) {
-      console.log('SendGrid not configured, logging application data instead');
-      console.log('Application Data:', {
-        firstName,
-        lastName,
-        email,
-        position,
-        coverLetter,
-        resumeFileName: resumeFile.name,
-        resumeFileSize: resumeFile.size
-      });
       
       return NextResponse.json(
         { message: 'Application received successfully (SendGrid not configured)' },
@@ -84,14 +74,9 @@ export async function POST(request: NextRequest) {
       throw new Error('SENDGRID_FROM_EMAIL environment variable is required and must be a verified sender in SendGrid');
     }
 
-    console.log('Attempting to send email via SendGrid...');
-    console.log('From:', msg.from);
-    console.log('To:', msg.to);
-    console.log('Subject:', msg.subject);
 
     // Send email
     await sgMail.send(msg);
-    console.log('Application email sent successfully');
 
     // Send confirmation email to applicant
     const confirmationMsg = {
@@ -110,7 +95,6 @@ export async function POST(request: NextRequest) {
     };
 
     await sgMail.send(confirmationMsg);
-    console.log('Confirmation email sent successfully');
 
     return NextResponse.json(
       { message: 'Application submitted successfully' },

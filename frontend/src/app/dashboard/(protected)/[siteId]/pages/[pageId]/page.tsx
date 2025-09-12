@@ -182,9 +182,7 @@ export default function PageAnalysisPage() {
   // Check if content is deployed for a section
   const isContentDeployed = (contentType: string) => {
     const content = contentVersions[contentType];
-    console.log(`Checking deployment for ${contentType}:`, content);
     const isDeployed = content?.some(item => item.isActive === 1) || false;
-    console.log(`Is ${contentType} deployed:`, isDeployed);
     return isDeployed;
   };
 
@@ -212,12 +210,6 @@ export default function PageAnalysisPage() {
           originalContentResult.value.originalContent?.metaDescription || ""
         );
       }
-      console.log({
-        pageDetails,
-        analysisData,
-        savedContent,
-        originalContentResult,
-      });
       if (pageDetails.status === "fulfilled") {
         setPageData(pageDetails.value);
       } else {
@@ -248,10 +240,8 @@ export default function PageAnalysisPage() {
         setAnalysis(null);
       }
       if (sectionRatingsData.status === "fulfilled") {
-        console.log("Section ratings data:", sectionRatingsData.value);
         setSectionRatings(sectionRatingsData.value);
       } else {
-        console.log("Section ratings failed:", sectionRatingsData.reason);
         setSectionRatings(null);
       }
       setLoading(false);
@@ -305,7 +295,6 @@ export default function PageAnalysisPage() {
           setToast({ message: "Analysis completed!", type: "success" });
         } catch {
           // Analysis might still be processing
-          console.log("Analysis still processing...");
         }
       }, 5000);
     } catch (err: unknown) {
@@ -465,7 +454,6 @@ export default function PageAnalysisPage() {
       </SidebarProvider>
     );
   }
-  console.log({ pageData, analysis });
   if (error || !pageData) {
     return (
       <SidebarProvider>
@@ -513,7 +501,6 @@ export default function PageAnalysisPage() {
   const deployedParagraph = (contentVersions.paragraph || []).find(
     (c) => c.isActive === 1
   );
-  console.log(contentVersions);
   const hasAnyDeployed = Boolean(
     deployedTitle || deployedDescription || deployedFAQ || deployedParagraph
   );
@@ -1502,7 +1489,6 @@ export default function PageAnalysisPage() {
                                       });
                                     }
                                     setContentVersions(grouped);
-                                    console.log('Updated content versions:', grouped);
                                   } catch (error) {
                                     console.error('Failed to refresh page content:', error);
                                     // Fallback: refresh all data
