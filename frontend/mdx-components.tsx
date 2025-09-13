@@ -94,6 +94,14 @@ export function CustomTd({ children }: { children: React.ReactNode }) {
   )
 }
 
+export function CustomLink({ children, href }: { children: React.ReactNode, href: string }) {
+  return (
+    <a href={href} target="_blank" className="text-blue-500 underline hover:text-blue-700 transition-colors duration-200">
+      {children}
+    </a>
+  )
+}
+
 export function useMDXComponents(components: MDXComponents): MDXComponents {
   return {
     ...components,
@@ -114,6 +122,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     td: CustomTd,
     Callout,
     HighlightedText,
+    a: CustomLink,
   }
 }
 
@@ -135,5 +144,6 @@ const components: MDXComponents = {
   td: CustomTd,
   Callout,
   HighlightedText,
+  a: CustomLink,
 };
 export default components;
