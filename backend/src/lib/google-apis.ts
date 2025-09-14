@@ -26,13 +26,13 @@ export async function writeToGoogleSheet(application: any) : Promise<{success: b
       });
       
       const rows = res.data.values || [];
-            
+
       // Check if email already exists
       const exists = rows.some((row) => row[0] === application.companyEmail);
       
       if (exists) {
         console.log(`Email ${application.companyEmail} already exists in the sheet`);
-        return {success: true, message: "You have already applied for early access."};
+        return {success: false, message: "You have already applied for early access."};
       }
 
       await sheets.spreadsheets.values.append({
