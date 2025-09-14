@@ -34,6 +34,7 @@ import {
   dashboardRateLimit,
   authRateLimit,
 } from "./middleware/rateLimit";
+import earlyAccessRouter from "./routes/early-access";
 
 // Import workers to start background job processing
 // Conditionally start background workers (can be disabled in development)
@@ -303,6 +304,7 @@ app.use("/api/v1/tools", generalRateLimit, toolsRouter);
 app.use("/api/v1/leads", generalRateLimit, leadsRouter);
 app.use("/api/v1/analytics", dashboardRateLimit, analyticsRouter);
 app.use("/api/v1/tracker", trackerRouter);
+app.use("/api/v1/early-access", generalRateLimit, earlyAccessRouter);
 
 // Serve static files for tracker script (MUST be after API routes)
 app.use("/tracker", express.static("public/tracker"));
