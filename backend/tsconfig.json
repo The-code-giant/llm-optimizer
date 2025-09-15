@@ -9,8 +9,16 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "isolatedModules": true,
+    "noEmitOnError": false,
+    "preserveConstEnums": true,
+    "sourceMap": false,
+    "declaration": false,
+    "removeComments": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["node_modules", "**/*.spec.ts", "dist", "**/*.test.ts"]
 }

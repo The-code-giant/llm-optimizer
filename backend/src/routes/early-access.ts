@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { writeToGoogleSheet } from '../lib/google-apis';
+import { writeToGoogleSheet } from '../lib/google-sheets-api';
 
 
 const router = Router();
