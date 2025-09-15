@@ -13,6 +13,7 @@ import { z } from "zod";
 import { submitWebsiteUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
+import ApplicationModal from "./early-access/application-modal";
 
 const transitionVariants = {
   item: {
@@ -289,12 +290,7 @@ export default function HeroSection() {
                   }}
                   className="relative z-20 mt-6 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row sm:gap-4"
                 >
-                  <Link
-                    href={"/register"}
-                    className="w-full transform rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-sm font-medium text-white transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:w-60 sm:py-2 sm:text-base md:text-lg"
-                  >
-                    {"Get started"}
-                  </Link>
+                <ApplicationModal />
                   <Link
                     href="/demo"
                     className="w-full transform rounded-2xl border border-gray-300 bg-transparent px-6 py-3 text-sm font-medium text-black transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-100 dark:border-gray-600 dark:text-white dark:hover:bg-gray-800 sm:w-60 sm:py-2 sm:text-base md:text-lg"

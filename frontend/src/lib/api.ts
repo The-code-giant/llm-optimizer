@@ -1314,3 +1314,12 @@ export async function checkTrackerInstallation(
   const result = await response.json();
   return result.data;
 }
+
+export async function submitEarlyAccessApplication(data: any): Promise<{ success: boolean, message: string }> {
+  const res = await fetch(`${API_BASE}/early-access`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+}
