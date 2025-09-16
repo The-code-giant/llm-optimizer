@@ -32,6 +32,7 @@ interface SectionImprovementFormProps {
   currentScore: number;
   onBack: () => void;
   onContentGenerated: (content: string, newScore: number) => void;
+  originalContent?: string; // Add original content prop
 }
 
 const sectionLabels = {
@@ -61,6 +62,7 @@ export default function SectionImprovementForm({
   currentScore,
   onBack,
   onContentGenerated,
+  originalContent,
 }: SectionImprovementFormProps) {
   const { getToken } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
@@ -392,12 +394,47 @@ export default function SectionImprovementForm({
               Content Generated & Deployed Successfully!
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-              <h4 className="font-semibold mb-2 text-green-800">✅ Content Successfully Generated & Deployed</h4>
-              <pre className="text-sm whitespace-pre-wrap text-green-700">{generatedContent}</pre>
+          <CardContent className="space-y-6">
+            {/* Before/After Comparison */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Original Content */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                  Original {sectionLabel}
+                </h4>
+                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <p className="text-sm text-gray-600">
+                    {originalContent || `No ${sectionType} content available`}
+                  </p>
+                </div>
+              </div>
+
+              {/* Generated Content */}
+              <div className="space-y-2">
+                <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  New {sectionLabel}
+                </h4>
+                <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                  <p className="text-sm text-green-800 font-medium">
+                    {generatedContent.split('Generated Content:')[1]?.split('---')[0]?.trim() || generatedContent}
+                  </p>
+                </div>
+              </div>
             </div>
 
+            {/* Recommendations Addressed */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h4 className="font-semibold text-blue-800 mb-2">✅ Recommendations Addressed</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                {selectedRecommendations.map((rec, index) => (
+                  <li key={index}>• {rec}</li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Score Improvement */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="text-center p-4 border rounded-lg">
                 <div className="text-2xl font-bold text-gray-600">{currentScore}/10</div>

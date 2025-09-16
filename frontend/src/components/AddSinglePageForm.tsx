@@ -105,7 +105,7 @@ export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToas
     }
   } catch (err) {
     // Timeout waiting for analysis or auth error — proceed but inform user
-  console.warn("Error waiting for analysis", err);
+  console.log("Error waiting for analysis", err);
     setProgress(90);
     setPhase(null);
     if (err instanceof Error && err.message.includes("Authentication failed")) {
@@ -123,9 +123,10 @@ export default function AddSinglePageForm({ siteId, siteUrl, onCompleted, onToas
       router.push(`/dashboard/${siteId}/pages/${created.id}`);
       
     } catch (error) {
-      console.error("Error adding page:", error);
-      setFormError("Failed to add page. Please try again.");
-      onToast?.({ message: "Failed to add page", type: "error" });
+      const message = error instanceof Error ? JSON.parse(error.message) : 'Failed to add page. Please try again.';
+      console.log("Error adding page:", message);
+      setFormError(message.error);
+      onToast?.({ message, type: "error" });
     } finally {
       setAdding(false);
     }

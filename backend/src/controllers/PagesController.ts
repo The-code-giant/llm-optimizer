@@ -294,6 +294,19 @@ export class PagesController extends BaseController {
       // Don't fail the analysis if AI recommendations fail
     }
 
+    // Deprecated: auto-generating content suggestions
+    // We are not using content_suggestions in the UI right now and will remove it.
+    // Leaving this block commented to avoid writes and to make cleanup straightforward.
+    /*
+    try {
+      console.log('🧩 Generating content suggestions for page...');
+      await AnalysisService.autoGenerateContentSuggestions(pageId, analysisResult.content, analysisResult);
+      console.log('✅ Content suggestions generated and stored');
+    } catch (suggestErr) {
+      console.warn('⚠️ Content suggestion generation failed (non-blocking):', suggestErr);
+    }
+    */
+
     this.sendSuccess(res, {
       pageId,
       score: finalScore,

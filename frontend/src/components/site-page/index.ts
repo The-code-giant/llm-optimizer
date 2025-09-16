@@ -5,3 +5,4 @@ export { SiteDashboardOverview } from "./site-dashboard-overview";
 export { SitePagesManagement } from "./site-pages-management";
 export { SiteSettingsDialog } from "./site-settings-dialog";
 export { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+export { DeletePageDialog } from "./delete-page-dialog";

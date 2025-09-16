@@ -560,16 +560,33 @@ export class SitesController extends BaseController {
     // Validate siteId
     const siteIdValidation = UUIDSchema.safeParse(siteId);
     if (!siteIdValidation.success) {
+      console.warn('createPage: invalid siteId format', { siteId });
       return this.sendError(res, 'Invalid site ID format', 400);
     }
 
     // Validate request body
+    console.log('createPage: incoming body', req.body);
     const bodyValidation = this.validateBody(CreatePageSchema, req.body);
     if (!bodyValidation.isValid) {
+      console.warn('createPage: body validation failed', { errors: bodyValidation.errors });
       return this.sendError(res, 'Invalid request body', 400, bodyValidation.errors);
     }
 
     const { url, title } = bodyValidation.data!;
+    try {
+      // Log parsed URL parts to help debug environment-specific URLs with ports
+      const parsed = new URL(url);
+      console.log('createPage: parsed URL', {
+        href: parsed.href,
+        protocol: parsed.protocol,
+        host: parsed.host,
+        hostname: parsed.hostname,
+        port: parsed.port,
+        pathname: parsed.pathname
+      });
+    } catch (e) {
+      console.warn('createPage: URL parsing failed', { url, error: (e as Error).message });
+    }
 
     // Check if site exists and belongs to user
     const siteArr = await db
@@ -580,6 +597,7 @@ export class SitesController extends BaseController {
 
     const site = siteArr[0];
     if (!site) {
+      console.warn('createPage: site not found or not owned by user', { siteId, userId });
       return this.sendError(res, 'Site not found', 404);
     }
 
@@ -591,7 +609,13 @@ export class SitesController extends BaseController {
       .limit(1);
 
     if (existingPage.length > 0) {
-      return this.sendError(res, 'Page with this URL already exists', 400);
+      console.warn('createPage: duplicate page URL for site', { siteId, url });
+      return this.sendError(
+        res,
+        'A page with this URL already exists in this site.',
+        400,
+        [{ code: 'PAGE_ALREADY_EXISTS', siteId, url }]
+      );
     }
 
     // Create new page
