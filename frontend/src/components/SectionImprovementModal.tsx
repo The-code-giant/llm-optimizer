@@ -365,40 +365,110 @@ export default function SectionImprovementModal({
                 <h3 className="text-lg font-medium">Review & Regenerate</h3>
               </div>
 
-              <div className="space-y-6">
-                {/* Before/After Comparison */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Original Content */}
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-700 flex items-center gap-2">
-                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                      Original {sectionType}
-                    </h4>
-                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                      <p className="text-sm text-gray-600">
-                        {originalContent || `No ${sectionType} content available`}
-                      </p>
+              {/* Development Notice for disabled sections */}
+              {sectionType !== 'title' && sectionType !== 'description' && sectionType !== 'schema' && (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Generated Content */}
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-green-700 flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      New {sectionType}
-                    </h4>
-                    <div className="p-4 border border-green-200 rounded-lg bg-green-50">
-                      <p className="text-sm text-green-800 font-medium">
-                        {generatedContent || "Content will be generated..."}
+                    <div>
+                      <h4 className="font-medium text-yellow-800 mb-1">Feature Under Development</h4>
+                      <p className="text-sm text-yellow-700 mb-2">
+                        This feature is under development and will not show on your website yet. 
+                        You can apply these recommendations manually to your website for now.
                       </p>
-                      {generatedContent && (
-                        <p className="text-xs text-green-600 mt-2">
-                          {getCharacterCount()} characters • Ready to Deploy
-                        </p>
-                      )}
+                      <div className="text-xs text-yellow-600">
+                        <strong>Manual Implementation:</strong>
+                        <ul className="mt-1 ml-4 list-disc">
+                          {selectedRecommendations.map((rec, index) => (
+                            <li key={index}>{rec.title}: {rec.description}</li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
+              )}
+
+              <div className="space-y-6">
+                {/* Before/After Comparison - Only show for enabled sections */}
+                {(sectionType === 'title' || sectionType === 'description' || sectionType === 'schema') && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Original Content */}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                        Original {sectionType}
+                      </h4>
+                      <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                        <p className="text-sm text-gray-600">
+                          {originalContent || `No ${sectionType} content available`}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Generated Content */}
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        New {sectionType}
+                      </h4>
+                      <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                        <p className="text-sm text-green-800 font-medium">
+                          {generatedContent || "Content will be generated..."}
+                        </p>
+                        {generatedContent && (
+                          <p className="text-xs text-green-600 mt-2">
+                            {getCharacterCount()} characters • Ready to Deploy
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Generated Content Display - Only show for disabled sections */}
+                {sectionType !== 'title' && sectionType !== 'description' && sectionType !== 'schema' && generatedContent && (
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-blue-700 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      Generated {sectionType} Content
+                    </h4>
+                    <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+                      {sectionType === 'headings' ? (
+                        <div className="text-sm text-blue-800 font-medium">
+                          <div className="prose prose-sm max-w-none">
+                            {generatedContent.split('\n').map((line, index) => {
+                              if (line.startsWith('## ')) {
+                                return <h2 key={index} className="text-lg font-bold mt-4 mb-2">{line.replace('## ', '')}</h2>;
+                              } else if (line.startsWith('### ')) {
+                                return <h3 key={index} className="text-base font-semibold mt-3 mb-2">{line.replace('### ', '')}</h3>;
+                              } else if (line.startsWith('#### ')) {
+                                return <h4 key={index} className="text-sm font-semibold mt-2 mb-1">{line.replace('#### ', '')}</h4>;
+                              } else if (line.startsWith('- ')) {
+                                return <li key={index} className="ml-4">{line.replace('- ', '')}</li>;
+                              } else if (line.trim() === '') {
+                                return <br key={index} />;
+                              } else {
+                                return <p key={index} className="mb-2">{line}</p>;
+                              }
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-blue-800 font-medium whitespace-pre-wrap">
+                          {generatedContent}
+                        </p>
+                      )}
+                      <p className="text-xs text-blue-600 mt-2">
+                        {getCharacterCount()} characters • Apply manually to your website
+                      </p>
+                    </div>
+                  </div>
+                )}
 
 
                 {/* Success Summary - Only show if content was actually generated */}
@@ -500,10 +570,22 @@ export default function SectionImprovementModal({
                       )}
                     </Button>
                     
-                    <Button onClick={handleDeploy}>
-                      Deploy Changes
-                      <CheckCircle className="h-4 w-4 ml-2" />
-                    </Button>
+                    {(sectionType === 'title' || sectionType === 'description' || sectionType === 'schema') ? (
+                      <Button onClick={handleDeploy}>
+                        Deploy Changes
+                        <CheckCircle className="h-4 w-4 ml-2" />
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={() => {
+                          alert('This feature is under development. Please apply the generated content manually to your website.');
+                        }}
+                        variant="outline"
+                        disabled
+                      >
+                        Manual Implementation Only
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -512,6 +594,34 @@ export default function SectionImprovementModal({
 
           {currentStep === 3 && (
             <div className="space-y-6">
+              {/* Development Notice for disabled sections */}
+              {sectionType !== 'title' && sectionType !== 'description' && sectionType !== 'schema' && (
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs font-bold">!</span>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-yellow-800 mb-1">Feature Under Development</h4>
+                      <p className="text-sm text-yellow-700 mb-2">
+                        This feature is under development and will not show on your website yet. 
+                        You can apply these recommendations manually to your website for now.
+                      </p>
+                      <div className="text-xs text-yellow-600">
+                        <strong>Manual Implementation:</strong>
+                        <ul className="mt-1 ml-4 list-disc">
+                          {selectedRecommendations.map((rec, index) => (
+                            <li key={index}>{rec.title}: {rec.description}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="text-center space-y-4">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
                 <div>
