@@ -51,6 +51,9 @@ interface SectionRatingDisplayProps {
   sectionRecommendations?: SectionRecommendations;
   overallScore?: number; // Add overall score from API
   onImproveSection: (sectionType: string, recommendations: Recommendation[]) => void;
+  // Add props for showing generated content
+  generatedContent?: { [sectionType: string]: string };
+  originalContent?: { [sectionType: string]: string };
 }
 
 const sectionConfig = {
@@ -68,6 +71,13 @@ const sectionConfig = {
     maxScore: 10,
     color: "bg-green-500",
   },
+  schema: {
+    icon: Database,
+    label: "Schema Markup",
+    description: "Structured data implementation",
+    maxScore: 10,
+    color: "bg-red-500",
+  },
   headings: {
     icon: Hash,
     label: "Heading Structure",
@@ -81,13 +91,6 @@ const sectionConfig = {
     description: "Comprehensive and valuable content",
     maxScore: 10,
     color: "bg-orange-500",
-  },
-  schema: {
-    icon: Database,
-    label: "Schema Markup",
-    description: "Structured data implementation",
-    maxScore: 10,
-    color: "bg-red-500",
   },
   images: {
     icon: Image,
@@ -110,8 +113,13 @@ export default function SectionRatingDisplay({
   sectionRecommendations,
   overallScore,
   onImproveSection,
+  generatedContent,
+  originalContent,
 }: SectionRatingDisplayProps) {
   const [currentRatings, setCurrentRatings] = useState<SectionRating | null>(null);
+  
+  // Debug: Log the props we receive
+  
   useEffect(() => {
     if (sectionRatings) {
       setCurrentRatings(sectionRatings);
@@ -189,7 +197,7 @@ export default function SectionRatingDisplay({
           const recommendations = sectionRecommendations?.[sectionType as keyof SectionRecommendations] || [];
           const hasRecommendations = recommendations.length > 0;
           return (
-            <Card key={sectionType} id={`${sectionType}-section`} className="hover:shadow-md transition-shadow">
+            <Card key={sectionType} id={`${sectionType}-section`} className="hover:shadow-md transition-shadow gap-1">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -215,8 +223,43 @@ export default function SectionRatingDisplay({
                     <Progress value={(score / 10) * 100} className="h-2" />
                   </div>
 
-                  {/* Recommendations */}
-                  {hasRecommendations && (
+                  {/* Recommendations OR Content Comparison */}
+                  {generatedContent?.[sectionType] ? (
+                    // Show content comparison if content was deployed
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Content Comparison
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {/* Original Content */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                            <span className="text-xs font-medium text-gray-600">Original</span>
+                          </div>
+                          <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded text-xs border">
+                            <p className="text-gray-600 dark:text-gray-300">
+                              {originalContent?.[sectionType] || "No original content available"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Generated Content */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-xs font-medium text-green-600">Deployed</span>
+                          </div>
+                          <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded text-xs border border-green-200 dark:border-green-800">
+                            <p className="text-green-800 dark:text-green-200 font-medium">
+                              {generatedContent[sectionType]}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : hasRecommendations ? (
+                    // Show recommendations if no content was deployed
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-muted-foreground">
                         AI Recommendations ({recommendations.length})
@@ -246,7 +289,7 @@ export default function SectionRatingDisplay({
                         )}
                       </div>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* Improve Button */}
                   <Button

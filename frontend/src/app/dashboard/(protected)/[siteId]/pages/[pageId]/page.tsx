@@ -153,6 +153,10 @@ export default function PageAnalysisPage() {
   const [contentVersions, setContentVersions] = useState<{
     [type: string]: PageContentData[];
   }>({});
+  // Add state to track recently deployed content for immediate display
+  const [recentlyDeployedContent, setRecentlyDeployedContent] = useState<{
+    [sectionType: string]: string;
+  }>({});
 
   // 1. Add state for undeploy dialog
   const [undeployDialog, setUndeployDialog] = useState<{
@@ -307,38 +311,6 @@ export default function PageAnalysisPage() {
     }
   }
 
-  // Commented out with Content tab
-  // const getScoreBadge = (score: number) => {
-  //   if (score >= 80)
-  //     return (
-  //       <Badge variant="default" className="bg-green-500">
-  //         High ({score}%)
-  //       </Badge>
-  //     );
-  //   if (score >= 60)
-  //     return (
-  //       <Badge variant="secondary" className="bg-yellow-500">
-  //         Medium ({score}%)
-  //       </Badge>
-  //     );
-  //   return <Badge variant="destructive">Low ({score}%)</Badge>;
-  // };
-
-  // Commented out with Content tab
-  // const openEditor = (
-  //   contentType: "title" | "description" | "faq" | "paragraph" | "keywords",
-  //   currentContent: string,
-  //   title: string,
-  //   description: string
-  // ) => {
-  //   setEditorModal({
-  //     isOpen: true,
-  //     contentType,
-  //     currentContent,
-  //     title,
-  //     description,
-  //   });
-  // };
 
   const handleContentSave = async (
     content: string,
@@ -1413,8 +1385,30 @@ export default function PageAnalysisPage() {
                                 <SectionRatingDisplay
                                   pageId={pageId}
                                   sectionRatings={sectionRatings?.sectionRatings}
-                                  sectionRecommendations={sectionRatings?.sectionRecommendations}
+                                  sectionRecommendations={sectionRatings?.sectionRecommendations as any}
                                   overallScore={analysis?.score || 0}
+                                  generatedContent={{
+                                    title: (() => {
+                                      const recent = recentlyDeployedContent.title;
+                                      const fromVersions = (contentVersions.title || []).find(c => c.isActive)?.optimizedContent;
+                                      return recent || fromVersions || "";
+                                    })(),
+                                    description: recentlyDeployedContent.description || (contentVersions.description || []).find(c => c.isActive)?.optimizedContent || "",
+                                    headings: recentlyDeployedContent.headings || (contentVersions.headings || []).find(c => c.isActive)?.optimizedContent || "",
+                                    content: recentlyDeployedContent.content || (contentVersions.content || []).find(c => c.isActive)?.optimizedContent || "",
+                                    schema: recentlyDeployedContent.schema || (contentVersions.schema || []).find(c => c.isActive)?.optimizedContent || "",
+                                    images: recentlyDeployedContent.images || (contentVersions.images || []).find(c => c.isActive)?.optimizedContent || "",
+                                    links: recentlyDeployedContent.links || (contentVersions.links || []).find(c => c.isActive)?.optimizedContent || "",
+                                  }}
+                                  originalContent={{
+                                    title: pageData?.title || "",
+                                    description: originalMetaDescription || "",
+                                    headings: "",
+                                    content: "",
+                                    schema: "",
+                                    images: "",
+                                    links: "",
+                                  }}
                                   onImproveSection={(
                                     sectionType,
                                     recommendations
@@ -1442,6 +1436,15 @@ export default function PageAnalysisPage() {
                               recommendations={improvementModal.recommendations}
                               currentScore={improvementModal.currentScore}
                               onClose={() => setImprovementModal(null)}
+                              originalContent={(() => {
+                                // Get original content based on section type
+                                if (improvementModal.sectionType === "title") {
+                                  return pageData?.title || "";
+                                } else if (improvementModal.sectionType === "description") {
+                                  return originalMetaDescription || "";
+                                }
+                                return "";
+                              })()}
                               onContentGenerated={async (
                                 content: string,
                                 newScore: number
@@ -1460,6 +1463,33 @@ export default function PageAnalysisPage() {
                                     message: `${improvementModal.sectionType} section improved from ${improvementModal.currentScore}/10 to ${newScore}/10!`,
                                     type: "success",
                                   });
+
+                                  // Immediately show the deployed content in the comparison
+                                  setRecentlyDeployedContent(prev => {
+                                    const updated = {
+                                      ...prev,
+                                      [improvementModal.sectionType]: content
+                                    };
+                                    console.log('Setting recentlyDeployedContent to:', updated);
+                                    return updated;
+                                  });
+
+                                  // Debug: Log the deployed content
+                                  console.log('=== DEPLOYMENT DEBUG ===');
+                                  console.log('Section type:', improvementModal.sectionType);
+                                  console.log('Content received:', content);
+                                  console.log('Content type:', typeof content);
+                                  console.log('Content length:', content?.length);
+                                  console.log('Current recentlyDeployedContent:', recentlyDeployedContent);
+
+                                  // Clear the recently deployed content after 10 seconds
+                                  setTimeout(() => {
+                                    setRecentlyDeployedContent(prev => {
+                                      const updated = { ...prev };
+                                      delete updated[improvementModal.sectionType];
+                                      return updated;
+                                    });
+                                  }, 10000);
 
                                   // Refresh section ratings data to get updated scores
                                   try {

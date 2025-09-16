@@ -36,6 +36,7 @@ interface SectionImprovementModalProps {
   currentScore: number;
   onClose: () => void;
   onContentGenerated: (content: string, newScore: number) => void;
+  originalContent?: string; // Add original content prop
 }
 
 // Component for modal improvements - validation removed per user request
@@ -65,7 +66,8 @@ export default function SectionImprovementModal({
   recommendations,
   currentScore,
   onClose,
-  onContentGenerated
+  onContentGenerated,
+  originalContent,
 }: SectionImprovementModalProps) {
   const { getToken } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
@@ -229,7 +231,14 @@ export default function SectionImprovementModal({
         generatedContent
       );
 
-      onContentGenerated(generatedContent, estimatedNewScore);
+      // Debug: Log what we're passing to onContentGenerated
+      console.log('SectionImprovementModal - Passing to onContentGenerated:', {
+        originalRawContent,
+        generatedContent,
+        finalContent: originalRawContent || generatedContent
+      });
+
+      onContentGenerated(originalRawContent || generatedContent, estimatedNewScore);
       setCurrentStep(3); // Move to final step (3) instead of 4
     } catch (error) {
       console.error("Error deploying content:", error);
@@ -357,18 +366,40 @@ export default function SectionImprovementModal({
               </div>
 
               <div className="space-y-6">
-                {/* Generated Content - Moved to top */}
-                {generatedContent && (
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                    <h4 className="font-medium text-blue-800 mb-3">✨ Generated Content</h4>
-                    <div className="bg-white p-3 rounded border border-blue-100">
-                      <p className="text-sm whitespace-pre-wrap text-gray-900">{generatedContent}</p>
+                {/* Before/After Comparison */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Original Content */}
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-700 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                      Original {sectionType}
+                    </h4>
+                    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                      <p className="text-sm text-gray-600">
+                        {originalContent || `No ${sectionType} content available`}
+                      </p>
                     </div>
-                    <p className="text-xs text-blue-700 mt-2">
-                      {getCharacterCount()} characters • Ready to Deploy
-                    </p>
                   </div>
-                )}
+
+                  {/* Generated Content */}
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-green-700 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      New {sectionType}
+                    </h4>
+                    <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                      <p className="text-sm text-green-800 font-medium">
+                        {generatedContent || "Content will be generated..."}
+                      </p>
+                      {generatedContent && (
+                        <p className="text-xs text-green-600 mt-2">
+                          {getCharacterCount()} characters • Ready to Deploy
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
 
                 {/* Success Summary - Only show if content was actually generated */}
                 {generatedContent && (
