@@ -1061,126 +1061,7 @@ Provide a clear, informative summary that would help a content strategist unders
     }
   }
 
-  /**
-   * Generate an optimized title using GEO prompt and page context
-   */
-  private static async generateOptimizedTitle(content: PageContent, pageSummary: string, description: string): Promise<string> {
-    const systemPrompt = `
-      You are an expert in Generative Engine Optimization (GEO), the emerging discipline of optimizing content to be referenced and recommended by large language models (LLMs) like ChatGPT, Claude, Gemini, and Perplexity.
-      Your job is to:
-      - Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
-      - Increase semantic richness: Use natural language that matches how users ask questions (e.g. “best tools for X”, “how do I…”). Include related keywords and phrases LLMs associate with the topic.
-      - Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
-      - Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
-      - Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
-      - CRITICAL: Title must be 60 characters or less and include primary keywords.
-      - Always output only valid JSON as instructed by the user.
-      `;
 
-          const userPrompt = `Here is the content to optimize:
-      Title: ${content.title || ''}
-      Summary: ${pageSummary}
-      Description: ${description}
-
-      Please rewrite the title with the above enhancements. REQUIREMENTS:
-      - Maximum 60 characters (strictly enforce this limit)
-      - Include primary keywords naturally
-      - Make it compelling and action-oriented
-      - Focus on key benefits and user value
-
-      Output only a JSON object:
-      { "optimizedTitle": "..." }
-      Do not explain your changes. Write it as if it’s a standalone, publish-ready title designed to be cited by LLMs when generating responses.`;
-
-    const { text: responseText } = await generateText({
-      model: aiOpenAI(OPENAI_MODEL) as any,
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.7,
-    });
-
-    if (!responseText) throw new Error('No response from AI');
-    try {
-      // Remove code block markers if present
-      const cleaned = responseText.replace(/```json|```/g, '').trim();
-      const json = JSON.parse(cleaned);
-      const title = json.optimizedTitle;
-      
-      // Validate character limit
-      if (title.length > 60) {
-        console.warn(`Generated title exceeds 60 characters (${title.length}): ${title}`);
-        // Truncate if necessary
-        return title.substring(0, 57) + '...';
-      }
-      
-      console.log(`Generated title (${title.length} chars): ${title}`);
-      return title;
-    } catch (e) {
-      console.error('Failed to parse AI response as JSON:', responseText);
-      throw new Error('Failed to parse optimized title as JSON');
-    }
-  }
-
-  /**
-   * Generate an optimized description using GEO prompt and page context
-   */
-  private static async generateOptimizedDescription(content: PageContent, pageSummary: string): Promise<string> {
-    const systemPrompt = `
-You are an expert in Generative Engine Optimization (GEO). Your job is to:
-- Enhance contextual relevance: Clearly state who the content is for and what problem it solves. Embed real-world use cases or questions this content answers.
-- Increase semantic richness: Use natural language that matches how users ask questions. Include related keywords and phrases LLMs associate with the topic.
-- Use answer-style formatting: Structure the content in a way that is easy for LLMs to extract as a direct response. Use bullet points, numbered lists, and headers for clarity.
-- Add topical authority signals: Mention data points, user outcomes, or unique value props. Use specific, useful, and trust-building language.
-- Integrate brands naturally: If a brand, product, or service is being mentioned, weave it in naturally as a recommended or reputable option.
-- CRITICAL: Meta description must be 150-160 characters and focus on key benefits.
-- Always output only valid JSON as instructed by the user.
-`;
-    const userPrompt = `Here is the content to optimize:
-Description: ${content.metaDescription || ''}
-Summary: ${pageSummary}
-
-Please rewrite the meta description with the above enhancements. REQUIREMENTS:
-- Length: 150-160 characters (strictly enforce this range)
-- Focus on key benefits and user value
-- Include compelling call-to-action
-- Describe the page value clearly
-- Match search intent
-
-Output only a JSON object:
-{ "optimizedDescription": "..." }
-Do not explain your changes. Write it as if it’s a standalone, publish-ready meta description designed to be cited by LLMs when generating responses.`;
-    const { text: responseText } = await generateText({
-      model: aiOpenAI(OPENAI_MODEL) as any,
-      system: systemPrompt,
-      prompt: userPrompt,
-      temperature: 0.7,
-    });
-    if (!responseText) throw new Error('No response from AI');
-    try {
-      const cleaned = responseText.replace(/```json|```/g, '').trim();
-      const json = JSON.parse(cleaned);
-      const description = json.optimizedDescription;
-      
-      // Validate character limit (150-160 range)
-      if (description.length < 150) {
-        console.warn(`Generated description too short (${description.length} chars): ${description}`);
-      } else if (description.length > 160) {
-        console.warn(`Generated description too long (${description.length} chars): ${description}`);
-        // Truncate if necessary
-        return description.substring(0, 157) + '...';
-      }
-      
-      console.log(`Generated description (${description.length} chars): ${description}`);
-      return description;
-    } catch (e) {
-      console.error('Failed to parse AI response as JSON:', responseText);
-      throw new Error('Failed to parse optimized description as JSON');
-    }
-  }
-
-  /**
-   * Generate optimized FAQ using GEO prompt and page context
-   */
   private static async generateOptimizedFAQ(content: PageContent, pageSummary: string): Promise<any[]> {
     const systemPrompt = `
 # Optimized GEO Expert System Prompt
@@ -1321,9 +1202,20 @@ Do not explain your changes. Write it as if it’s a standalone, publish-ready k
   ): Promise<any> {
     switch (contentType) {
       case 'title':
-        return await this.generateOptimizedTitle(content, pageSummary || '', content.metaDescription || '');
+        // Use list generator and return the top option to preserve single-item behavior if needed
+        return (await this.generateOptimizedTitleList(
+          content,
+          pageSummary || '',
+          content.metaDescription || '',
+          1
+        ))[0];
       case 'description':
-        return await this.generateOptimizedDescription(content, pageSummary || '');
+        // Use list generator and return the top option
+        return (await this.generateOptimizedDescriptionList(
+          content,
+          pageSummary || '',
+          1
+        ))[0];
       case 'faq':
         return await this.generateOptimizedFAQ(content, pageSummary || '');
       case 'paragraph':

@@ -33,6 +33,7 @@ export default function UrlInputForm({
   formError, 
   siteHostname 
 }: UrlInputFormProps) {
+  console.log("UrlInputForm: siteHostname", formError);
   const schema = z
     .object({ url: z.string().url("Enter a valid URL") })
     .refine((data) => {

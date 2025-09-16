@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback } from "react";
 interface SitePagesManagementProps {
   site: SiteDetails;
   siteId: string;
+  refreshToken?: number;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   sortBy: "title" | "url" | "score" | "lastScanned" | "createdAt";
@@ -40,6 +41,7 @@ const ITEMS_PER_PAGE = 10;
 export function SitePagesManagement({
   site,
   siteId,
+  refreshToken,
   searchTerm,
   setSearchTerm,
   sortBy,
@@ -94,7 +96,7 @@ export function SitePagesManagement({
   // Fetch pages when filters or page changes
   useEffect(() => {
     fetchPages();
-  }, [fetchPages]);
+  }, [fetchPages, refreshToken]);
 
   // Reset to page 1 when filters change
   useEffect(() => {

@@ -2,7 +2,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import PageContentDeploymentModal from "@/components/content-deployment-modal";
 import { SiteHeader } from "@/components/site-header";
-import { DeleteConfirmationDialog, SiteAnalyticsTab, SiteDashboardOverview, SitePagesManagement, SiteSettingsDialog } from "@/components/site-page";
+import { DeleteConfirmationDialog, DeletePageDialog, SiteAnalyticsTab, SiteDashboardOverview, SitePagesManagement, SiteSettingsDialog } from "@/components/site-page";
 import Toast from "@/components/Toast";
 import { TourTrigger } from "@/components/tours";
 import TrackerScriptModal from "@/components/tracker-script-modal";
@@ -62,11 +62,14 @@ export default function SiteDetailsPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddPageModal, setShowAddPageModal] = useState(false);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showDeletePageDialog, setShowDeletePageDialog] = useState(false);
+  const [pendingDeletePage, setPendingDeletePage] = useState<Page | null>(null);
   const [selectedPageForDeployment, setSelectedPageForDeployment] =
     useState<Page | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "analytics">(
     "overview"
   );
+  const [pagesRefreshToken, setPagesRefreshToken] = useState(0);
 
   // Add Single Page and Import Sitemap handled by extracted components
 
@@ -226,19 +229,27 @@ export default function SiteDetailsPage() {
 
   // Calculate metrics using new scoring system
   const pagesWithScores = pages.filter(page => 
+    page.pageScore != null && page.pageScore > 0 ||
     (page.sectionRatings && Object.values(page.sectionRatings).some(score => score > 0)) || 
     (page.llmReadinessScore != null && page.llmReadinessScore > 0)
   );
   
   // Utility function to calculate overall score from section ratings
   const calculateOverallScore = (page: Page): number => {
+    // Use cached pageScore if available (most accurate)
+    if (page.pageScore != null) {
+      return page.pageScore;
+    }
+    
+    // Fallback to calculating from section ratings
     if (page.sectionRatings) {
       const scores = Object.values(page.sectionRatings) as number[];
       const total = scores.reduce((sum: number, score: number) => sum + score, 0);
       const maxPossible = scores.length * 10; // 7 sections * 10 = 70
       return Math.round((total / maxPossible) * 100); // Convert to percentage
     }
-    // Fallback to legacy score
+    
+    // Final fallback to legacy score
     return page.llmReadinessScore || 0;
   };
   
@@ -387,6 +398,7 @@ export default function SiteDetailsPage() {
                             <SitePagesManagement
                               site={site}
                               siteId={siteId}
+                              refreshToken={pagesRefreshToken}
                               searchTerm={searchTerm}
                               setSearchTerm={setSearchTerm}
                               sortBy={sortBy}
@@ -401,42 +413,9 @@ export default function SiteDetailsPage() {
                               setShowAddPageModal={setShowAddPageModal}
                               onRefresh={refreshData}
                               onDeletePage={async (pageId: string) => {
-                                const page = pages.find(p => p.id === pageId);
-                                const confirmMessage = `Delete "${
-                                  page?.title || page?.url
-                                }"?\n\nThis will permanently delete the page and all its related data (analysis results, content, suggestions, etc.).`;
-                                if (confirm(confirmMessage)) {
-                                  try {
-                                    setToast({
-                                      message: "Deleting page...",
-                                      type: "info",
-                                    });
-                                    const token = await getToken();
-                                    if (!token) {
-                                      setError("Failed to get authentication token");
-                                      return;
-                                    }
-                                    await deletePage(token, pageId);
-
-                                    // Refresh the pages list
-                                    const updatedPagesResponse = await getPages(token, siteId);
-                                    setPages(updatedPagesResponse.pages);
-
-                                    setToast({
-                                      message: "Page deleted successfully",
-                                      type: "success",
-                                    });
-                                  } catch (err: unknown) {
-                                    const errorMessage =
-                                      err instanceof Error
-                                        ? err.message
-                                        : "Failed to delete page";
-                                    setToast({
-                                      message: errorMessage,
-                                      type: "error",
-                                    });
-                                  }
-                                }
+                                const page = pages.find((p) => p.id === pageId) || null;
+                                setPendingDeletePage(page);
+                                setShowDeletePageDialog(true);
                               }}
                               onBulkDelete={handleBulkDelete}
                               calculateOverallScore={calculateOverallScore}
@@ -487,12 +466,40 @@ export default function SiteDetailsPage() {
                       onShowDeleteConfirmation={() => setShowDeleteConfirmation(true)}
                     />
 
-                    {/* Delete Confirmation Dialog */}
+                    {/* Delete Site Confirmation Dialog */}
                     <DeleteConfirmationDialog
                       isOpen={showDeleteConfirmation}
                       onClose={() => setShowDeleteConfirmation(false)}
                       siteName={site.name}
                       onConfirm={handleDeleteSite}
+                    />
+
+                    {/* Delete Page Confirmation Dialog */}
+                    <DeletePageDialog
+                      isOpen={showDeletePageDialog}
+                      onClose={() => setShowDeletePageDialog(false)}
+                      pageLabel={pendingDeletePage?.title || pendingDeletePage?.url || "this page"}
+                      onConfirm={async () => {
+                        try {
+                          setToast({ message: "Deleting page...", type: "info" });
+                          const token = await getToken();
+                          if (!token || !pendingDeletePage) {
+                            setError("Failed to get authentication token");
+                            return;
+                          }
+                          await deletePage(token, pendingDeletePage.id);
+                          const updatedPagesResponse = await getPages(token, siteId);
+                          setPages(updatedPagesResponse.pages);
+                          setPagesRefreshToken((v) => v + 1);
+                          setToast({ message: "Page deleted successfully", type: "success" });
+                        } catch (err: unknown) {
+                          const errorMessage = err instanceof Error ? err.message : "Failed to delete page";
+                          setToast({ message: errorMessage, type: "error" });
+                        } finally {
+                          setShowDeletePageDialog(false);
+                          setPendingDeletePage(null);
+                        }
+                      }}
                     />
                   </>
                 )}

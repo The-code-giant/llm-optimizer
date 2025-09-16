@@ -29,7 +29,8 @@ export interface Page {
   siteId: string;
   url: string;
   title: string;
-  llmReadinessScore: number; // Legacy field for compatibility
+  pageScore?: number; // Cached overall score (0-100) from section ratings
+  llmReadinessScore?: number; // Legacy field for compatibility
   lastScannedAt: string;
   lastAnalysisAt: string;
   createdAt: string;
@@ -48,13 +49,20 @@ export interface Page {
 
 // Utility function to calculate overall score from section ratings
 export function calculateOverallScore(page: Page): number {
+  // Use cached pageScore if available (most accurate)
+  if (page.pageScore != null) {
+    return page.pageScore;
+  }
+  
+  // Fallback to calculating from section ratings
   if (page.sectionRatings) {
     const scores = Object.values(page.sectionRatings);
     const total = scores.reduce((sum, score) => sum + score, 0);
     const maxPossible = scores.length * 10; // 7 sections * 10 = 70
     return Math.round((total / maxPossible) * 100); // Convert to percentage
   }
-  // Fallback to legacy score
+  
+  // Final fallback to legacy score
   return page.llmReadinessScore || 0;
 }
 
@@ -193,29 +201,30 @@ export async function getSitesWithMetrics(
         const siteDetails = await getSiteDetails(token, site.id);
 
         // Get pages for this site
-        const pages = await getPages(token, site.id);
+        const pagesResponse = await getPages(token, site.id);
+        const pages = pagesResponse.pages;
 
         // Calculate metrics using new scoring system
         const totalPages = pages.length;
         const pagesWithScores = pages.filter(
-          (p) => p.sectionRatings || p.llmReadinessScore != null
+          (p: Page) => p.pageScore != null && p.pageScore > 0 || p.sectionRatings || p.llmReadinessScore != null
         );
         const avgLLMReadiness =
           pagesWithScores.length > 0
             ? Math.round(
                 pagesWithScores.reduce(
-                  (sum, p) => sum + calculateOverallScore(p),
+                  (sum: number, p: Page) => sum + calculateOverallScore(p),
                   0
                 ) / pagesWithScores.length
               )
             : 0;
 
         // Find most recent scan
-        const pagesWithScans = pages.filter((p) => p.lastScannedAt);
+        const pagesWithScans = pages.filter((p: Page) => p.lastScannedAt);
         const lastScan =
           pagesWithScans.length > 0
             ? pagesWithScans.sort(
-                (a, b) =>
+                (a: Page, b: Page) =>
                   new Date(b.lastScannedAt).getTime() -
                   new Date(a.lastScannedAt).getTime()
               )[0].lastScannedAt
@@ -228,7 +237,7 @@ export async function getSitesWithMetrics(
 
         // Count improvements (pages with score > 60 as improvement indicator)
         const improvements = pagesWithScores.filter(
-          (p) => calculateOverallScore(p) > 60
+          (p: Page) => calculateOverallScore(p) > 60
         ).length;
 
         return {
