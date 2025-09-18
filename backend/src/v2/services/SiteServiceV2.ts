@@ -37,7 +37,7 @@ export class SiteServiceV2 {
   private firecrawlService: FirecrawlService;
 
   constructor() {
-    this.firecrawlService = new FirecrawlService();
+    this.firecrawlService = FirecrawlService.getInstance();
   }
 
   /**

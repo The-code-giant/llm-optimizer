@@ -12,7 +12,7 @@ export class AnalysisControllerV2 extends BaseController {
 
   constructor() {
     super();
-    this.firecrawlService = new FirecrawlService();
+    this.firecrawlService = FirecrawlService.getInstance();
     this.analysisService = new AnalysisServiceV2(this.firecrawlService);
   }
 

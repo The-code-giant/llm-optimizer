@@ -13,7 +13,7 @@ export class SitesControllerV2 extends BaseController {
 
   constructor() {
     super();
-    this.firecrawlService = new FirecrawlService();
+    this.firecrawlService = FirecrawlService.getInstance();
     this.siteService = new SiteServiceV2();
   }
 

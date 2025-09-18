@@ -57,7 +57,7 @@ export class CompetitiveIntelligenceService {
   private analysisService: AnalysisServiceV2;
 
   constructor() {
-    this.firecrawlService = new FirecrawlService();
+    this.firecrawlService = FirecrawlService.getInstance();
     this.analysisService = new AnalysisServiceV2(this.firecrawlService);
   }
 

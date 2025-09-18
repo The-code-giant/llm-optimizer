@@ -10,7 +10,7 @@ export class PagesControllerV2 extends BaseController {
 
   constructor() {
     super();
-    this.firecrawlService = new FirecrawlService();
+    this.firecrawlService = FirecrawlService.getInstance();
   }
 
   /**

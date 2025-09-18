@@ -42,9 +42,10 @@ export interface FirecrawlBulkResult {
  * Enhanced Firecrawl service with comprehensive web scraping capabilities
  */
 export class FirecrawlService {
+  private static instance: FirecrawlService;
   private firecrawl: Firecrawl;
 
-  constructor() {
+  private constructor() {
     if (!process.env.FIRECRAWL_API_KEY) {
       console.warn('⚠️ FIRECRAWL_API_KEY not found in environment variables');
       throw new Error('Firecrawl API key is required');
@@ -57,39 +58,16 @@ export class FirecrawlService {
     });
     
     console.log('✅ Firecrawl service initialized');
-    
-    // Test the API connection
-    this.testConnection();
   }
 
   /**
-   * Test Firecrawl API connection
+   * Get singleton instance of FirecrawlService
    */
-  private async testConnection() {
-    try {
-      console.log('🧪 Testing Firecrawl API connection...');
-      console.log('🔧 Firecrawl SDK version: @mendable/firecrawl-js v4.3.5+');
-      console.log('🌐 API Key format check:', {
-        hasKey: !!process.env.FIRECRAWL_API_KEY,
-        keyLength: process.env.FIRECRAWL_API_KEY?.length || 0,
-        keyPrefix: process.env.FIRECRAWL_API_KEY?.substring(0, 8) || 'none'
-      });
-      
-      // Test with a simple, reliable URL
-      const testResult = await this.firecrawl.scrape('https://httpbin.org/html');
-      console.log('✅ Firecrawl API connection test successful:', {
-        hasResult: !!testResult,
-        resultType: typeof testResult,
-        keys: Object.keys(testResult || {})
-      });
-    } catch (error: any) {
-      console.error('❌ Firecrawl API connection test failed:', {
-        message: error.message,
-        status: error.status,
-        code: error.code,
-        name: error.name
-      });
+  public static getInstance(): FirecrawlService {
+    if (!FirecrawlService.instance) {
+      FirecrawlService.instance = new FirecrawlService();
     }
+    return FirecrawlService.instance;
   }
 
   /**
