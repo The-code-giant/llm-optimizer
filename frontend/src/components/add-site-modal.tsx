@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Plus, Loader2, Sparkles, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, Loader2, Sparkles, CheckCircle, AlertCircle, Zap, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -86,7 +86,7 @@ const urlSchema = z
     return normalizedUrl;
   });
 
-// Zod schema for form validation
+// Zod schema for form validation with enhanced Firecrawl options
 const addSiteSchema = z.object({
   name: z
     .string()
@@ -95,8 +95,9 @@ const addSiteSchema = z.object({
     .max(100, "Site name must be less than 100 characters")
     .regex(/^[a-zA-Z0-9\s\-_]+$/, "Site name can only contain letters, numbers, spaces, hyphens, and underscores")
     .trim(),
-    url: z.string().min(1, "URL is required"),
-  // url: urlSchema,
+  url: z.string().min(1, "URL is required"),
+  autoCrawl: z.boolean(),
+  maxPages: z.number().min(1).max(50),
 });
 
 type AddSiteFormData = z.infer<typeof addSiteSchema>;
@@ -121,9 +122,16 @@ export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps,
     formState: { errors, isValid },
     reset,
     watch,
+    setValue,
   } = useForm<AddSiteFormData>({
     resolver: zodResolver(addSiteSchema),
     mode: "onChange",
+    defaultValues: {
+      name: "",
+      url: "",
+      autoCrawl: true,
+      maxPages: 10,
+    },
   });
 
   const watchedUrl = watch("url");
@@ -141,20 +149,26 @@ export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps,
         return;
       }
 
-      // Fancy staged loader progression while waiting for API
+      // Enhanced progress phases for Firecrawl integration
       const ticker = setInterval(() => {
         setProgress((p) => {
-          const next = Math.min(85, p + 5 + Math.random() * 5);
-          // move through phases as progress increases
+          const next = Math.min(85, p + 3 + Math.random() * 4);
+          // Move through phases as progress increases
           setPhase((ph) => {
-            if (next > 30 && ph === "validating") return "analyzing";
+            if (next > 25 && ph === "validating") return "analyzing";
+            if (next > 60 && ph === "analyzing") return "finalizing";
             return ph;
           });
           return next;
         });
-      }, 400);
+      }, 500);
 
-      const newSite = await addSite(token, data.name, data.url);
+      // Call enhanced addSite with Firecrawl options
+      const newSite = await addSite(token, data.name, data.url, {
+        autoCrawl: data.autoCrawl,
+        maxPages: data.maxPages,
+      });
+      
       clearInterval(ticker);
 
       // Finish the staged steps so users can see Analyzing and Finalizing
@@ -211,12 +225,15 @@ export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps,
           Add Site
         </Button>
       </DialogTrigger>
-          <DialogContent className="sm:max-w-[520px]">
+      <DialogContent 
+        className="sm:max-w-[520px] !bg-white dark:!bg-gray-900 border border-border shadow-lg backdrop-blur-none opacity-100"
+        style={{ backgroundColor: 'white' }}
+      >
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Add New Website</DialogTitle>
             <DialogDescription>
-              Add a new website to start optimizing it for LLM and search engines.
+              Add a new website to start optimizing it for LLM and search engines. With enhanced Firecrawl integration, we&apos;ll automatically discover and analyze your pages with superior content extraction.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -260,6 +277,51 @@ export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps,
               )}
             </div>
 
+            {/* Enhanced Firecrawl Options */}
+            <div className="space-y-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">Auto-discover Pages</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically find and analyze up to {watch("maxPages") || 10} pages using advanced web crawling
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    {...register("autoCrawl")}
+                    disabled={adding}
+                    className="h-4 w-4"
+                  />
+                  <Sparkles className="h-4 w-4 text-yellow-500" />
+                </div>
+              </div>
+
+              {watch("autoCrawl") && (
+                <div className="space-y-2">
+                  <Label htmlFor="maxPages">Maximum Pages to Discover</Label>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="range"
+                      min="1"
+                      max="50"
+                      step="1"
+                      {...register("maxPages", { valueAsNumber: true })}
+                      disabled={adding}
+                      className="flex-1"
+                    />
+                    <span className="min-w-[3ch] text-sm font-medium">
+                      {watch("maxPages") || 10}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Search className="h-3 w-3" />
+                    <span>Higher quality content extraction with Firecrawl</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
                 {adding && (
                   <div className="rounded-md border bg-muted p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -289,7 +351,7 @@ export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps,
                         ) : (
                           <Loader2 className="w-4 h-4 text-muted-foreground" />
                         )}
-                        <span>Analyzing homepage content</span>
+                        <span>Discovering pages with Firecrawl{watch("autoCrawl") ? ` (up to ${watch("maxPages")} pages)` : ""}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm opacity-90">
                         {phase === "finalizing" ? (
@@ -299,10 +361,15 @@ export function AddSiteModal({ onSiteAdded, onSuccess }: Omit<AddSiteModalProps,
                         ) : (
                           <Loader2 className="w-4 h-4 text-muted-foreground" />
                         )}
-                        <span>Finalizing setup</span>
+                        <span>Extracting enhanced content</span>
                       </div>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">This may take ~10–20 seconds if your site is slow to respond.</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {watch("autoCrawl") 
+                        ? `Enhanced crawling with Firecrawl for better content extraction. May take 20-60 seconds for ${watch("maxPages")} pages.`
+                        : "This may take ~10–20 seconds if your site is slow to respond."
+                      }
+                    </p>
                   </div>
                 )}
           </div>

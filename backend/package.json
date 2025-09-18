@@ -30,6 +30,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^2.0.7",
     "@clerk/backend": "^2.3.1",
+    "@mendable/firecrawl-js": "^4.3.5",
     "@neondatabase/serverless": "^1.0.1",
     "@sentry/node": "^9.32.0",
     "@types/axios": "^0.14.4",

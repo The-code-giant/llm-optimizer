@@ -63,7 +63,7 @@ const sitesController = new SitesController();
  *             schema:
  *               $ref: '#/components/schemas/Site'
  */
-router.post('/', authenticateJWT, sitesController.createSite);
+// DISABLED: Use V2 API for site creation - router.post('/', authenticateJWT, sitesController.createSite);
 
 /**
  * @openapi

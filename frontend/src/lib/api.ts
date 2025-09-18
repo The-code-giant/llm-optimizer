@@ -293,25 +293,70 @@ function formatRelativeTime(date: Date): string {
 export async function addSite(
   token: string,
   name: string,
-  url: string
+  url: string,
+  options: { autoCrawl?: boolean; maxPages?: number } = {}
 ): Promise<Site> {
-  const res = await fetch(`${API_BASE}/sites`, {
+  const { autoCrawl = true, maxPages = 10 } = options;
+  
+  const res = await fetch(`${API_BASE.replace('/v1', '/v2')}/sites`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ name, url }),
+    body: JSON.stringify({ 
+      name, 
+      url, 
+      autoCrawl, 
+      maxPages 
+    }),
   });
   const response = await handleResponse(res);
   
-  // Handle new structured response format
-  if (response.success && response.data) {
-    return response.data;
+  // Handle v2 structured response format
+  if (response.success && response.data && response.data.site) {
+    return response.data.site;
   }
   
-  // Fallback for direct response format (if any legacy endpoints still exist)
-  return response;
+  // Fallback for any legacy endpoints
+  return response.data || response;
+}
+
+export async function rediscoverSitePages(
+  token: string,
+  siteId: string,
+  maxPages: number = 10
+): Promise<{
+  success: boolean;
+  pagesDiscovered: number;
+  pagesAnalyzed: number;
+  errors: string[];
+}> {
+  const res = await fetch(`${API_BASE.replace('/v1', '/v2')}/sites/${siteId}/rediscover`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ maxPages }),
+  });
+  const response = await handleResponse(res);
+  
+  if (response.success && response.data && response.data.discovery) {
+    return {
+      success: true,
+      pagesDiscovered: response.data.discovery.pagesDiscovered,
+      pagesAnalyzed: response.data.discovery.pagesAnalyzed,
+      errors: response.data.discovery.errors
+    };
+  }
+  
+  return {
+    success: false,
+    pagesDiscovered: 0,
+    pagesAnalyzed: 0,
+    errors: ['Failed to rediscover pages']
+  };
 }
 
 export async function getSiteDetails(

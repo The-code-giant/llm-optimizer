@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import AddSinglePageForm from "@/components/AddSinglePageForm";
+import { RediscoverPagesButton } from "@/components/rediscover-pages-button";
 import { Page, SiteDetails, GetPagesParams, GetPagesResponse, getPages } from "@/lib/api";
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
@@ -178,6 +179,15 @@ export function SitePagesManagement({
                 )}
               </DialogContent>
             </Dialog>
+
+            {/* Rediscover Pages Button */}
+            <RediscoverPagesButton
+              siteId={siteId}
+              siteName={site.name}
+              onSuccess={() => {
+                onRefresh();
+              }}
+            />
 
             {/* Bulk Actions */}
             {selectedPages.size > 0 && (

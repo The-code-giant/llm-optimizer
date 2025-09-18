@@ -16,6 +16,11 @@ import usersRouter from "./routes/users";
 import toolsRouter from "./routes/tools";
 import leadsRouter from "./routes/leads";
 import analyticsRouter from "./routes/analytics";
+import earlyAccessRouter from "./routes/early-access";
+
+// Import V2 API
+import v2Router from "./v2";
+
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import swaggerUi from "swagger-ui-express";
 import swaggerJSDoc from "swagger-jsdoc";
@@ -34,7 +39,6 @@ import {
   dashboardRateLimit,
   authRateLimit,
 } from "./middleware/rateLimit";
-import earlyAccessRouter from "./routes/early-access";
 
 // Import workers to start background job processing
 // Conditionally start background workers (can be disabled in development)
@@ -129,7 +133,7 @@ app.use("/tracker", (req, res, next) => {
   next();
 });
 
-// Tracker API CORS: reflect any Origin just for /api/v1/tracker
+// Tracker API CORS: reflect any Origin just for tracker endpoints
 const trackerCors = cors({
   origin: true, // reflect request Origin header
   methods: ["GET", "HEAD", "OPTIONS", "POST", "PUT", "DELETE"],
@@ -138,6 +142,7 @@ const trackerCors = cors({
   optionsSuccessStatus: 200,
 });
 app.use("/api/v1/tracker", trackerCors);
+app.use("/api/v2/tracker", trackerCors);
 
 app.use(cors(corsOptions));
 
@@ -305,6 +310,9 @@ app.use("/api/v1/leads", generalRateLimit, leadsRouter);
 app.use("/api/v1/analytics", dashboardRateLimit, analyticsRouter);
 app.use("/api/v1/tracker", trackerRouter);
 app.use("/api/v1/early-access", generalRateLimit, earlyAccessRouter);
+
+// Mount V2 API with enhanced features
+app.use("/api/v2", generalRateLimit, v2Router);
 
 // Serve static files for tracker script (MUST be after API routes)
 app.use("/tracker", express.static("public/tracker"));

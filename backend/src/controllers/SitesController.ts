@@ -270,7 +270,6 @@ export class SitesController extends BaseController {
       return this.sendError(res, 'Site not found', 404);
     }
 
-    console.log('Site data being returned:', site);
     this.sendSuccess(res, site);
   });
 
@@ -1185,13 +1184,10 @@ export class SitesController extends BaseController {
     const { userId } = this.getAuthenticatedUser(req);
     const siteId = req.params.siteId;
 
-    console.log(`🚀 Starting tracker installation check for site: ${siteId}`);
-    console.log(`👤 User ID: ${userId}`);
 
     // Validate siteId
     const siteIdValidation = UUIDSchema.safeParse(siteId);
     if (!siteIdValidation.success) {
-      console.log(`❌ Invalid site ID format: ${siteId}`);
       return this.sendError(res, 'Invalid site ID format', 400);
     }
 
@@ -1200,39 +1196,29 @@ export class SitesController extends BaseController {
     const site = siteArr[0];
     
     if (!site || site.userId !== userId) {
-      console.log(`❌ Site not found or access denied for site: ${siteId}`);
       return this.sendError(res, 'Site not found', 404);
     }
 
-    console.log(`✅ Site found: ${site.name} (${site.url})`);
-    console.log(`🆔 Tracker ID: ${site.trackerId}`);
-
     try {
       // Check if tracker script is installed by making a request to the site
-      console.log(`🔍 Initiating tracker script check...`);
       const isInstalled = await this.checkTrackerScriptInstalled(site.url, site.trackerId);
       
-      console.log(`📋 Check result: ${isInstalled ? 'INSTALLED' : 'NOT INSTALLED'}`);
       
       // Update site status based on installation result
       if (isInstalled) {
-        console.log(`🔄 Updating site status to 'active'...`);
         await db.update(sites)
           .set({ 
             status: 'active',
             updatedAt: new Date()
           })
           .where(eq(sites.id, siteId));
-        console.log(`✅ Site status updated to 'active'`);
       } else {
-        console.log(`🔄 Updating site status to 'created' (tracker not installed)...`);
         await db.update(sites)
           .set({ 
             status: 'created',
             updatedAt: new Date()
           })
           .where(eq(sites.id, siteId));
-        console.log(`✅ Site status updated to 'created'`);
       }
 
       const responseData = {
@@ -1243,13 +1229,11 @@ export class SitesController extends BaseController {
         checkedAt: new Date().toISOString()
       };
 
-      console.log(`📤 Sending response:`, responseData);
       this.sendSuccess(res, responseData, 'Tracker installation check completed');
     } catch (error) {
       console.error('❌ Error checking tracker installation:', error);
       
       // Update site status to 'created' on error
-      console.log(`🔄 Updating site status to 'created' due to error...`);
       try {
         await db.update(sites)
           .set({ 
@@ -1274,14 +1258,11 @@ export class SitesController extends BaseController {
       // Ensure URL has protocol
       const url = siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`;
       
-      console.log(`🔍 Starting tracker check for site: ${url}`);
-      console.log(`📋 Looking for tracker ID: ${trackerId}`);
       
       // Make request to the website
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
-      console.log(`🌐 Making HTTP request to: ${url}`);
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -1292,7 +1273,6 @@ export class SitesController extends BaseController {
       });
       
       clearTimeout(timeoutId);
-      console.log(`📡 Response status: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         console.log(`❌ Failed to fetch ${url}: ${response.status} ${response.statusText}`);
@@ -1300,7 +1280,6 @@ export class SitesController extends BaseController {
       }
 
       const html = await response.text();
-      console.log(`📄 HTML content length: ${html.length} characters`);
       
       // Check for multiple indicators that the tracker script is installed
       const indicators = [
@@ -1324,27 +1303,10 @@ export class SitesController extends BaseController {
         { name: 'tracker-loaded', found: html.includes('cleversearchTrackerLoaded') },
       ];
 
-      // Log each indicator result
-      console.log(`🔎 Tracker detection results:`);
-      indicators.forEach(indicator => {
-        console.log(`   ${indicator.found ? '✅' : '❌'} ${indicator.name}: ${indicator.found}`);
-      });
-
-      // Count how many indicators are present
       const indicatorCount = indicators.filter(ind => ind.found).length;
       
-      // Consider it installed if at least 2 indicators are present
       const isInstalled = indicatorCount >= 2;
-      
-      console.log(`📊 Summary: ${indicatorCount}/12 indicators found`);
-      console.log(`🎯 Tracker installed: ${isInstalled ? 'YES' : 'NO'}`);
-      
-      // Log some sample HTML content for debugging
-      if (html.length > 0) {
-        console.log(`📝 Sample HTML (first 500 chars):`);
-        console.log(html.substring(0, 500));
-      }
-      
+     
       return isInstalled;
     } catch (error) {
       console.error(`❌ Error checking tracker installation for ${siteUrl}:`, error);
