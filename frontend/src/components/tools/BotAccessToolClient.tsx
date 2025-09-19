@@ -251,7 +251,7 @@ export default function BotAccessToolClient() {
 
       {/* Modal for progress + lead form */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg bg-white">
           {step === 'checking' && (
             <div>
               <DialogHeader>
@@ -308,7 +308,7 @@ export default function BotAccessToolClient() {
             </div>
           )}
           {step === 'lead' && (
-            <div>
+            <div className='bg-gray-50'>
               <DialogHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
